@@ -133,3 +133,29 @@ def test_an_extra_field_is_refused():
     """`additionalProperties: false` - otherwise a model invents its own confidence score."""
     with pytest.raises(jsonschema.ValidationError):
         validate({"findings": [dict(GOOD["findings"][0], confidence=0.9)]})
+
+
+# ------------------------------------------------------------------ two contracts
+
+def test_a_defs_entry_is_a_vocabulary_only_if_it_has_a_gloss():
+    """`$defs` also holds object shapes. Iterating all of them asked `finding` for a glossary
+    and crashed every prompt in the project at once — one line, sixteen failing tests."""
+    from rsquad.findings import vocabularies
+    assert vocabularies("finding") == ["kind", "severity"]
+    assert vocabularies("verdict") == ["verdict"]
+
+
+def test_each_contract_renders_only_its_own_vocabulary():
+    """A refuter shown the finding vocabulary would be invited to re-categorise the claim
+    instead of testing it."""
+    from rsquad.findings import vocabulary_block
+    assert "correctness" not in vocabulary_block("verdict")
+    assert "already-handled" not in vocabulary_block("finding")
+
+
+def test_the_verdict_vocabulary_is_binary_in_effect():
+    """One value lets a finding through; every other one names a way it died. No confidence
+    scale, because a scale is where a refuter hedges."""
+    values = vocabulary("verdict", "verdict")
+    assert "stands" in values
+    assert len(values) > 1

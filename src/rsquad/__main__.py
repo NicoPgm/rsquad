@@ -16,7 +16,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import budget, chunking, config, lenses, ranking
+from . import budget, chunking, config, lenses, ranking, refutation
 from .gate import ADAPTERS, DEFAULT_ADAPTER, check, git, merge_base, report
 from .vcs import resolve
 
@@ -121,7 +121,8 @@ def _review(args: argparse.Namespace) -> int:
         # No estimate is printed on purpose. Two invented cost constants in the source project
         # are in `evaluation/defects.yaml`; this tool reports what was billed, not what it
         # guessed. Pass --confirm to find out.
-        print("\ndry run. --confirm to spend.")
+        print("\ndry run. --confirm to spend."
+              + ("" if args.no_refute else " Plus one further call per finding, to refute it."))
         return 0
 
     errors: list[str] = []
@@ -142,18 +143,35 @@ def _review(args: argparse.Namespace) -> int:
         if run.error:
             errors.append("%s on %s: %s" % (run.lens, run.file, run.error))
 
-    usages = [r.usage for r in runs]
+    verdicts = []
+    if not args.no_refute and findings:
+        print("\n%d finding(s) to refute" % len(findings), flush=True)
+
+        def told(verdict):
+            print("  %-46s %s" % ("%s:%s" % (verdict.finding["file"][-30:],
+                                             verdict.finding["line"]),
+                                  verdict.error or verdict.verdict), flush=True)
+
+        verdicts = refutation.refute_all(findings, {u.file: u for u in units}, args.model,
+                                         on_verdict=told)
+        findings, killed = refutation.survivors(verdicts)
+    else:
+        killed = []
+
+    usages = [r.usage for r in runs] + [v.usage for v in verdicts]
     spend = budget.total(args.model, usages)
-    footer = ("Model `%s`, %d call(s), %.4f USD billed. %s"
-              % (args.model, len(runs), spend.total, budget.cache_verdict(usages)))
+    footer = ("Model `%s`, %d lens call(s) + %d refutation(s), %.4f USD billed. %s"
+              % (args.model, len(runs), len(verdicts), spend.total,
+                 budget.cache_verdict(usages)))
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(ranking.render(ranking.group(findings), dropped, errors, footer),
+    out.write_text(ranking.render(ranking.group(findings), dropped, errors, footer,
+                                  refuted=killed if not args.no_refute else None),
                    encoding="utf-8")
     print("\n%s" % footer)
-    print("%d kept, %d dropped by the guards, %d lens failure(s) -> %s"
-          % (len(findings), len(dropped), len(errors), out))
+    print("%d survived refutation, %d refuted, %d dropped by the guards, %d lens failure(s)"
+          " -> %s" % (len(findings), len(killed), len(dropped), len(errors), out))
     # Always 0. Only the gate blocks; opinions comment.
     return 0
 
@@ -192,6 +210,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="run only this lens; repeatable (default: all four)")
     review.add_argument("--model", default=lenses.MODEL, help="default: %s" % lenses.MODEL)
     review.add_argument("--out", default="review/queue.md", help="where to write the queue")
+    review.add_argument("--no-refute", action="store_true",
+                        help="skip step [3]. Cheaper, and the queue becomes a list of "
+                             "suspicions nobody contested")
     review.add_argument("--confirm", action="store_true",
                         help="actually call the API and spend; without it, a dry run")
     review.set_defaults(handler=_review)

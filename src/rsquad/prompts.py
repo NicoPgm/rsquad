@@ -70,6 +70,31 @@ def user_prompt(file: str, diff: str, numbered: str, elision: str = "",
                    elision=elision, context=context)
 
 
+def refutation_system_prompt() -> str:
+    return _render(_load(PROMPT_DIR / "refutation-system.v1.md"),
+                   vocabulary_block=vocabulary_block("verdict"))
+
+
+def refutation_user_prompt(finding: dict, file: str, diff: str, numbered: str,
+                           elision: str = "", context: str = "") -> str:
+    """The claim under test, and nothing about who made it.
+
+    `lens`, `kind` and `severity` are deliberately absent. They are the finder's framing, and
+    framing is what a refuter must not inherit — the claim to test is only "with these inputs,
+    does this line produce this consequence?".
+    """
+    return _render(_load(PROMPT_DIR / "refutation-user.v1.md"),
+                   file=file, line=str(finding["line"]), snippet=finding["snippet"],
+                   inputs=finding["inputs"], consequence=finding["consequence"],
+                   diff=diff, numbered=numbered, elision=elision, context=context)
+
+
+def refutation_blocks() -> list[dict]:
+    """One block: the shared rules carry the breakpoint, and there is no per-claim system text."""
+    return [{"type": "text", "text": refutation_system_prompt(),
+             "cache_control": {"type": "ephemeral"}}]
+
+
 def system_blocks(lens: str) -> list[dict]:
     """The system turn: shared text with the cache breakpoint, then the lens instruction.
 

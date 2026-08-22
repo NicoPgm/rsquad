@@ -89,7 +89,7 @@ def rank(entries: list[Entry]) -> list[Entry]:
 
 
 def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
-           errors: list[str] | None = None, footer: str = "") -> str:
+           errors: list[str] | None = None, footer: str = "", refuted=None) -> str:
     """The queue, as Markdown. Read top-down; stop when it stops being worth your time."""
     ranked = rank(entries)
     out = ["# Review queue", ""]
@@ -99,6 +99,10 @@ def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
             "model's own claim and nothing has checked it**; agreement between lenses is "
             "independent, because they never saw each other's output. This is a reading order, "
             "not a verdict — nothing here blocks anything.", ""]
+    if refuted is not None:
+        out += ["> Every finding below **survived a refuter** that was given the claim without "
+                "its author, its severity or the other findings, and told to kill it. %d claim(s) "
+                "did not survive." % len(refuted), ""]
 
     if not ranked:
         out += ["Nothing to report. On most diffs this is the correct answer.", ""]
@@ -122,6 +126,17 @@ def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
         for finding, reason in dropped:
             out += ["- `%s:%s` (%s) — %s" % (finding.get("file"), finding.get("line"),
                                              finding.get("lens", "?"), reason)]
+        out += [""]
+
+    if refuted:
+        out += ["---", "", "## Refuted (%d)" % len(refuted), ""]
+        out += ["Not noise. This is the measurement of how much of what the lenses produce is "
+                "plausible rather than true.", ""]
+        for verdict in refuted:
+            finding = verdict.finding
+            out += ["- `%s:%s` (%s) — **%s** — %s"
+                    % (finding.get("file"), finding.get("line"), finding.get("lens", "?"),
+                       verdict.verdict, verdict.reason)]
         out += [""]
 
     if errors:

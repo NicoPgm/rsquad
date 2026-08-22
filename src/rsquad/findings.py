@@ -24,7 +24,10 @@ import jsonschema
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_DIR = ROOT / "schema"
-SCHEMA_FILE = SCHEMA_DIR / "finding.v1.json"
+#: The two contracts. A finding is what a lens may say; a verdict is what a refuter may say
+#: about one. Both are normative, both carry closed vocabularies, and both are read from disk so
+#: no prompt ever restates them.
+CONTRACTS = {"finding": "finding.v1.json", "verdict": "verdict.v1.json"}
 
 VERSION = "v1"
 
@@ -47,11 +50,12 @@ ANNOTATIONS = ("glossary",)
 UNSUPPORTED = ("minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum")
 
 
-@lru_cache(maxsize=1)
-def schema() -> dict:
-    if not SCHEMA_FILE.exists():
-        raise SystemExit("schema not found: %s (installed non-editable?)" % SCHEMA_FILE)
-    return json.loads(SCHEMA_FILE.read_text(encoding="utf-8"))
+@lru_cache(maxsize=None)
+def schema(contract: str = "finding") -> dict:
+    path = SCHEMA_DIR / CONTRACTS[contract]
+    if not path.exists():
+        raise SystemExit("schema not found: %s (installed non-editable?)" % path)
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 _REMOVED = ANNOTATIONS + UNSUPPORTED
@@ -65,45 +69,56 @@ def _strip(node):
     return node
 
 
-def api_schema() -> dict:
+def api_schema(contract: str = "finding") -> dict:
     """The schema as sent to the API in `output_config.format`.
 
     Note for token accounting: this counts toward the cached prefix, so it belongs **before**
     the cache breakpoint, with the diff after it.
     """
-    return _strip(schema())
+    return _strip(schema(contract))
 
 
-def vocabulary(name: str) -> list[str]:
-    """The closed list for `kind` or `severity`, read from the schema."""
-    return list(schema()["$defs"][name]["enum"])
+def vocabulary(name: str, contract: str = "finding") -> list[str]:
+    """The closed list for a field, read from the schema that owns it."""
+    return list(schema(contract)["$defs"][name]["enum"])
 
 
-def glossary(name: str) -> dict[str, str]:
-    return dict(schema()["$defs"][name]["glossary"])
+def glossary(name: str, contract: str = "finding") -> dict[str, str]:
+    return dict(schema(contract)["$defs"][name]["glossary"])
 
 
-def vocabulary_block() -> str:
+def vocabularies(contract: str = "finding") -> list[str]:
+    """The `$defs` entries that are closed vocabularies, in a stable order.
+
+    A `$defs` entry **is** a vocabulary when it carries a glossary — the object shapes live
+    there too, and iterating all of them was a real bug: `finding` has no glossary, and asking
+    for one crashed every prompt in the project at once.
+    """
+    return sorted(name for name, node in schema(contract)["$defs"].items()
+                  if "glossary" in node)
+
+
+def vocabulary_block(contract: str = "finding") -> str:
     """The text rendered into `{{VOCABULARY_BLOCK}}` in every lens prompt.
 
     Rendered, never written by hand. A prompt that spells out the values would be a second
     source of truth, and the second source is always the one that goes stale.
     """
     lines = []
-    for name in ("kind", "severity"):
-        gloss = glossary(name)
+    for name in vocabularies(contract):
+        gloss = glossary(name, contract)
         lines.append("`%s` - exactly one of:" % name)
         lines.append("")
-        for value in vocabulary(name):
+        for value in vocabulary(name, contract):
             lines.append("- `%s` - %s" % (value, gloss[value]))
         lines.append("")
     return "\n".join(lines).rstrip()
 
 
-def validate(payload: dict) -> None:
+def validate(payload: dict, contract: str = "finding") -> None:
     """Raise `jsonschema.ValidationError` if the payload is not a well-formed finding set.
 
     This is the shape check only. It says nothing about whether a finding is *true* - that is
     what `anchoring` and, later, the refuter are for.
     """
-    jsonschema.validate(payload, schema())
+    jsonschema.validate(payload, schema(contract))

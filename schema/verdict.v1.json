@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "verdict.v1.json",
+  "title": "Verdict",
+  "description": "What a refuter concluded about one finding. Binary on purpose: there is no confidence scale, because a scale is where a refuter hedges. Doubt means refuted. The refuter must quote code for its verdict, checked by the same anchoring guard the finding passed - a refutation nobody can check is worth no more than a finding nobody can check.",
+
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "reason", "evidence_line", "evidence_snippet"],
+  "properties": {
+    "verdict": { "$ref": "#/$defs/verdict" },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Why, in one or two sentences, tied to the code you quote below."
+    },
+    "evidence_line": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "1-indexed line in the numbered file that carries your evidence."
+    },
+    "evidence_snippet": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The code that settles it, copied verbatim. When the verdict is `stands`, quote the code you tried and failed to refute."
+    }
+  },
+
+  "$defs": {
+    "verdict": {
+      "enum": ["stands", "not-reachable", "already-handled", "misread", "wrong-location",
+               "no-consequence", "intended"],
+      "glossary": {
+        "stands": "I tried to kill it and could not - the claimed inputs do reach that code and do produce that consequence",
+        "not-reachable": "no input reaches that code path, so the claim is about dead ground",
+        "already-handled": "the check the finding says is missing is present, above or around the quoted line",
+        "misread": "the code does not do what the finding says it does",
+        "wrong-location": "something real, but not at this line - the quoted code is not where it happens",
+        "no-consequence": "the described situation occurs and nothing observable follows from it",
+        "intended": "the behaviour is deliberate and consistent with the code around it"
+      }
+    }
+  }
+}

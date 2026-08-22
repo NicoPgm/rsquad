@@ -56,7 +56,7 @@ claims to replace it.
 | the finding contract | **built** — `schema/finding.v1.json` + both guards, no model involved |
 | [1] conformance lens | not started |
 | [2] blind lenses | **built** — `rsquad review`, four lenses, blindness enforced by signature |
-| [3] refutation | not started |
+| [3] refutation | **built** — one refuter per finding, no inherited framing |
 | [4] ranked queue | **built** — grouped by location, ranked, never a verdict |
 
 ### The finding contract
@@ -106,6 +106,7 @@ rsquad gate --replay 20 --repo ../other      # aggregate over the last 20 commit
 rsquad review                                # what would be sent, and to how many lenses
 rsquad review --confirm                      # actually spend
 rsquad review --lens repro --confirm         # one lens only
+rsquad review --no-refute --confirm          # skip step [3], cheaper and weaker
 ```
 
 `rsquad review` is a dry run unless you pass `--confirm`, and the dry run prints **no cost
@@ -207,6 +208,7 @@ reports. A report says what happened, an ADR says what we do about it.
 | [0003](docs/adr/0003-the-finding-contract.md) | closed vocabulary and two mechanical guards |
 | [0004](docs/adr/0004-one-file-per-unit-with-a-computed-context-pack.md) | one file per unit, plus a computed context pack |
 | [0005](docs/adr/0005-two-transports-one-core.md) | two transports, one core — *proposed* |
+| [0006](docs/adr/0006-refutation-inherits-no-framing.md) | the refuter inherits no framing, and a broken refutation refutes nothing |
 
 ## License and provenance
 

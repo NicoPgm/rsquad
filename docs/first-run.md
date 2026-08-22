@@ -91,9 +91,10 @@ now in the evaluation set marked `self_found: true`, and any future rate has to 
 twice — over all scorable cases, and over the ones the squad did not discover itself. Only the
 second number means anything.
 
-**Nothing about false positives.** Twenty-one findings were kept and none has been refuted yet,
-because step [3] does not exist. The refuter is the half that makes finding expensive, and until
-it is built the useful question — *how many of these survive an adversary?* — has no answer.
+**Answered since, in part.** Step [3] was built and run on `b404a93`: six findings, five stood,
+one was refuted. See ADR-0006 — the refuter killed a claim whose consequence was overstated and
+kept the accurately-stated version of the same underlying bug, without being told either was
+about the same code.
 
 **Nothing about other stacks.** One repository, one language, one file per unit.
 
@@ -102,3 +103,29 @@ it is built the useful question — *how many of these survive an adversary?* �
 $1.07 for eight calls across two commits, one file each. No figure is projected from that: two
 invented cost constants from the source project are in the evaluation set for exactly this
 reason, and a per-review number needs a spread of real diffs, not two.
+
+
+## Addendum, same day — the run with refutation
+
+`b404a93`, four lenses then one refuter per finding.
+
+| | |
+|---|---:|
+| Findings | 6 |
+| **Survived refutation** | **5** |
+| Refuted | 1 |
+| Dropped by the guards | 0 |
+| Billed | $0.8890 |
+| Cache | 5605 written, 11609 read |
+
+The ground-truth case — `head-overwritten-before-use` at line 272, `blocking`, four lenses —
+**survived**, with a consequence more precise than the one in `evaluation/defects.yaml`.
+
+### The same commit gave 8 findings, then 6
+
+Same prompts, same model, same diff. Severities moved too: the `git rev-parse` finding was
+`significant` with three lenses agreeing on the first run, and `minor` with one on the second.
+
+Nothing is broken. It is the thing to know before quoting any count from a single run, and it is
+the number ADR-0005's comparison actually turns on — not "is the standalone transport
+reproducible" (it is not, exactly) but "which transport varies less".
