@@ -1,0 +1,26 @@
+[project]
+name = "rsquad"
+version = "0.1.0"
+description = "A review squad: a mechanical gate, blind lenses, adversarial refutation, a ranked queue."
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.116",
+    "pyyaml>=6.0",
+    "jsonschema>=4.20",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+rsquad = "rsquad.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
