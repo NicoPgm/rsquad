@@ -53,10 +53,49 @@ claims to replace it.
 | Step | State |
 |---|---|
 | [0] mechanical gate | **built** — `rsquad gate`, Python/pytest adapter |
+| the finding contract | **built** — `schema/finding.v1.json` + both guards, no model involved |
 | [1] conformance lens | not started |
 | [2] blind lenses | not started |
 | [3] refutation | not started |
 | [4] ranked queue | not started |
+
+### The finding contract
+
+Everything a lens produces passes through `schema/finding.v1.json`, and the two guards are built
+into its shape rather than asked for in prose:
+
+```
+file · line · snippet · kind · severity · inputs · consequence
+```
+
+**Anchoring.** `snippet` must appear in the file within a few lines of `line`, by exact search
+after whitespace normalisation. Checking it *near the claimed line* validates the quote and the
+location together — a finding that quotes real code but points at the wrong place is not
+actionable. This is the only anti-hallucination guard that depends on no provider, no model and
+no prompt.
+
+**Reproduction or nothing.** `inputs` and `consequence` are required and must not be vacuous.
+"This is fragile" does not ship. "If `items` is empty, line 42 raises" does. The guard rejects
+the empty and the evasive; it cannot separate a specific claim from a confidently-worded vague
+one, and does not pretend to — that is the refuter's job in step [3].
+
+`kind` and `severity` are **closed enumerations**, constrained by the API's structured-output
+format rather than by a line of prompt asking nicely. They exist once, in the schema, with the
+gloss that explains each value; `findings.vocabulary_block()` renders the prompt text from them
+at run time so the two cannot drift.
+
+Rejected findings are returned alongside kept ones, never dropped silently — what the guards
+refuse is a measurement of how the lenses are behaving.
+
+### Ground truth
+
+`evaluation/defects.yaml` holds real defects with the commit that introduced each one, so a
+squad can be replayed against diffs whose label came from reality rather than from a model.
+
+It is a **smoke test, not a measurement** — five cases today. It will catch a squad that finds
+nothing; it cannot tell 40 % from 70 %. Its most important field is `detectable_from_diff`:
+some real defects are simply not findable by reading the diff that introduced them, and scoring
+against those measures nothing.
 
 ```bash
 rsquad gate                                  # HEAD against its parent

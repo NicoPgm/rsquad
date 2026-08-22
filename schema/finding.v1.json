@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finding.v1.json",
+  "title": "Findings",
+  "description": "What a lens is allowed to say. Everything a lens produces passes through this shape, and two mechanical guards are built into it: a finding must quote code that literally exists (file, line, snippet) and it must be reproducible (inputs, consequence). A finding that cannot fill those in is not a finding.",
+
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "description": "Empty is a valid and common answer. Do not invent a finding to fill this.",
+      "items": { "$ref": "#/$defs/finding" }
+    }
+  },
+
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "line", "snippet", "kind", "severity", "inputs", "consequence"],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Repository-relative path, exactly as it appears in the diff."
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-indexed line in the file at head where the defect lives."
+        },
+        "snippet": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The code itself, copied verbatim from the file. It is checked by exact search near `line`, so it must be quoted, not paraphrased or reconstructed from memory."
+        },
+        "kind": { "$ref": "#/$defs/kind" },
+        "severity": { "$ref": "#/$defs/severity" },
+        "inputs": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The concrete inputs or state that trigger the defect. \"an empty items list\", \"a video with no captions and duration_s = 0\". Not \"certain conditions\"."
+        },
+        "consequence": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What observably goes wrong with those inputs. \"raises IndexError\", \"writes a card with an empty summary\". Not \"could cause problems\"."
+        }
+      }
+    },
+
+    "kind": {
+      "enum": ["correctness", "boundary", "contract", "resource", "test-quality"],
+      "glossary": {
+        "correctness": "the code computes or returns the wrong thing for some reachable input",
+        "boundary": "empty, zero, one, maximum, off-by-one, or an unhandled edge of a range",
+        "contract": "an interface used against its documented or implied terms: wrong type, wrong order, ignored error, broken invariant",
+        "resource": "something acquired and not released, or growing without bound: handles, memory, connections, unbounded retries or cost",
+        "test-quality": "a test that cannot fail, asserts the wrong property, or freezes current behaviour as if it were intended"
+      }
+    },
+
+    "severity": {
+      "enum": ["blocking", "significant", "minor"],
+      "glossary": {
+        "blocking": "merging this ships a defect that reaches users or corrupts data",
+        "significant": "a real defect on a reachable path, but bounded - degraded, recoverable, or behind a rare condition",
+        "minor": "real but low impact: cosmetic, or a path that is hard to reach"
+      }
+    }
+  }
+}
