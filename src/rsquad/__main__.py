@@ -16,7 +16,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import budget, chunking, config, lenses, ranking, refutation
+from . import budget, chunking, conformance, config, lenses, ranking, refutation
 from .gate import ADAPTERS, DEFAULT_ADAPTER, check, git, merge_base, report
 from .vcs import resolve
 
@@ -125,6 +125,12 @@ def _review(args: argparse.Namespace) -> int:
               + ("" if args.no_refute else " Plus one further call per finding, to refute it."))
         return 0
 
+    intent = conformance.gather(head, repo, args.spec)
+    if not args.no_conformance and not intent.parts:
+        raise SystemExit(
+            "no stated intent: the commit message is empty and no --spec was given.\n"
+            "Pass --spec, or --no-conformance to skip step [1] deliberately.")
+
     errors: list[str] = []
 
     def progress(run):
@@ -136,12 +142,20 @@ def _review(args: argparse.Namespace) -> int:
               flush=True)
 
     runs = lenses.review(units, chosen, args.model, on_run=progress)
+
+    if not args.no_conformance:
+        print("\nconformance, against %s" % ", ".join(intent.sources), flush=True)
+        runs += conformance.review(units, intent, args.model, on_run=lambda r: print(
+            "  %-10s %-40s %s" % (conformance.LENS, r.file[-40:],
+                                  r.error or "%d finding(s)" % len(r.findings)), flush=True))
+
     findings, dropped = [], []
     for run in runs:
         findings += run.findings
         dropped += run.dropped
         if run.error:
-            errors.append("%s on %s: %s" % (run.lens, run.file, run.error))
+            errors.append("%s on %s: %s" % (getattr(run, "lens", conformance.LENS),
+                                            run.file, run.error))
 
     verdicts = []
     if not args.no_refute and findings:
@@ -210,6 +224,13 @@ def main(argv: list[str] | None = None) -> int:
                         help="run only this lens; repeatable (default: all four)")
     review.add_argument("--model", default=lenses.MODEL, help="default: %s" % lenses.MODEL)
     review.add_argument("--out", default="review/queue.md", help="where to write the queue")
+    review.add_argument("--spec", action="append", default=None,
+                        help="a document stating what this change should do; repeatable. The "
+                             "commit message is always included. Nothing is discovered by "
+                             "walking directories - step [1] reads what you name, and the other "
+                             "steps read none of it")
+    review.add_argument("--no-conformance", action="store_true",
+                        help="skip step [1]")
     review.add_argument("--no-refute", action="store_true",
                         help="skip step [3]. Cheaper, and the queue becomes a list of "
                              "suspicions nobody contested")

@@ -70,6 +70,27 @@ def user_prompt(file: str, diff: str, numbered: str, elision: str = "",
                    elision=elision, context=context)
 
 
+def conformance_system_prompt() -> str:
+    return _render(_load(PROMPT_DIR / "conformance-system.v1.md"),
+                   vocabulary_block=vocabulary_block("conformance"))
+
+
+def conformance_user_prompt(intent: str, file: str, diff: str, numbered: str,
+                            elision: str = "", context: str = "") -> str:
+    return _render(_load(PROMPT_DIR / "conformance-user.v1.md"), intent=intent, file=file,
+                   diff=diff, numbered=numbered, elision=elision, context=context)
+
+
+def conformance_blocks() -> list[dict]:
+    """The shared rules carry the breakpoint; the intent is variable and goes in the user turn.
+
+    Putting the intent in the system block would look tidier and would cost a cache write on
+    every change, since the intent differs per commit.
+    """
+    return [{"type": "text", "text": conformance_system_prompt(),
+             "cache_control": {"type": "ephemeral"}}]
+
+
 def refutation_system_prompt() -> str:
     return _render(_load(PROMPT_DIR / "refutation-system.v1.md"),
                    vocabulary_block=vocabulary_block("verdict"))

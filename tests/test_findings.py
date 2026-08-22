@@ -159,3 +159,18 @@ def test_the_verdict_vocabulary_is_binary_in_effect():
     values = vocabulary("verdict", "verdict")
     assert "stands" in values
     assert len(values) > 1
+
+
+def test_severity_means_the_same_in_both_contracts():
+    """It is declared twice, in finding.v1.json and conformance.v1.json, rather than shared by
+    a cross-file `$ref` nobody has measured against a strict output format.
+
+    Two declarations need a mechanical check, or they drift and the queue starts ranking two
+    scales as if they were one.
+    """
+    assert vocabulary("severity", "finding") == vocabulary("severity", "conformance")
+
+
+def test_the_conformance_kinds_are_disjoint_from_the_blind_ones():
+    """The two lenses answer different questions; sharing a vocabulary would blur that."""
+    assert not set(vocabulary("kind", "finding")) & set(vocabulary("kind", "conformance"))

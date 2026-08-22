@@ -24,10 +24,17 @@ import jsonschema
 
 ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_DIR = ROOT / "schema"
-#: The two contracts. A finding is what a lens may say; a verdict is what a refuter may say
-#: about one. Both are normative, both carry closed vocabularies, and both are read from disk so
-#: no prompt ever restates them.
-CONTRACTS = {"finding": "finding.v1.json", "verdict": "verdict.v1.json"}
+#: The three contracts. A finding is what a blind lens may say; a verdict is what a refuter may
+#: say about one; a conformance mismatch is what the one lens that reads the intent may say. All
+#: three are normative, all carry closed vocabularies, and all are read from disk so no prompt
+#: ever restates them.
+#:
+#: `severity` is declared separately in the finding and conformance contracts rather than shared
+#: by `$ref` across files, because a cross-file reference in a strict output format is a risk
+#: nobody has measured. A test asserts the two lists stay identical — the sibling project's
+#: discipline: a mechanical consistency check beats a clever schema.
+CONTRACTS = {"finding": "finding.v1.json", "verdict": "verdict.v1.json",
+             "conformance": "conformance.v1.json"}
 
 VERSION = "v1"
 

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "conformance.v1.json",
+  "title": "Conformance findings",
+  "description": "What the conformance lens may say. It is the only step that reads the stated intent, so it is the only one that can invent a requirement - and inventing one is worse than missing a mismatch, because a fabricated requirement sounds authoritative and sends a reader to argue with a document that never said it. Hence two anchors: the code side quoted from the file, and the requirement side quoted from the intent.",
+
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "description": "Empty is a valid and frequent answer. Most changes match their stated intent, and a change that simply does more than the intent describes is usually not a defect.",
+      "items": { "$ref": "#/$defs/mismatch" }
+    }
+  },
+
+  "$defs": {
+    "mismatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "line", "snippet", "requirement", "mismatch", "kind", "severity"],
+      "properties": {
+        "file": { "type": "string", "minLength": 1 },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "1-indexed line in the numbered file where the divergence shows."
+        },
+        "snippet": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The code, copied verbatim from the numbered listing. Checked by exact search near `line`."
+        },
+        "requirement": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The sentence or clause from the stated intent, **copied verbatim**. It is checked by exact search against the intent you were given. Do not paraphrase it, do not summarise several sentences into one, and do not state a requirement you believe is implied - if you cannot quote it, it is not a requirement."
+        },
+        "mismatch": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What the code does instead, in one or two sentences."
+        },
+        "kind": { "$ref": "#/$defs/kind" },
+        "severity": { "$ref": "#/$defs/severity" }
+      }
+    },
+
+    "kind": {
+      "enum": ["unimplemented", "contradicts", "undocumented", "stale-intent"],
+      "glossary": {
+        "unimplemented": "the intent requires something and the change does not do it",
+        "contradicts": "the change does the opposite of what the intent says",
+        "undocumented": "the change does something substantial the intent does not mention - report only when it changes behaviour somebody depends on, not for every helper",
+        "stale-intent": "the code is right and the document is out of date - say so, this is often the most useful thing you can report"
+      }
+    },
+
+    "severity": {
+      "enum": ["blocking", "significant", "minor"],
+      "glossary": {
+        "blocking": "merging this ships behaviour the intent forbids, or omits something it requires outright",
+        "significant": "a real divergence on a path somebody uses, but bounded",
+        "minor": "a real divergence with little consequence, or a wording gap"
+      }
+    }
+  }
+}

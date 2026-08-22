@@ -46,6 +46,19 @@ STANDS = "stands"
 
 UNANCHORED = "evidence does not appear near the line it cites"
 
+NOT_REFUTABLE = "no refuter exists for this claim shape"
+
+#: What this refuter can test. It walks concrete inputs to a concrete consequence, which is the
+#: shape a blind lens produces and **not** the shape of a conformance mismatch — that claim is
+#: "the intent says X and the code does Y", and testing it needs the intent and a different
+#: question. Pointing this refuter at one produced a crash on the first real run, which is the
+#: honest outcome: it was documented as missing and then handed one anyway.
+REQUIRED_FIELDS = ("inputs", "consequence")
+
+
+def refutable(finding: dict) -> bool:
+    return all(field in finding for field in REQUIRED_FIELDS)
+
 
 @dataclass
 class Verdict:
@@ -146,6 +159,15 @@ def refute_all(findings: list[dict], units: dict[str, Unit], model: str = MODEL,
     for finding in findings:
         unit = units.get(finding["file"])
         if unit is None:
+            continue
+        if not refutable(finding):
+            # Recorded, not skipped silently, and not spent on. A broken verdict leaves the
+            # finding standing, so the claim still reaches the reader — uncontested, and the
+            # run report says so.
+            verdict = Verdict(finding=finding, error=NOT_REFUTABLE)
+            verdicts.append(verdict)
+            if on_verdict:
+                on_verdict(verdict)
             continue
         verdict = refute(unit, finding, model, client)
         verdicts.append(verdict)

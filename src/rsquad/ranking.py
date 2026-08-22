@@ -23,6 +23,26 @@ from dataclasses import dataclass, field
 
 SEVERITY_ORDER = {"blocking": 0, "significant": 1, "minor": 2}
 
+#: The queue renders two finding shapes. A blind lens states the inputs that trigger a defect and
+#: the consequence that follows; the conformance lens quotes a requirement and says what the code
+#: does instead. Same location, same severity, different claim — and labelling a quoted
+#: requirement "Inputs" would make the strongest guard in step [1] read like a guess.
+SHAPES = (("inputs", "consequence", "Inputs", "Consequence"),
+          ("requirement", "mismatch", "Requirement", "Mismatch"))
+
+
+def _shape(finding: dict) -> tuple[str, str, str, str]:
+    for first, second, left, right in SHAPES:
+        if first in finding:
+            return first, second, left, right
+    raise KeyError("finding matches no known shape: %s" % sorted(finding))
+
+
+def detail(finding: dict) -> tuple[str, str, str, str]:
+    """(left label, left text, right label, right text) for whichever shape this is."""
+    first, second, left, right = _shape(finding)
+    return left, finding[first], right, finding[second]
+
 #: Two findings this close, in the same file, are treated as the same defect seen twice.
 NEAR = 3
 
@@ -52,15 +72,32 @@ class Entry:
         return len(self.lenses) > 1
 
     @property
-    def representative(self) -> dict:
-        """One finding to show for the whole entry.
+    def representatives(self) -> list[dict]:
+        """One account per shape, most detailed first.
 
-        Four blind lenses that agree describe the same defect four times, in nearly the same
-        words. Printing all four turns the strongest signal in the queue — agreement — into the
-        longest thing to read, which is precisely backwards. The count is already in the
-        heading; the body needs one account of the defect, so take the most detailed one.
+        Four blind lenses that agree describe the same defect four times in nearly the same
+        words; printing all four turns the strongest signal in the queue — agreement — into the
+        longest thing to read. So one account per shape, not per finding.
+
+        **Per shape, not one overall.** When the conformance lens lands on the same lines as the
+        blind ones, its account is the only one carrying a quoted requirement, and picking a
+        single most-detailed representative buried it: the first real run reported
+        `contradicts` on a line and showed nothing about what it contradicted.
         """
-        return max(self.findings, key=lambda f: len(f["consequence"]) + len(f["inputs"]))
+        def weight(finding: dict) -> int:
+            first, second, _, _ = _shape(finding)
+            return len(finding[first]) + len(finding[second])
+
+        best: dict[str, dict] = {}
+        for finding in self.findings:
+            key = _shape(finding)[0]
+            if key not in best or weight(finding) > weight(best[key]):
+                best[key] = finding
+        return [best[key] for key, *_ in SHAPES if key in best]
+
+    @property
+    def representative(self) -> dict:
+        return self.representatives[0]
 
 
 def group(findings: list[dict], near: int = NEAR) -> list[Entry]:
@@ -112,13 +149,16 @@ def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
         out += ["## %d. `%s:%d` — %s%s" % (position, entry.file, entry.line, entry.severity,
                                            mark), ""]
         out += ["_%s · seen by %s_" % (", ".join(entry.kinds), ", ".join(entry.lenses)), ""]
-        finding = entry.representative
-        out += ["```", finding["snippet"].rstrip(), "```", ""]
-        out += ["- **Inputs** — %s" % finding["inputs"]]
-        out += ["- **Consequence** — %s" % finding["consequence"], ""]
-        if len(entry.findings) > 1:
+        shown = entry.representatives
+        out += ["```", shown[0]["snippet"].rstrip(), "```", ""]
+        for finding in shown:
+            left, left_text, right, right_text = detail(finding)
+            out += ["- **%s** — %s" % (left, left_text)]
+            out += ["- **%s** — %s" % (right, right_text), ""]
+        remaining = len(entry.findings) - len(shown)
+        if remaining:
             out += ["_%d further account(s) of the same defect, not repeated here._"
-                    % (len(entry.findings) - 1), ""]
+                    % remaining, ""]
 
     if dropped:
         out += ["---", "", "## Dropped by the guards (%d)" % len(dropped), ""]
