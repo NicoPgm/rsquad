@@ -66,7 +66,8 @@ def check(base: str | None = None, head: str = "HEAD", repo: Path | None = None,
 
     report_path = run_against_base(base_sha, head_sha, files, adapter, repo)
     try:
-        verdicts = parse_junit(report_path, adapter.exempt_names(sources), changed)
+        verdicts = parse_junit(report_path, adapter.exempt_names(sources), changed,
+                               missing_symbol=adapter.signals_missing_symbol)
     finally:
         cleanup(report_path, repo)
 

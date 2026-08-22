@@ -8,10 +8,33 @@ it produces a reassuring green.
 from __future__ import annotations
 
 import ast
+import re
 import sys
 from pathlib import Path
 
 from .base import StackAdapter
+
+# Verified against real `pytest --junitxml` output on 2026-08-22, one probe per shape. The
+# `message` attribute carries the exception repr, and the shapes separate cleanly:
+#
+#   AttributeError: module 'os' has no attribute 'nope'      <- symbol not there yet
+#   NameError: name 'nope' is not defined                    <- symbol not there yet
+#   ImportError: cannot import name 'nope' from 'os'         <- symbol not there yet
+#   assert 4 == 5                                            <- a real assertion
+#   AttributeError: 'NoneType' object has no attribute 'x'   <- a REAL defect, caught
+#
+# The last row is why this is a narrow allowlist of shapes and not "any AttributeError". A test
+# that trips over a None is a test doing its job, and discarding it would be the false negative
+# this whole mechanism has to avoid.
+_MISSING_SYMBOL = re.compile(
+    r"""^\s*(?:
+          ModuleNotFoundError:
+        | ImportError:
+        | NameError:\s*name\s+'[^']+'\s+is\s+not\s+defined
+        | AttributeError:\s*module\s+'[^']+'\s+has\s+no\s+attribute\s+'[^']+'
+    )""",
+    re.VERBOSE,
+)
 
 
 class PythonPytestAdapter(StackAdapter):
@@ -64,6 +87,10 @@ class PythonPytestAdapter(StackAdapter):
         # adds a test file, which is precisely when it would earn its keep.
         return [sys.executable, "-m", "pytest", *files, "-p", "no:cacheprovider",
                 "--continue-on-collection-errors", "--junitxml", str(report_path), "-q"]
+
+    # ------------------------------------------------------------------ question 5
+    def signals_missing_symbol(self, message: str) -> bool:
+        return bool(_MISSING_SYMBOL.match(message))
 
     # ------------------------------------------------------------------ question 4
     def base_environment(self, tree: Path) -> dict[str, str]:

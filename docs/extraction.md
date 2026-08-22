@@ -70,7 +70,7 @@ denominator and the verdicts came from that path.
 test. Same failure shape as above: correct when head happens to be checked out, silently wrong
 on every replay. `exempt_names` now takes the file text at the revision.
 
-### 3. Not fixed here — recorded instead
+### 3. Deferred one commit, then fixed
 
 A third defect was found independently in the source project and committed there as `b366b7d`:
 a test that fails on the base with `AttributeError` on a missing symbol is classed **valid**,
@@ -78,8 +78,28 @@ while an `ImportError` on the same missing symbol is classed **no signal**. The 
 same epistemic content — the symbol does not exist yet — so the verdict depends on where the
 symbol is referenced, i.e. on import style, not on test quality.
 
-It is left unfixed in this commit on purpose: fixing it would have broken the equivalence check
-above. It is the first item of real work on `parse_junit`.
+It was left unfixed in the import commit on purpose: fixing it would have broken the equivalence
+check above. It is fixed in the commit that follows, as **question 5** of the adapter protocol —
+see `gate-baseline.md` for what it cost.
+
+The shape of the fix matters more than the fix. The classification looked portable, because
+`<failure>` versus `<error>` is a JUnit distinction every runner emits. It is not: deciding
+whether a failure means "nothing was there to discriminate" requires reading an exception
+message, and exception vocabularies are per-language. So the seam between core and adapter was
+in the wrong place, and only running the gate revealed it.
+
+The predicate is deliberately a narrow allowlist of message shapes, each verified against real
+`pytest --junitxml` output rather than assumed. The risk being managed is the false negative:
+
+| Message | Meaning |
+|---|---|
+| `AttributeError: module 'x' has no attribute 'y'` | symbol absent — no signal |
+| `NameError: name 'y' is not defined` | symbol absent — no signal |
+| `ImportError: cannot import name 'y' from 'x'` | symbol absent — no signal |
+| `AttributeError: 'NoneType' object has no attribute 'y'` | **a real defect, caught — valid** |
+| `assert 4 == 5` | a real assertion — valid |
+
+Widening this to "any `AttributeError`" would throw away tests that were doing their job.
 
 ## What this costs to know
 

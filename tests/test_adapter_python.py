@@ -8,6 +8,8 @@ without a fixture repository.
 import sys
 from pathlib import Path
 
+import pytest
+
 from rsquad.gate.adapters.python_pytest import PythonPytestAdapter
 
 ADAPTER = PythonPytestAdapter()
@@ -126,6 +128,48 @@ def test_the_environment_forces_the_base_sources(tmp_path):
     env = ADAPTER.base_environment(tmp_path)
     assert env["PYTHONPATH"] == str(tmp_path / "src")
     assert env["PYTHONDONTWRITEBYTECODE"] == "1"
+
+
+# ------------------------------------------------------------------ question 5
+
+ABSENT = [
+    "AttributeError: module 'avd.indexation' has no attribute 'part_glissante'",
+    "NameError: name 'nom_absent' is not defined",
+    "ImportError: cannot import name 'fonction_absente' from 'os' (C:\\Lib\\os.py)",
+    "ModuleNotFoundError: No module named 'avd.nouveau'",
+]
+
+GENUINE = [
+    "assert 4 == 5",
+    "AttributeError: 'NoneType' object has no attribute 'champ'",
+    "AttributeError: 'Fiche' object has no attribute 'key_points'",
+    "KeyError: 'video_id'",
+    "AssertionError: le corpus est vide",
+    "TypeError: unsupported operand type(s) for +: 'int' and 'str'",
+]
+
+
+@pytest.mark.parametrize("message", ABSENT)
+def test_an_absent_symbol_is_recognised(message):
+    """Every shape below was produced by a real `pytest --junitxml` run, not guessed."""
+    assert ADAPTER.signals_missing_symbol(message)
+
+
+@pytest.mark.parametrize("message", GENUINE)
+def test_a_genuine_failure_is_not_swallowed(message):
+    """The risk of question 5 is the false negative — discarding a test that did its job.
+
+    `'NoneType' object has no attribute` is a test catching a real defect; it must never be
+    confused with `module '...' has no attribute`, which means the symbol is not there yet.
+    """
+    assert not ADAPTER.signals_missing_symbol(message)
+
+
+def test_the_default_adapter_answer_is_no():
+    """An adapter that has not answered question 5 keeps the old, over-permissive behaviour."""
+    from rsquad.gate.adapters.base import StackAdapter
+    assert StackAdapter.signals_missing_symbol(ADAPTER, "AttributeError: module 'x' has no "
+                                                        "attribute 'y'") is False
 
 
 # ------------------------------------------------------------------ exemption markers

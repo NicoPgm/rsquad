@@ -70,13 +70,15 @@ would actually have caught, on data nobody arranged. Do that before trusting it.
 
 ## Porting to another stack
 
-The core knows no language. Everything stack-specific fits into four questions
+The core knows no language. Everything stack-specific fits into five questions
 (`gate/adapters/base.py`):
 
 1. Which files in the diff are tests?
 2. Which test functions are new or modified? (by comparing function bodies across revisions)
 3. How do we run that subset so it emits JUnit XML?
 4. **How do we guarantee the code under test is the base's?**
+5. Which base failures mean "the symbol does not exist yet" rather than "the test caught
+   something"?
 
 Question 4 is the trap, and it differs in every ecosystem — editable installs, `node_modules`
 resolution, classpath, NuGet caches. Expect to find your version of it **by running the gate**,
@@ -84,16 +86,29 @@ not by reading it. Every defect in the original implementation was found by exec
 review, and each one made the tool silently useless while looking green.
 
 JUnit XML is the portable seam: pytest, Jest, Vitest, Surefire, gotestsum and .NET all emit it,
-and it natively distinguishes `<failure>` (an assertion — the test discriminates) from `<error>`
-(a crash — the module does not exist yet). Nothing to guess.
+and it distinguishes `<failure>` (an assertion) from `<error>` (a crash during collection or
+setup).
+
+**That seam is not quite where it looks, which is question 5.** A symbol that does not exist yet
+lands on either side depending on how the test names it — `from mod import thing` fails at
+collection (`<error>`), while `import mod` then `mod.thing(...)` fails in the body (`<failure>`,
+reading as a discriminating test). Same missing symbol, opposite verdicts, decided by import
+style. So the classification needs a per-language predicate, and it must be narrow: the risk is
+the false negative. `AttributeError: module 'x' has no attribute 'y'` means the symbol is absent;
+`AttributeError: 'NoneType' object has no attribute 'y'` is a test catching a real defect, and
+discarding it would be worse than the problem being fixed.
+
+Assume a sixth question exists and that only running the gate will surface it.
 
 ## What this will not do
 
-- **It is blind to additions.** A test covering a function that did not exist can only fail with
-  an import error — there is nothing to discriminate. The gate covers *modifications*. Code
-  written by agents often adds whole modules, which is exactly the least covered case. The
-  complement is **mutation testing**: not "does the test fail without the module?" (trivially
-  yes) but "does it fail if the logic is subtly wrong?". Named here, not built.
+- **It is blind to additions, and more so than it looks.** A test covering a function that did
+  not exist can only fail by not finding it — there is nothing to discriminate. The gate covers
+  *modifications*. Measured over 20 real commits: **it can say nothing about 79 % of new test
+  functions** (`docs/gate-baseline.md`). Code written by agents often adds whole modules, which
+  is exactly the least covered case. The complement is **mutation testing**: not "does the test
+  fail without the module?" (trivially yes) but "does it fail if the logic is subtly wrong?".
+  Named here, not built.
 - **It measures falsifiability, not relevance.** A test can discriminate perfectly and prove a
   property nobody needs. One real case: a test asserted `canonicalise("Huggy Face")` while the
   stored key held `huggyface` in one word. Perfectly discriminating, and useless. No mechanical
@@ -102,7 +117,9 @@ and it natively distinguishes `<failure>` (an assertion — the test discriminat
   wrote the code.
 - **No architectural findings.** It reads a diff, not a system.
 - **A green verdict is not a validation.** Always read the number of tests *examined* next to the
-  verdict: "0 suspect" very often means "nothing could be checked at all".
+  verdict: "0 suspect" very often means "nothing could be checked at all". The gate's own
+  published coverage was 47 % for two weeks; the real figure is **21 %**, and the gap was three
+  defects nobody caught by reading the code.
 
 ## Deploying it without getting it switched off
 

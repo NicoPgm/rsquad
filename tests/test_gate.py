@@ -84,6 +84,42 @@ def test_parametrization_is_folded_back_into_its_function(tmp_path):
     assert v.state == VALID
 
 
+# ------------------------------------------------------------------- missing symbols
+
+ABSENT = ('<testcase classname="tests.t" name="test_a"><failure message="AttributeError: '
+          "module 'pkg' has no attribute 'nope'\"/></testcase>")
+
+
+def test_a_failure_on_an_absent_symbol_is_no_signal(tmp_path):
+    """`<failure>` versus `<error>` does not split failures the way this gate needs.
+
+    A symbol that does not exist yet fails at collection when imported by name, and inside the
+    test body when reached as a module attribute. Same missing symbol, and without this the
+    second one reads as a discriminating test.
+    """
+    v, = parse_junit(_report(tmp_path, ABSENT), set(), {"test_a"},
+                     missing_symbol=lambda m: "has no attribute" in m)
+    assert v.state == NO_SIGNAL
+    assert "does not exist yet" in v.detail
+
+
+def test_without_a_predicate_every_failure_still_counts_as_valid(tmp_path):
+    """The default has to be the old behaviour: over-count `valid`, never discard a finding.
+
+    An adapter that has not answered question 5 must not silently start dropping tests.
+    """
+    v, = parse_junit(_report(tmp_path, ABSENT), set(), {"test_a"})
+    assert v.state == VALID
+
+
+def test_the_predicate_never_sees_a_collection_error(tmp_path):
+    """Collection errors are already no-signal; running the predicate there would be noise."""
+    seen = []
+    parse_junit(_report(tmp_path, COLLECTION), set(), {"test_x"},
+                missing_symbol=lambda m: seen.append(m) or False)
+    assert seen == []
+
+
 # ------------------------------------------------------------------- overall verdict
 
 def test_strict_fails_only_on_a_suspect():

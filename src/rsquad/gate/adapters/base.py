@@ -1,18 +1,28 @@
-"""The stack adapter protocol — four questions, and nothing else.
+"""The stack adapter protocol — five questions, and nothing else.
 
 This is the line between what ports and what does not. The gate's core (worktree, merge base,
 JUnit parsing, verdicts, reporting) knows no language. Everything a stack changes fits into the
-four methods below.
+five methods below.
 
     1. Which files in the diff are tests?
     2. Which test functions are new or modified? (by comparing bodies across revisions)
     3. How do we run that subset so it emits JUnit XML?
     4. **How do we guarantee the code under test is the base's?**
+    5. Which base failures mean "the symbol does not exist yet" rather than "the test caught
+       something"?
 
 Question 4 is the trap, and it is different in every ecosystem. On Python it is the editable
 install resolving back to the main checkout's `src/`. Expect the equivalent — and expect to find
 it by running the thing, not by reading it. Every defect in the original implementation of this
 gate was found by executing it; none by review.
+
+**Question 5 was missing from the original design**, and its absence is instructive: the seam
+looked like it fell entirely on the JUnit format (`<failure>` versus `<error>`, which every
+runner emits), so the classification looked portable. It is not — the exception vocabulary is
+per-language, and without question 5 the gate over-reports `valid`. Discovered 2026-08-22 by
+running the gate on a commit that added a whole new test file and hearing it say "10 valid".
+Anyone porting to a new stack should assume there is a sixth question they have not found yet,
+and that only execution will surface it.
 """
 
 from __future__ import annotations
@@ -67,6 +77,29 @@ class StackAdapter(ABC):
 
         Get this wrong and the gate validates everything while looking green.
         """
+
+    # ------------------------------------------------------------------ question 5
+    def signals_missing_symbol(self, message: str) -> bool:
+        """Does this base-run failure mean "the symbol does not exist yet"?
+
+        The fifth question, and the one that was missing. `<failure>` versus `<error>` looks
+        like it splits "the test discriminated" from "there was nothing to discriminate", and
+        it nearly does — but a symbol that does not exist yet lands on either side depending on
+        how the test names it:
+
+            from mod import thing          -> fails at collection  -> <error>   -> no signal
+            import mod ... mod.thing(...)  -> fails in the body    -> <failure> -> "valid"
+
+        Same missing symbol, opposite verdicts, decided by import style. Left alone, the gate
+        over-reports `valid` and its coverage figure is an over-estimate.
+
+        The default answers "no" — every failure discriminates. That is the old behaviour, and
+        it is wrong in the safe direction: it over-counts `valid` rather than discarding real
+        findings. Override it, narrowly. **Match only shapes that cannot be a genuine defect** —
+        the risk here is the false negative, silently dropping a test that failed for a real
+        reason.
+        """
+        return False
 
     # ------------------------------------------------------------------ shared
     def exempt_names(self, sources: dict[str, str]) -> set[str]:

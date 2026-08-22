@@ -89,8 +89,25 @@ def changed_files(base: str, head: str, patterns: list[str],
     return [line.strip() for line in diff.stdout.splitlines() if line.strip()]
 
 
-def parse_junit(path: Path, exempt: set[str], retained: set[str]) -> list[Verdict]:
-    """Classify every test case from the JUnit report produced against the base."""
+def parse_junit(path: Path, exempt: set[str], retained: set[str],
+                missing_symbol=None) -> list[Verdict]:
+    """Classify every test case from the JUnit report produced against the base.
+
+    `missing_symbol` is the adapter's `signals_missing_symbol` — a predicate over a failure
+    message. It exists because `<failure>` and `<error>` do not split failures the way this
+    gate needs them split.
+
+    A test whose new symbol does not exist yet fails at *collection* when the symbol is named
+    in an import (`<error>`, no signal), but inside the *call phase* when it is reached through
+    a module attribute (`<failure>`, which reads as a discriminating test). Same epistemic
+    content — the symbol does not exist yet — opposite verdicts, decided by import style rather
+    than by test quality. Measured 2026-08-22 on a commit that reported 10 valid, 0 no-signal
+    while adding an entirely new test file.
+
+    The predicate is per-stack because the exception vocabulary is: `AttributeError` here,
+    `NoSuchMethodError` or `ReferenceError` elsewhere. Adapters that do not implement it keep
+    the old behaviour, which over-reports `valid`.
+    """
     if not path.exists():
         return []
     verdicts = []
@@ -105,11 +122,16 @@ def parse_junit(path: Path, exempt: set[str], retained: set[str]) -> list[Verdic
         collection_error = case.find("error") is not None and not case.get("classname")
         if retained and function not in retained and not collection_error:
             continue
+        failure = case.find("failure")
         if case.find("error") is not None:
             verdicts.append(Verdict(identifier, NO_SIGNAL,
                                     "collection or setup error on the base"))
-        elif case.find("failure") is not None:
-            verdicts.append(Verdict(identifier, VALID, "fails on the base"))
+        elif failure is not None:
+            if missing_symbol and missing_symbol(failure.get("message") or ""):
+                verdicts.append(Verdict(identifier, NO_SIGNAL,
+                                        "fails on a symbol that does not exist yet"))
+            else:
+                verdicts.append(Verdict(identifier, VALID, "fails on the base"))
         elif case.find("skipped") is not None:
             verdicts.append(Verdict(identifier, NO_SIGNAL, "skipped on the base"))
         elif name in exempt:
