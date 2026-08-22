@@ -121,7 +121,7 @@ would actually have caught, on data nobody arranged. Do that before trusting it.
 
 ## Porting to another stack
 
-The core knows no language. Everything stack-specific fits into five questions
+The core knows no language. Everything stack-specific fits into six questions
 (`gate/adapters/base.py`):
 
 1. Which files in the diff are tests?
@@ -130,6 +130,7 @@ The core knows no language. Everything stack-specific fits into five questions
 4. **How do we guarantee the code under test is the base's?**
 5. Which base failures mean "the symbol does not exist yet" rather than "the test caught
    something"?
+6. Which definitions elsewhere in the repository does a change reference?
 
 Question 4 is the trap, and it differs in every ecosystem — editable installs, `node_modules`
 resolution, classpath, NuGet caches. Expect to find your version of it **by running the gate**,
@@ -149,7 +150,14 @@ the false negative. `AttributeError: module 'x' has no attribute 'y'` means the 
 `AttributeError: 'NoneType' object has no attribute 'y'` is a test catching a real defect, and
 discarding it would be worse than the problem being fixed.
 
-Assume a sixth question exists and that only running the gate will surface it.
+**Question 6 is the context pack** (ADR-0004): the definitions of first-party symbols the
+changed lines name, resolved deterministically so a lens can check how the change uses its
+neighbours without being handed file-reading tools. Measured on 34 changed files: 65 % resolve at
+least one definition, 3.2 on average. Leaf modules resolve nothing and need nothing;
+orchestration files resolve the most and need it most.
+
+Assume a seventh question exists. Five and six both arrived after the protocol was declared
+complete — one from a crash, one from a conversation.
 
 ## What this will not do
 
@@ -186,6 +194,19 @@ those two kinds. Deployed without the markers, that gate produces five false pos
 and is switched off within a week, taking the real finding with it.
 
 And never let a judgement finding block a merge. The mechanical gate blocks. Opinions comment.
+
+## Decisions
+
+`docs/adr/` holds the decisions that constrain future work; `docs/*.md` holds measurement
+reports. A report says what happened, an ADR says what we do about it.
+
+| | |
+|---|---|
+| [0001](docs/adr/0001-record-decisions-in-adrs.md) | record decisions in ADRs |
+| [0002](docs/adr/0002-blindness-is-a-property-not-a-promise.md) | blindness is a property of the payload, not a prompt instruction |
+| [0003](docs/adr/0003-the-finding-contract.md) | closed vocabulary and two mechanical guards |
+| [0004](docs/adr/0004-one-file-per-unit-with-a-computed-context-pack.md) | one file per unit, plus a computed context pack |
+| [0005](docs/adr/0005-two-transports-one-core.md) | two transports, one core — *proposed* |
 
 ## License and provenance
 

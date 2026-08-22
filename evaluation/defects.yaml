@@ -136,12 +136,16 @@ defects:
     severity: significant
     replayable: true
     self_found: false
-    detectable_from_diff: "weak"
+    detectable_from_diff: "yes"
     found_by: a bounded backfill returning far more videos than the bound implied
     note: >
-      The comparison is against a field that is always absent. Findable as "this filter reads a
-      field nothing in this diff populates", which is a contract finding and does not require
-      knowing yt-dlp.
+      Corrected 2026-08-22. This entry first claimed the cause lived in another file and was
+      therefore only weakly detectable. It does not: the yt-dlp invocation (line 363) and the
+      `--depuis` filter (line 379) are sixteen lines apart in `discover.py`, and both sit inside
+      the diff of 22a9680. Everything needed is on one screen, so this is a `yes`.
+      The claim was written without being checked - the second such note in this file. Both were
+      caught by running something rather than by rereading, which is the whole point of the
+      project and applies to its own ground truth first.
 
   # ---------------------------------------------------------------------------------------
   # Found by RSquad itself, first paid run, 2026-08-22, on the diff of 2a21282. All four were

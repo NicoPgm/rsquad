@@ -64,9 +64,10 @@ def lens_prompt(lens: str) -> str:
     return _load(LENS_DIR / ("%s.v1.md" % lens))
 
 
-def user_prompt(file: str, diff: str, numbered: str, elision: str = "") -> str:
+def user_prompt(file: str, diff: str, numbered: str, elision: str = "",
+                context: str = "") -> str:
     return _render(_load(PROMPT_DIR / "user.v1.md"), file=file, diff=diff, numbered=numbered,
-                   elision=elision)
+                   elision=elision, context=context)
 
 
 def system_blocks(lens: str) -> list[dict]:

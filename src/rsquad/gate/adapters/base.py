@@ -1,8 +1,8 @@
-"""The stack adapter protocol — five questions, and nothing else.
+"""The stack adapter protocol — six questions, and nothing else.
 
 This is the line between what ports and what does not. The gate's core (worktree, merge base,
 JUnit parsing, verdicts, reporting) knows no language. Everything a stack changes fits into the
-five methods below.
+six methods below.
 
     1. Which files in the diff are tests?
     2. Which test functions are new or modified? (by comparing bodies across revisions)
@@ -10,6 +10,7 @@ five methods below.
     4. **How do we guarantee the code under test is the base's?**
     5. Which base failures mean "the symbol does not exist yet" rather than "the test caught
        something"?
+    6. Which definitions elsewhere in the repository does a change reference?
 
 Question 4 is the trap, and it is different in every ecosystem. On Python it is the editable
 install resolving back to the main checkout's `src/`. Expect the equivalent — and expect to find
@@ -21,8 +22,9 @@ looked like it fell entirely on the JUnit format (`<failure>` versus `<error>`, 
 runner emits), so the classification looked portable. It is not — the exception vocabulary is
 per-language, and without question 5 the gate over-reports `valid`. Discovered 2026-08-22 by
 running the gate on a commit that added a whole new test file and hearing it say "10 valid".
-Anyone porting to a new stack should assume there is a sixth question they have not found yet,
-and that only execution will surface it.
+Anyone porting to a new stack should assume there is a further question they have not found yet,
+and that only execution will surface it. Question 6 arrived the same day, from a conversation
+rather than a crash, which was cheaper.
 """
 
 from __future__ import annotations
@@ -100,6 +102,30 @@ class StackAdapter(ABC):
         reason.
         """
         return False
+
+    # ------------------------------------------------------------------ question 6
+    def resolve_context(self, path: str, source: str, ranges: list[tuple[int, int]],
+                        revision: str, repo: Path | None, tracked: list[str]) -> list:
+        """Definitions from elsewhere in the repository that the changed lines reference.
+
+        The sixth question, and it was predicted above before it had a name. Following a symbol
+        to its definition means understanding this language's import and resolution rules, so it
+        cannot live in the core.
+
+        Two constraints bind any implementation, and they are what make this worth having
+        instead of simply handing the lens file-reading tools:
+
+        - **Deterministic.** Same revision and same diff must give the same definitions, in the
+          same order. A pack that varies cannot be replayed, and a squad that cannot be replayed
+          cannot be measured.
+        - **Symbol-driven, never directory-driven.** Follow what the change references. A
+          resolver that walks the tree could reach a specification, and blindness would stop
+          being a property of the mechanism.
+
+        The default resolves nothing, which is the honest behaviour for a stack nobody has
+        taught it: a smaller pack, never a wrong one.
+        """
+        return []
 
     # ------------------------------------------------------------------ shared
     def exempt_names(self, sources: dict[str, str]) -> set[str]:

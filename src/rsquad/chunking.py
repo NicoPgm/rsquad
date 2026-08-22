@@ -22,7 +22,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .vcs import file_at, git
+from .context import Definition, cap, render as render_context
+from .vcs import file_at, git, tracked_files
 
 #: Above this many lines, a file is windowed around its hunks rather than shown whole.
 MAX_LINES = 1200
@@ -48,11 +49,15 @@ class Unit:
     source: str                 # the file at head, verbatim — what anchoring checks against
     numbered: str               # the same, with line numbers, possibly windowed
     elided: bool = False
-    lenses: list[str] = field(default_factory=list)
+    context: list[Definition] = field(default_factory=list)
 
     @property
     def elision(self) -> str:
         return ELISION_NOTICE if self.elided else ""
+
+    @property
+    def context_block(self) -> str:
+        return render_context(self.context)
 
 
 def changed_paths(base: str, head: str, repo: Path | None = None,
@@ -102,7 +107,8 @@ def number(source: str, ranges: list[tuple[int, int]] | None = None,
     return "\n".join(out), True
 
 
-def unit(path: str, base: str, head: str, repo: Path | None = None) -> Unit | None:
+def unit(path: str, base: str, head: str, repo: Path | None = None,
+         adapter=None, tracked: list[str] | None = None) -> Unit | None:
     """One review unit, or None when there is nothing a lens could read.
 
     Deleted files and binaries are skipped rather than reported: there is no "file as it now
@@ -114,11 +120,25 @@ def unit(path: str, base: str, head: str, repo: Path | None = None) -> Unit | No
     diff = git(["diff", "%s...%s" % (base, head), "--", path], repo).stdout
     if not diff.strip():
         return None
-    numbered, elided = number(source, hunk_ranges(diff))
-    return Unit(file=path, diff=diff, source=source, numbered=numbered, elided=elided)
+    ranges = hunk_ranges(diff)
+    numbered, elided = number(source, ranges)
+    context: list[Definition] = []
+    if adapter is not None:
+        context = cap(adapter.resolve_context(path, source, ranges, head, repo,
+                                              tracked if tracked is not None
+                                              else tracked_files(head, repo)))
+    return Unit(file=path, diff=diff, source=source, numbered=numbered, elided=elided,
+                context=context)
 
 
-def units(base: str, head: str, repo: Path | None = None,
-          paths: list[str] | None = None) -> list[Unit]:
-    found = [unit(path, base, head, repo) for path in changed_paths(base, head, repo, paths)]
+def units(base: str, head: str, repo: Path | None = None, paths: list[str] | None = None,
+          adapter=None) -> list[Unit]:
+    """Every reviewable file in the change.
+
+    `tracked` is read once and shared: it is the same list for every unit, and asking git per
+    file would be both slower and — if the revision moved underneath — inconsistent.
+    """
+    listing = tracked_files(head, repo) if adapter is not None else None
+    found = [unit(path, base, head, repo, adapter, listing)
+             for path in changed_paths(base, head, repo, paths)]
     return [u for u in found if u is not None]

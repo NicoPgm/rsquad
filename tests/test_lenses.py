@@ -60,7 +60,8 @@ def test_the_payload_is_exactly_the_unit_and_the_prompts():
     body = request(UNIT, "repro")
     assert body["system"] == system_blocks("repro")
     assert body["messages"] == [{"role": "user", "content": user_prompt(
-        file=UNIT.file, diff=UNIT.diff, numbered=UNIT.numbered, elision=UNIT.elision)}]
+        file=UNIT.file, diff=UNIT.diff, numbered=UNIT.numbered, elision=UNIT.elision,
+        context=UNIT.context_block)}]
     assert set(body) == {"model", "max_tokens", "thinking", "output_config", "system",
                          "messages"}
 

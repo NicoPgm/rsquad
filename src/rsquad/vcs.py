@@ -42,3 +42,13 @@ def file_at(revision: str, path: str, repo: Path | None = None) -> str | None:
     """Contents of `path` at `revision`, or None if it is not there."""
     shown = git(["show", "%s:%s" % (revision, path)], repo)
     return shown.stdout if shown.returncode == 0 else None
+
+
+def tracked_files(revision: str, repo: Path | None = None) -> list[str]:
+    """Every file the repository tracks at `revision`.
+
+    Read from the revision, not from disk: the working tree may hold untracked scratch files,
+    and a resolver that saw them would produce a context pack that cannot be reproduced.
+    """
+    listed = git(["ls-tree", "-r", "--name-only", revision], repo)
+    return [line.strip() for line in listed.stdout.splitlines() if line.strip()]

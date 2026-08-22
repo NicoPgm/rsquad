@@ -83,7 +83,8 @@ def request(unit: Unit, lens: str, model: str = MODEL) -> dict[str, Any]:
         },
         "system": prompts.system_blocks(lens),
         "messages": [{"role": "user", "content": prompts.user_prompt(
-            file=unit.file, diff=unit.diff, numbered=unit.numbered, elision=unit.elision)}],
+            file=unit.file, diff=unit.diff, numbered=unit.numbered, elision=unit.elision,
+            context=unit.context_block)}],
     }
 
 

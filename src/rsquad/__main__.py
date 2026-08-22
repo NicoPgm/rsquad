@@ -97,7 +97,8 @@ def _review(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve() if args.repo else None
     head = resolve(args.head, repo)
     base = merge_base(args.base or "%s~1" % head, head, repo)
-    units = chunking.units(base, head, repo, args.path)
+    units = chunking.units(base, head, repo, args.path,
+                           adapter=ADAPTERS[DEFAULT_ADAPTER])
     chosen = args.lens or list(lenses.LENSES)
 
     if not units:

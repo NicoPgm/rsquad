@@ -102,3 +102,137 @@ class PythonPytestAdapter(StackAdapter):
         env["PYTHONPATH"] = str(tree / "src")
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         return env
+
+    # ------------------------------------------------------------------ question 6
+    def resolve_context(self, path, source, ranges, revision, repo, tracked):
+        """Follow the first-party symbols the changed lines name, and nothing else.
+
+        First-party means: the module resolves to a file this repository tracks. Standard
+        library and third-party imports are deliberately skipped — a model already knows what
+        `os.path.join` does, and pasting it in would spend payload to teach it nothing. What it
+        cannot know is the function next door that this change just started calling.
+        """
+        from ...context import Definition, truncate
+
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:
+            return []
+
+        bindings = self._import_bindings(tree, path)
+        wanted = self._referenced(tree, ranges, bindings)
+
+        found, seen = [], set()
+        for symbol, module, name in wanted:
+            path = self._module_file(module, tracked)
+            if path is None or (path, name) in seen:
+                continue
+            seen.add((path, name))
+            text = self.file_at(revision, path, repo)
+            if text is None:
+                continue
+            defined = self._top_level(text).get(name)
+            if defined is None:
+                continue
+            line, body = defined
+            body, cut = truncate(body)
+            found.append(Definition(symbol=symbol, file=path, line=line, source=body,
+                                    truncated=cut))
+        return sorted(found, key=lambda d: (d.file, d.line))
+
+    @classmethod
+    def _import_bindings(cls, tree, path: str) -> dict[str, tuple[str, str | None]]:
+        """local name -> (module, symbol). `symbol` is None when the module itself is bound.
+
+        Relative imports are resolved against the file's own package, because `from . import
+        prompts` is how a package actually refers to itself — skipping them would leave the
+        resolver blind to exactly the neighbours a change is most likely to have just started
+        calling.
+        """
+        bindings: dict[str, tuple[str, str | None]] = {}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom):
+                module = cls._absolute(node.module, node.level, path)
+                if module is None:
+                    continue
+                for alias in node.names:
+                    # `from . import prompts` binds a MODULE, not a symbol of one.
+                    if node.level and not node.module:
+                        bindings[alias.asname or alias.name] = (
+                            "%s.%s" % (module, alias.name), None)
+                    else:
+                        bindings[alias.asname or alias.name] = (module, alias.name)
+            elif isinstance(node, ast.Import):
+                for alias in node.names:
+                    bindings[alias.asname or alias.name.split(".")[0]] = (alias.name, None)
+        return bindings
+
+    @staticmethod
+    def _absolute(module: str | None, level: int, path: str) -> str | None:
+        """Turn a possibly-relative import into a dotted path rooted at the repository."""
+        if not level:
+            return module
+        parts = path.replace("\\", "/").split("/")[:-1]        # the file's own directory
+        if level > 1:
+            parts = parts[:-(level - 1)]
+        if not parts:
+            return None
+        return ".".join(parts + ([module] if module else []))
+
+    @staticmethod
+    def _referenced(tree, ranges, bindings) -> list[tuple[str, str, str]]:
+        """(as written, module, symbol) for every binding named inside the changed ranges."""
+        def inside(node) -> bool:
+            line = getattr(node, "lineno", None)
+            return line is not None and any(a <= line <= b for a, b in ranges)
+
+        wanted: list[tuple[str, str, str]] = []
+        for node in ast.walk(tree):
+            if not inside(node):
+                continue
+            if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+                bound = bindings.get(node.value.id)
+                if bound and bound[1] is None:
+                    wanted.append(("%s.%s" % (node.value.id, node.attr), bound[0], node.attr))
+            elif isinstance(node, ast.Name):
+                bound = bindings.get(node.id)
+                if bound and bound[1] is not None:
+                    wanted.append((node.id, bound[0], bound[1]))
+        return wanted
+
+    @staticmethod
+    def _module_file(module: str, tracked: list[str]) -> str | None:
+        """The tracked file for a dotted module, or None when it is not ours to read."""
+        parts = module.split(".")
+        endings = ("/".join(parts) + ".py", "/".join(parts + ["__init__.py"]))
+        for path in tracked:
+            normalised = path.replace("\\", "/")
+            for ending in endings:
+                if normalised == ending or normalised.endswith("/" + ending):
+                    return path
+        return None
+
+    @staticmethod
+    def _top_level(source: str) -> dict[str, tuple[int, str]]:
+        """Top-level definitions by name: functions, classes, and simple assignments."""
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:
+            return {}
+        lines = source.splitlines()
+        found: dict[str, tuple[int, str]] = {}
+
+        def segment(node, first_line: int) -> str:
+            return "\n".join(lines[first_line - 1:node.end_lineno])
+
+        for node in tree.body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                first = min([node.lineno] + [d.lineno for d in node.decorator_list])
+                found[node.name] = (first, segment(node, first))
+            elif isinstance(node, ast.Assign):
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        found[target.id] = (node.lineno, segment(node, node.lineno))
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                found[node.target.id] = (node.lineno, segment(node, node.lineno))
+        return found

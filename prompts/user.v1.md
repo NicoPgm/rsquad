@@ -17,4 +17,4 @@ the text to their right — without the number.
 {{NUMBERED}}
 ```
 
-{{ELISION}}Report findings in `{{FILE}}` only. If there is nothing to report, return an empty list.
+{{CONTEXT}}{{ELISION}}Report findings in `{{FILE}}` only. If there is nothing to report, return an empty list.
