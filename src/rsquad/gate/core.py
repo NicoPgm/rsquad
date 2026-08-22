@@ -31,12 +31,13 @@ Nothing in this module knows about any language. Everything stack-specific goes 
 from __future__ import annotations
 
 import shutil
-import subprocess
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
+
+from ..vcs import git, resolve, run
 
 # A characterization test MUST pass on the base: it exists to prove a refactor changes nothing.
 # A guard test asserts that something does NOT happen; the base does not do it either, so it
@@ -47,21 +48,19 @@ EXEMPT_MARKERS = ("characterization", "guard")
 VALID, SUSPECT, NO_SIGNAL = "valid", "suspect", "no-signal"
 
 
+class RunnerFailed(RuntimeError):
+    """The runner produced no report, so the gate verified nothing.
+
+    Raised rather than swallowed on purpose. A gate that cannot run must say so loudly; one
+    that quietly returns "nothing to report" is worse than no gate, because it is trusted.
+    """
+
+
 @dataclass
 class Verdict:
     identifier: str
     state: str
     detail: str = ""
-
-
-def run(command: list[str], cwd: Path | None = None,
-        env: dict | None = None) -> subprocess.CompletedProcess:
-    return subprocess.run(command, cwd=cwd, env=env, capture_output=True, text=True,
-                          encoding="utf-8", errors="replace")
-
-
-def git(args: list[str], repo: Path | None = None) -> subprocess.CompletedProcess:
-    return run(["git", *args], cwd=repo)
 
 
 def merge_base(reference: str, head: str = "HEAD", repo: Path | None = None) -> str:
@@ -73,10 +72,7 @@ def merge_base(reference: str, head: str = "HEAD", repo: Path | None = None) -> 
     merged = git(["merge-base", head, reference], repo)
     if merged.returncode == 0 and merged.stdout.strip():
         return merged.stdout.strip()
-    resolved = git(["rev-parse", reference], repo)
-    if resolved.returncode != 0:
-        raise SystemExit("unknown revision: %s" % reference)
-    return resolved.stdout.strip()
+    return resolve(reference, repo)
 
 
 def changed_files(base: str, head: str, patterns: list[str],
@@ -120,7 +116,14 @@ def parse_junit(path: Path, exempt: set[str], retained: set[str],
         # like an ordinary test would hide the fact that N new tests could not be examined at
         # all — the gate's most misleading silence.
         collection_error = case.find("error") is not None and not case.get("classname")
-        if retained and function not in retained and not collection_error:
+        # **No `retained and` short-circuit here.** An empty `retained` means no test function
+        # was added or modified, which is a reason to say nothing — not a reason to classify
+        # every pre-existing test in a touched file. With the guard, a commit that edits a
+        # fixture or a module-level constant makes `tests_touched` return an empty set, the
+        # filter turns into a no-op, and every passing test in the file is reported SUSPECT:
+        # exactly the false-positive flood the per-function granularity exists to prevent, and
+        # exit 1 under --strict. Found by the squad's own lenses on 2026-08-22.
+        if function not in retained and not collection_error:
             continue
         failure = case.find("failure")
         if case.find("error") is not None:
@@ -134,7 +137,10 @@ def parse_junit(path: Path, exempt: set[str], retained: set[str],
                 verdicts.append(Verdict(identifier, VALID, "fails on the base"))
         elif case.find("skipped") is not None:
             verdicts.append(Verdict(identifier, NO_SIGNAL, "skipped on the base"))
-        elif name in exempt:
+        # `function`, not `name`. JUnit reports a parametrized case as `test_x[1]` while the
+        # marker scan collects the bare `test_x`, so matching on `name` silently loses the
+        # exemption for every parametrized characterization or guard test.
+        elif function in exempt:
             verdicts.append(Verdict(identifier, VALID,
                                     "passes on the base, but marked exempt"))
         else:
@@ -155,6 +161,10 @@ def run_against_base(base: str, head: str, files: list[str], adapter,
     tree = work / "base"
     added = git(["worktree", "add", "--detach", str(tree), base], repo)
     if added.returncode != 0:
+        # Clean up before leaving. The caller's `finally` only runs once this function has
+        # returned a path, so raising from here used to strand the temp directory — one orphan
+        # per failed run, forever.
+        shutil.rmtree(work, ignore_errors=True)
         raise SystemExit("cannot create worktree: %s" % (added.stderr or "")[:200])
 
     # **The head SHA, never the literal `HEAD`.** In a worktree detached on the base, `HEAD`
@@ -168,7 +178,19 @@ def run_against_base(base: str, head: str, files: list[str], adapter,
 
     report_path = work / "base.xml"
     env = adapter.base_environment(tree)
-    run(adapter.test_command(files, report_path), cwd=tree, env=env)
+    completed = run(adapter.test_command(files, report_path), cwd=tree, env=env)
+
+    # **A missing report is a run that did not happen, not a run that found nothing.** The
+    # return code cannot carry this: the runner exits non-zero whenever tests fail, which here
+    # is the normal, desired outcome. The file's absence is the signal — the runner is not
+    # installed, a path does not exist on the base, the invocation was rejected. Left
+    # unchecked, the gate printed "nothing collected" and returned 0, reporting success on a
+    # run that verified nothing. That is the failure mode this whole tool exists to name.
+    if not report_path.exists():
+        detail = (completed.stderr or completed.stdout or "").strip().splitlines()
+        cleanup(report_path, repo)
+        raise RunnerFailed("the runner produced no report: %s"
+                           % (detail[-1][:200] if detail else "no output"))
     return report_path
 
 

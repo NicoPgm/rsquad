@@ -55,9 +55,9 @@ claims to replace it.
 | [0] mechanical gate | **built** — `rsquad gate`, Python/pytest adapter |
 | the finding contract | **built** — `schema/finding.v1.json` + both guards, no model involved |
 | [1] conformance lens | not started |
-| [2] blind lenses | not started |
+| [2] blind lenses | **built** — `rsquad review`, four lenses, blindness enforced by signature |
 | [3] refutation | not started |
-| [4] ranked queue | not started |
+| [4] ranked queue | **built** — grouped by location, ranked, never a verdict |
 
 ### The finding contract
 
@@ -102,7 +102,19 @@ rsquad gate                                  # HEAD against its parent
 rsquad gate --base master --strict           # against the merge base with master
 rsquad gate --head 4164d03                   # replay on a past commit
 rsquad gate --replay 20 --repo ../other      # aggregate over the last 20 commits
+
+rsquad review                                # what would be sent, and to how many lenses
+rsquad review --confirm                      # actually spend
+rsquad review --lens repro --confirm         # one lens only
 ```
+
+`rsquad review` is a dry run unless you pass `--confirm`, and the dry run prints **no cost
+estimate**. Two invented cost constants from the source project are sitting in
+`evaluation/defects.yaml`; this tool reports what was billed, not what it guessed.
+
+The credential is read from `ANTHROPIC_API_KEY`, or from a `.env` at the repository root, or
+from whatever `RSQUAD_ENV_FILE` points at — so a key you already keep for another project can be
+reused in place instead of copied. A secret duplicated is a secret with two places to leak from.
 
 `--replay` is not a convenience: replaying the gate over history is how you measure what it
 would actually have caught, on data nobody arranged. Do that before trusting it.

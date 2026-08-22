@@ -14,7 +14,7 @@ from rsquad.findings import vocabulary
 DEFECTS_FILE = Path(__file__).resolve().parents[1] / "evaluation" / "defects.yaml"
 
 REQUIRED = {"id", "summary", "repo", "introduced_in", "fixed_in", "file", "kind", "severity",
-            "replayable", "detectable_from_diff", "found_by", "note"}
+            "replayable", "self_found", "detectable_from_diff", "found_by", "note"}
 
 DETECTABILITY = {"yes", "weak", "no"}
 
@@ -81,3 +81,18 @@ def test_the_scorable_subset_is_identified(defects):
     assert scorable
     assert len(scorable) < len(defects) or all(
         d["detectable_from_diff"] != "no" for d in defects)
+
+
+def test_the_set_is_not_all_self_found(defects):
+    """A ground truth made only of what the squad already found measures self-consistency.
+
+    It would report a rising detection rate while learning nothing, which is the most
+    comfortable way for an evaluation to become useless.
+    """
+    independent = [d for d in defects if not d["self_found"]]
+    assert independent, "every case was found by the squad itself - the set proves nothing"
+
+
+def test_self_found_cases_declare_themselves(defects):
+    for defect in defects:
+        assert isinstance(defect["self_found"], bool), defect["id"]

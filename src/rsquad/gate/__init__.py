@@ -9,10 +9,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from ..vcs import resolve
 from .adapters.base import StackAdapter
 from .adapters.python_pytest import PythonPytestAdapter
-from .core import (EXEMPT_MARKERS, NO_SIGNAL, SUSPECT, VALID, Summary, Verdict, changed_files,
-                   cleanup, git, merge_base, parse_junit, report, run_against_base, summarize)
+from .core import (EXEMPT_MARKERS, NO_SIGNAL, SUSPECT, VALID, RunnerFailed, Summary, Verdict,
+                   changed_files, cleanup, git, merge_base, parse_junit, report,
+                   run_against_base, summarize)
 
 ADAPTERS = {a.name: a for a in (PythonPytestAdapter(),)}
 DEFAULT_ADAPTER = "python-pytest"
@@ -46,10 +48,7 @@ def check(base: str | None = None, head: str = "HEAD", repo: Path | None = None,
     baseline.
     """
     adapter = adapter or ADAPTERS[DEFAULT_ADAPTER]
-    head_sha = git(["rev-parse", head], repo).stdout.strip()
-    if not head_sha:
-        raise SystemExit("unknown revision: %s" % head)
-
+    head_sha = resolve(head, repo)
     base_sha = merge_base(base or "%s~1" % head_sha, head_sha, repo)
     watched = patterns or list(adapter.watched_paths)
     files = [p for p in changed_files(base_sha, head_sha, watched, repo)
@@ -76,4 +75,5 @@ def check(base: str | None = None, head: str = "HEAD", repo: Path | None = None,
 
 
 __all__ = ["ADAPTERS", "DEFAULT_ADAPTER", "EXEMPT_MARKERS", "NO_SIGNAL", "SUSPECT", "VALID",
-           "Outcome", "StackAdapter", "Summary", "Verdict", "check", "report", "summarize"]
+           "Outcome", "RunnerFailed", "StackAdapter", "Summary", "Verdict", "check", "report",
+           "summarize"]

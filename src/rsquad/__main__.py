@@ -4,6 +4,10 @@
     rsquad gate --base master --strict           # against the merge base with master
     rsquad gate --head 4164d03                   # replay the gate on a past commit
     rsquad gate --replay 20 --repo ../other      # aggregate over the last 20 commits
+
+    rsquad review                                # what would be sent, and to how many lenses
+    rsquad review --confirm                      # actually spend
+    rsquad review --base master --lens repro --confirm
 """
 
 from __future__ import annotations
@@ -12,7 +16,9 @@ import argparse
 import sys
 from pathlib import Path
 
-from .gate import ADAPTERS, DEFAULT_ADAPTER, check, git, report
+from . import budget, chunking, config, lenses, ranking
+from .gate import ADAPTERS, DEFAULT_ADAPTER, check, git, merge_base, report
+from .vcs import resolve
 
 
 def _gate(args: argparse.Namespace) -> int:
@@ -87,6 +93,70 @@ def _replay(args: argparse.Namespace, repo: Path | None, adapter) -> int:
     return 1 if (args.strict and total["suspect"]) else 0
 
 
+def _review(args: argparse.Namespace) -> int:
+    repo = Path(args.repo).resolve() if args.repo else None
+    head = resolve(args.head, repo)
+    base = merge_base(args.base or "%s~1" % head, head, repo)
+    units = chunking.units(base, head, repo, args.path)
+    chosen = args.lens or list(lenses.LENSES)
+
+    if not units:
+        print("nothing readable changed between %s and %s." % (base[:12], head[:12]))
+        return 0
+
+    print("%s <- %s | %d file(s), %d lens(es) = %d call(s)"
+          % (head[:12], base[:12], len(units), len(chosen), len(units) * len(chosen)))
+    for unit in units:
+        print("  %-52s %6d chars%s" % (unit.file, len(unit.numbered),
+                                       "  (elided)" if unit.elided else ""))
+
+    if args.confirm and not config.credential_available():
+        raise SystemExit(
+            "no %s in the environment or in %s.\n"
+            "Export it, or source the .env you already keep for another project - do not copy "
+            "the key into a second file." % (config.KEY, config.ENV))
+
+    if not args.confirm:
+        # No estimate is printed on purpose. Two invented cost constants in the source project
+        # are in `evaluation/defects.yaml`; this tool reports what was billed, not what it
+        # guessed. Pass --confirm to find out.
+        print("\ndry run. --confirm to spend.")
+        return 0
+
+    errors: list[str] = []
+
+    def progress(run):
+        # `flush=True` is not cosmetic here. Piped or redirected, Python buffers stdout, so a
+        # command that spends money for minutes looks hung until it is finished — and the one
+        # moment you want to see it is while it is still cancellable.
+        print("  %-10s %-40s %s" % (run.lens, run.file[-40:],
+                                    run.error or "%d finding(s)" % len(run.findings)),
+              flush=True)
+
+    runs = lenses.review(units, chosen, args.model, on_run=progress)
+    findings, dropped = [], []
+    for run in runs:
+        findings += run.findings
+        dropped += run.dropped
+        if run.error:
+            errors.append("%s on %s: %s" % (run.lens, run.file, run.error))
+
+    usages = [r.usage for r in runs]
+    spend = budget.total(args.model, usages)
+    footer = ("Model `%s`, %d call(s), %.4f USD billed. %s"
+              % (args.model, len(runs), spend.total, budget.cache_verdict(usages)))
+
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(ranking.render(ranking.group(findings), dropped, errors, footer),
+                   encoding="utf-8")
+    print("\n%s" % footer)
+    print("%d kept, %d dropped by the guards, %d lens failure(s) -> %s"
+          % (len(findings), len(dropped), len(errors), out))
+    # Always 0. Only the gate blocks; opinions comment.
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="rsquad", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -109,6 +179,21 @@ def main(argv: list[str] | None = None) -> int:
     gate.add_argument("--strict", action="store_true",
                       help="exit 1 if any suspect remains")
     gate.set_defaults(handler=_gate)
+
+    review = sub.add_parser("review", help="steps [2] and [4] - blind lenses, ranked queue")
+    review.add_argument("--base", default=None,
+                        help="reference branch or commit (default: the parent of --head)")
+    review.add_argument("--head", default="HEAD", help="revision to review (default: HEAD)")
+    review.add_argument("--repo", default=None, help="repository to review (default: cwd)")
+    review.add_argument("--path", action="append", default=None,
+                        help="restrict to these paths; repeatable")
+    review.add_argument("--lens", action="append", default=None, choices=list(lenses.LENSES),
+                        help="run only this lens; repeatable (default: all four)")
+    review.add_argument("--model", default=lenses.MODEL, help="default: %s" % lenses.MODEL)
+    review.add_argument("--out", default="review/queue.md", help="where to write the queue")
+    review.add_argument("--confirm", action="store_true",
+                        help="actually call the API and spend; without it, a dry run")
+    review.set_defaults(handler=_review)
 
     args = parser.parse_args(argv)
     return args.handler(args)

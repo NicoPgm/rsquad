@@ -4,6 +4,8 @@ What is pinned here is the doctrine, not the current word list: the vocabulary e
 prompt text is derived from it, and nothing a validator would have to forgive reaches the API.
 """
 
+import json
+
 import jsonschema
 import pytest
 
@@ -69,6 +71,30 @@ def test_the_api_schema_still_validates_the_same_payloads():
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate({"findings": [dict(GOOD["findings"][0], kind="style")]},
                             api_schema())
+
+
+def test_the_numeric_bound_is_dropped_for_the_api_and_kept_for_us():
+    """Measured, not assumed: a strict output format rejects `minimum` on an integer with a
+    400. `minLength` on a string is accepted, so only this one falls back to the client.
+
+    Sending the schema unchanged fails the whole request - the first real run lost four calls
+    to exactly this.
+    """
+    assert "minimum" not in json.dumps(api_schema())
+    assert schema()["$defs"]["finding"]["properties"]["line"]["minimum"] == 1
+
+
+def test_the_client_still_refuses_a_line_below_one():
+    """The bound has to survive its removal from the wire, or dropping it would be a loophole."""
+    with pytest.raises(jsonschema.ValidationError):
+        validate({"findings": [dict(GOOD["findings"][0], line=0)]})
+
+
+def test_string_floors_survive_into_the_api_schema():
+    """These the API does enforce, so the model cannot return an empty snippet at all."""
+    properties = api_schema()["$defs"]["finding"]["properties"]
+    assert properties["snippet"]["minLength"] == 1
+    assert properties["inputs"]["minLength"] == 1
 
 
 # ------------------------------------------------------------------ shape

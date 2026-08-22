@@ -31,6 +31,21 @@ VERSION = "v1"
 #: Keys that mean something to us and nothing to a JSON Schema validator.
 ANNOTATIONS = ("glossary",)
 
+#: Keys a strict `output_config.format` schema rejects outright.
+#:
+#: Measured against the live API on 2026-08-22, one keyword at a time, not taken from
+#: documentation:
+#:
+#:     minimum on an integer   -> 400 "property 'minimum' is not supported"
+#:     minLength on a string   -> accepted
+#:
+#: So the string floors still bind at generation time and only the numeric bound falls back to
+#: the client. `validate()` keeps the full schema, which is where `line >= 1` is still enforced
+#: — the same division the source project states as its eleventh constraint: cardinality is not
+#: guaranteed by structured outputs, so it is checked client-side, at the same place as the
+#: literal verification.
+UNSUPPORTED = ("minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum")
+
 
 @lru_cache(maxsize=1)
 def schema() -> dict:
@@ -39,9 +54,12 @@ def schema() -> dict:
     return json.loads(SCHEMA_FILE.read_text(encoding="utf-8"))
 
 
+_REMOVED = ANNOTATIONS + UNSUPPORTED
+
+
 def _strip(node):
     if isinstance(node, dict):
-        return {k: _strip(v) for k, v in node.items() if k not in ANNOTATIONS}
+        return {k: _strip(v) for k, v in node.items() if k not in _REMOVED}
     if isinstance(node, list):
         return [_strip(v) for v in node]
     return node

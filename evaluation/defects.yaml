@@ -30,6 +30,13 @@
 # Only `yes` and `weak` belong in a detection rate. `no` entries are kept because they document
 # what kinds of defect this codebase actually produces, which is what the lenses are shaped
 # around.
+#
+# `self_found` MARKS CIRCULARITY
+#
+# Some entries below were found by RSquad itself. They are real defects and worth keeping, but
+# scoring the squad on cases it discovered measures nothing except that it can repeat itself.
+# Any detection rate must be reported twice: over all scorable cases, and over the ones marked
+# `self_found: false`. Only the second number means anything.
 
 schema_version: 1
 
@@ -40,12 +47,18 @@ defects:
       `main()` resolves the requested revision, uses it to pick the base and the changed file
       list, then reassigns the same variable to `HEAD` before the work that needs it.
     repo: ai-video-digest
-    introduced_in: 2a21282
+    # NOT 2a21282, though that is where the line first appears. At 2a21282 there was no --tete
+    # option, so `tete = HEAD` was simply correct. The defect is born in b404a93, which adds
+    # --tete around the line without removing it. `git log -S` finds when a LINE appeared, not
+    # when a DEFECT did, and taking one for the other put a wrong label in this file for half a
+    # day - caught only by replaying the squad on 2a21282 and finding no such bug to find.
+    introduced_in: b404a93
     fixed_in: f71241e            # in rsquad, not in the source project
     file: tools/portail_tests.py
     kind: correctness
     severity: significant
     replayable: true
+    self_found: false
     detectable_from_diff: "yes"
     found_by: reading the file line by line to port it
     note: >
@@ -65,6 +78,7 @@ defects:
     kind: correctness
     severity: blocking
     replayable: true
+    self_found: false
     detectable_from_diff: "weak"
     found_by: running the gate on a commit that added a whole new test file
     note: >
@@ -84,6 +98,7 @@ defects:
     kind: correctness
     severity: significant
     replayable: true
+    self_found: false
     detectable_from_diff: "weak"
     found_by: measuring the corpus after a batch cost more than announced
     note: >
@@ -101,6 +116,7 @@ defects:
     kind: correctness
     severity: significant
     replayable: true
+    self_found: false
     detectable_from_diff: "no"
     found_by: comparing the estimate against the billed amount
     note: >
@@ -119,9 +135,92 @@ defects:
     kind: contract
     severity: significant
     replayable: true
+    self_found: false
     detectable_from_diff: "weak"
     found_by: a bounded backfill returning far more videos than the bound implied
     note: >
       The comparison is against a field that is always absent. Findable as "this filter reads a
       field nothing in this diff populates", which is a contract finding and does not require
       knowing yt-dlp.
+
+  # ---------------------------------------------------------------------------------------
+  # Found by RSquad itself, first paid run, 2026-08-22, on the diff of 2a21282. All four were
+  # inherited into RSquad's own gate by the extraction at 6984c72 and fixed straight after.
+  # `self_found: true` - they must be excluded from any headline detection rate.
+
+  - id: empty-retained-disables-the-filter
+    summary: >
+      `if retenus and fonction not in retenus` short-circuits when no test function changed, so
+      the per-function filter becomes a no-op and every pre-existing passing test in a touched
+      file is reported SUSPECT.
+    repo: ai-video-digest
+    introduced_in: 2a21282
+    fixed_in: pending
+    file: tools/portail_tests.py
+    kind: correctness
+    severity: significant
+    replayable: true
+    self_found: true
+    detectable_from_diff: "yes"
+    found_by: all four blind lenses, independently, on the first paid run
+    note: >
+      The strongest result of the first run. It is the exact failure the surrounding docstring
+      claims to have designed out - 35 false positives for 6 real findings - reachable by any
+      commit that edits a fixture or a module-level constant inside a test file.
+
+  - id: exemption-lost-on-parametrized-tests
+    summary: >
+      The exemption is matched against the raw JUnit name `test_x[1]` while the marker scan
+      collected the bare `test_x`, so a parametrized characterization or guard test loses its
+      exemption and is reported SUSPECT.
+    repo: ai-video-digest
+    introduced_in: 2a21282
+    fixed_in: pending
+    file: tools/portail_tests.py
+    kind: correctness
+    severity: significant
+    replayable: true
+    self_found: true
+    detectable_from_diff: "yes"
+    found_by: all four blind lenses, independently, on the first paid run
+    note: >
+      The stripped name is computed two lines above and simply not used at this branch. Every
+      lens noticed the unused local, which is what made it findable from the diff alone.
+
+  - id: missing-report-reads-as-nothing-found
+    summary: >
+      The runner's exit status and the report's existence are both ignored, so a run where the
+      runner never started prints "nothing collected" and returns 0.
+    repo: ai-video-digest
+    introduced_in: 2a21282
+    fixed_in: pending
+    file: tools/portail_tests.py
+    kind: contract
+    severity: blocking
+    replayable: true
+    self_found: true
+    detectable_from_diff: "yes"
+    found_by: the repro lens
+    note: >
+      A gate reporting success on a run that verified nothing is the precise failure this tool
+      exists to name, sitting inside the tool. The return code cannot carry the signal - the
+      runner exits non-zero whenever tests fail, which here is the wanted outcome - so the
+      report's absence has to.
+
+  - id: temp-directory-stranded-on-worktree-failure
+    summary: >
+      `SystemExit` is raised after `mkdtemp` has created the directory, and cleanup only runs
+      from the caller's `finally`, which is never entered.
+    repo: ai-video-digest
+    introduced_in: 2a21282
+    fixed_in: pending
+    file: tools/portail_tests.py
+    kind: resource
+    severity: minor
+    replayable: true
+    self_found: true
+    detectable_from_diff: "yes"
+    found_by: three of the four blind lenses
+    note: >
+      Minor, and correctly ranked minor by the queue. Worth keeping as a case because it is the
+      only `resource` entry in the set.

@@ -7,6 +7,8 @@ stay visible instead of being filtered away with everything else.
 
 from pathlib import Path
 
+import pytest
+
 from rsquad.gate import NO_SIGNAL, SUSPECT, VALID, Verdict, parse_junit, report, summarize
 
 
@@ -120,6 +122,38 @@ def test_the_predicate_never_sees_a_collection_error(tmp_path):
     assert seen == []
 
 
+# ------------------------------------------------------------------- found by the squad
+
+def test_nothing_is_examined_when_no_test_function_changed(tmp_path):
+    """Empty `retained` means "say nothing", not "classify everything".
+
+    A commit editing a fixture, an import or a module-level constant inside a test file changes
+    no test function body, so `retained` comes back empty. With a `retained and ...`
+    short-circuit the filter became a no-op and every pre-existing passing test in that file
+    was reported SUSPECT — the false-positive flood per-function granularity exists to prevent,
+    plus exit 1 under --strict. Reported by all four blind lenses on 2026-08-22.
+    """
+    assert parse_junit(_report(tmp_path, PASSED), set(), set()) == []
+
+
+def test_a_collection_error_survives_an_empty_retained_set(tmp_path):
+    """It still carries information: N new tests could not be examined at all."""
+    v, = parse_junit(_report(tmp_path, COLLECTION), set(), set())
+    assert v.state == NO_SIGNAL
+
+
+def test_a_parametrized_exempt_test_keeps_its_exemption(tmp_path):
+    """JUnit says `test_a[1]`; the marker scan collected the bare `test_a`.
+
+    Matching the raw name silently dropped the exemption for every parametrized
+    characterization or guard test, and reported it SUSPECT.
+    """
+    body = '<testcase classname="tests.t" name="test_a[cas1]"/>'
+    v, = parse_junit(_report(tmp_path, body), {"test_a"}, {"test_a"})
+    assert v.state == VALID
+    assert "exempt" in v.detail
+
+
 # ------------------------------------------------------------------- overall verdict
 
 def test_strict_fails_only_on_a_suspect():
@@ -153,3 +187,54 @@ def test_the_summary_is_printed_next_to_the_verdict():
     lines = []
     report([Verdict("tests.t::test_a", NO_SIGNAL)], strict=False, out=lines.append)
     assert any("0 function(s) examined" in line for line in lines)
+
+
+# ------------------------------------------------------------------- the runner never ran
+
+def test_a_missing_report_is_loud_not_silent(tmp_path, monkeypatch):
+    """The gate must never report success on a run that verified nothing.
+
+    The return code cannot carry this: the runner exits non-zero whenever tests fail, which
+    here is the normal, wanted outcome. The report's absence is the signal. Left unchecked, a
+    missing pytest or a bad path made the gate print "nothing collected" and return 0 — the
+    exact failure mode this tool exists to name, inside the tool itself.
+    """
+    from rsquad.gate import RunnerFailed, core
+
+    class _Adapter:
+        def test_command(self, files, report_path):
+            return ["true"]
+
+        def base_environment(self, tree):
+            return {}
+
+    ok = type("R", (), {"returncode": 0, "stdout": "", "stderr": "pytest: not found"})()
+    monkeypatch.setattr(core, "git", lambda args, repo=None: ok)
+    monkeypatch.setattr(core, "run", lambda *a, **k: ok)
+
+    with pytest.raises(RunnerFailed) as raised:
+        core.run_against_base("base", "head", ["tests/t.py"], _Adapter())
+    assert "not found" in str(raised.value)
+
+
+def test_a_failed_worktree_leaves_no_temporary_directory(monkeypatch, tmp_path):
+    """The caller's `finally` only runs once this function returned a path."""
+    from rsquad.gate import core
+
+    work = tmp_path / "rsquad-gate-probe"
+    work.mkdir()
+
+    def fake_mkdtemp(prefix):
+        return str(work)
+
+    def refuse(args, repo=None):
+        return type("R", (), {"returncode": 1, "stderr": "worktree refused", "stdout": ""})()
+
+    removed = []
+    monkeypatch.setattr(core.tempfile, "mkdtemp", fake_mkdtemp)
+    monkeypatch.setattr(core, "git", refuse)
+    monkeypatch.setattr(core.shutil, "rmtree", lambda path, **kw: removed.append(str(path)))
+
+    with pytest.raises(SystemExit):
+        core.run_against_base("base", "head", ["tests/t.py"], object())
+    assert removed == [str(work)], "the temp directory was stranded"
