@@ -237,7 +237,10 @@ In order, most fragile first. This is the real answer to "does it generalise".
 
 1. **The conformance lens [1].** It needs a stated intent, and most repositories do not have one.
    The commit message is the floor, and it is often one line. It degrades gracefully — no intent,
-   no step — but it is the first thing to lose.
+   no step — but it is the first thing to lose. **And it may already be the weakest step here:**
+   in the evaluation it ran on two cases whose commit messages directly contradicted the code and
+   returned zero findings. Thin messages or a weak lens — one paid run per case would tell them
+   apart (`first-evaluation.md`).
 2. **The gate's coverage [0].** 21 % here. The figure depends on how much of a change is
    *modification* rather than *addition*, and agent-written code skews hard toward addition,
    which is the least covered case.
@@ -255,6 +258,13 @@ are the hard part.
 
 ## What this architecture does not address
 
+- **The blind lenses find contradictions, not omissions.** Measured 2026-08-23: of four
+  ground-truth cases, the one detected was a diff that contradicted itself — a variable resolved,
+  used, then reassigned before its use. All three misses were defects whose wrongness is invisible
+  in the text: a command missing a flag, a constant that is simply wrong, a distinction drawn
+  correctly and meant wrongly. An omission has no anchor to quote, and `snippet` requires one —
+  so the guard that stops hallucination may be the same thing that stops this class of finding.
+  Nothing separates the two yet (`first-evaluation.md`).
 - **No architectural findings.** It reads a diff, not a system. Nothing here notices that a module
   should not exist.
 - **Correlated blind spots.** The lenses share the training distribution of the model that wrote

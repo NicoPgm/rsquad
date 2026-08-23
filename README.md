@@ -92,11 +92,17 @@ refuse is a measurement of how the lenses are behaving.
 `evaluation/defects.yaml` holds real defects with the commit that introduced each one, so a
 squad can be replayed against diffs whose label came from reality rather than from a model.
 
-It is a **smoke test, not a measurement**. Nine entries today, of which **four are scorable** —
+It is a **smoke test, not a measurement**. Eleven entries today, of which **four are scorable** —
 the rest are either not findable from the diff at all, or were found by RSquad itself, and both
 kinds measure nothing. On four cases a 25 % detection rate and a 75 % one are the same number.
 It will catch a squad that finds nothing; it cannot tell 40 % from 70 %. The method, the cost and
 what it cannot prove: [`docs/evaluation.md`](docs/evaluation.md).
+
+**First replay, 2026-08-23: 1 detected of 4, $7.05.** The three misses share a shape — every one
+is a defect whose wrongness is invisible in the text, where the hit was a diff that contradicted
+itself. **The blind lenses find contradictions, not omissions**, and an omission has no anchor to
+quote. The run also found two live defects in RSquad's own gate.
+[`docs/first-evaluation.md`](docs/first-evaluation.md).
 
 ```bash
 rsquad gate                                  # HEAD against its parent
@@ -265,6 +271,7 @@ reports. A report says what happened, an ADR says what we do about it.
 | [`docs/blindness-under-a-harness.md`](docs/blindness-under-a-harness.md) | 46 agents, 119 file operations, and a mitigation that did not work |
 | [`docs/extraction.md`](docs/extraction.md) | the extraction from the source project, verified function by function |
 | [`docs/first-run.md`](docs/first-run.md) | the first paid run, and the five defects it found in this repository |
+| [`docs/first-evaluation.md`](docs/first-evaluation.md) | the first replay against ground truth: 1 of 4, and what the misses have in common |
 
 ## License and provenance
 

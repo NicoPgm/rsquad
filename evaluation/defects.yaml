@@ -148,6 +148,50 @@ defects:
       project and applies to its own ground truth first.
 
   # ---------------------------------------------------------------------------------------
+  # Found by the first `rsquad evaluate` run, 2026-08-23, on the diff of 2a21282 - while
+  # MISSING the defect that case was replaying. Both survived the extraction and are live in
+  # RSquad's gate today, verified by running `exempt_names`.
+
+  - id: exemption-lost-and-stolen-on-async-tests
+    summary: >
+      `is_test_declaration` matches `def test`, so an `async def test_x` line matches neither
+      branch of the marker scan: the async test loses its exemption AND `marked` stays True,
+      landing the exemption on the next plain test - which never carried a marker.
+    repo: rsquad
+    introduced_in: 2a21282        # inherited from the source project at the extraction
+    fixed_in: pending
+    file: src/rsquad/gate/adapters/base.py
+    kind: correctness
+    severity: significant
+    replayable: true
+    self_found: true
+    detectable_from_diff: "yes"
+    found_by: two blind lenses during the first evaluate run
+    note: >
+      Two defects in one branch, pointing opposite ways: a guard test wrongly reported suspect,
+      and a non-discriminating test wrongly reported valid. The second is worse - the gate
+      silently approves exactly what it exists to catch.
+
+  - id: filters-match-bare-names-across-files
+    summary: >
+      `changed_test_functions` returns bare function names with no file qualification, and the
+      JUnit filter compares against them, so a same-named test in an untouched file is examined
+      and reported suspect.
+    repo: rsquad
+    introduced_in: 2a21282        # inherited from the source project at the extraction
+    fixed_in: pending
+    file: src/rsquad/gate/core.py
+    kind: correctness
+    severity: minor
+    replayable: true
+    self_found: true
+    detectable_from_diff: "yes"
+    found_by: one blind lens during the first evaluate run
+    note: >
+      Minor because `test_roundtrip`-style collisions are uncommon in one suite, and it fails
+      toward the false positive - the noisy direction, not the silent one.
+
+  # ---------------------------------------------------------------------------------------
   # Found by RSquad itself, first paid run, 2026-08-22, on the diff of 2a21282. All four were
   # inherited into RSquad's own gate by the extraction at 6984c72 and fixed straight after.
   # `self_found: true` - they must be excluded from any headline detection rate.

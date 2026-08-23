@@ -9,23 +9,24 @@ scored against itself.
 
 ## The honest denominator today is four
 
-`evaluation/defects.yaml` holds nine defects. Two fields decide how many of them can appear in a
-detection rate.
+`evaluation/defects.yaml` holds eleven defects. Two fields decide how many of them can appear in
+a detection rate.
 
 **`detectable_from_diff`** — not every real defect is findable by reading the diff that introduced
 it. A wrong constant looks like a right constant. A no-op flag looks like a working flag when the
 reason it is a no-op lives in another file. Scoring against undetectable cases measures nothing
 and makes the squad look worse than it is: the same self-deception, pointed the other way.
 
-**`self_found`** — four entries were found by RSquad itself. They are real defects and worth
-keeping, but scoring a squad on cases it discovered measures only that it can repeat itself.
+**`self_found`** — six entries were found by RSquad itself, four of them on the first paid run
+and two more during this evaluation. They are real defects and worth keeping, but scoring a squad
+on cases it discovered measures only that it can repeat itself.
 
 |  | `self_found: false` | `self_found: true` | |
 |---|---:|---:|---:|
-| `detectable: yes` | **2** | 4 | 6 |
+| `detectable: yes` | **2** | 6 | 8 |
 | `detectable: weak` | **2** | 0 | 2 |
-| `detectable: no` | 0 | 0 | 1 |
-| | **4 scorable** | 4 circular | 9 |
+| `detectable: no` | 1 | 0 | 1 |
+| | **4 scorable** | 6 circular | 11 |
 
 **Four cases.** On four cases a 25 % detection rate and a 75 % one are the same measurement. This
 set will catch gross blindness — a squad that finds nothing, or that only ever finds style — and
@@ -33,6 +34,10 @@ nothing finer. Any number computed from it must be reported as a fraction with i
 visible, never as a percentage.
 
 ### What is already known about those four
+
+**Replayed once, 2026-08-23: 1 detected of 4** — $7.05, and the three misses share a shape that
+turned out to be the interesting part. Full report: [`first-evaluation.md`](first-evaluation.md);
+the cases and their verdicts are in `evaluation/report.md`.
 
 One of them has been replayed, by hand, eight times. `head-overwritten-before-use` at
 `tools/portail_tests.py:272` in `ai-video-digest@b404a93` was found **first and `blocking` in all
@@ -83,8 +88,10 @@ one refuter per refutable finding:
 | API transport | **$0.80 – $1.00 per case**, 11–13 calls (three runs) |
 | Harness transport | 764k – 949k tokens per case (three runs) |
 
-So the current four scorable cases cost roughly **$4** on the API path, and replaying all nine
-costs under $10. That is cheap enough that the reason it has not been automated is not money.
+**Measured on the real thing: the four scorable cases cost $7.05**, 56 calls — not the ~$4 those
+per-case figures implied. The gap is the point: those figures came from one small file, and a
+case that produces 18 findings pays for 18 refutations. Cost scales with what the lenses find,
+which is not knowable in advance.
 
 Both transports returned the same set of places on repeated runs, so a single pass per case is
 defensible. That was not obvious in advance and it halves the cost of any future measurement.
