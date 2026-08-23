@@ -109,12 +109,51 @@ returns is verifiable rather than plausible:
 4. reject the case if the commit is a rename, a reformat, or touches more than a few files —
    detectable, and mechanical.
 
-Cases that survive step 3 have a label that came from reality and a diff that does not contain
-its own answer. Cases that do not survive are dropped before anything is spent, which is the
-right time to lose them.
+It needs full clones rather than `--shallow-since`, and it rejects candidates. Both are cheap
+compared with $5 spent measuring the wrong thing.
 
-It needs full clones rather than `--shallow-since`, and it will reject a good share of
-candidates. Both are cheap compared with $5 spent measuring the wrong thing.
+### Measured the same day, and it changed the criterion
+
+Step 2 above says "the last commit to touch that range". That was written expecting to find
+**regressions** — correct code that a later commit broke. Across roughly 70 qualifying fixes in
+both repositories, the scan found **none**. The single match was a false positive: what had
+previously stood in correct form was a *moved comment*, not the code.
+
+Where the six selected defects were first written:
+
+| Case | First written |
+|---|---|
+| SerializerCache | 2011 — "First check-in", **293 files** |
+| StrBuilder | 2004 — file creation |
+| StringUtils:1094 | 2003 — file creation |
+| DefaultCacheProvider | 2023 — ordinary feature commit, 5–9 files |
+| MapSerializer | 2012 — ordinary feature commit, 22 files |
+| BitField:215 | 2026-01 — "Add long support to BitField" |
+
+**In a mature library, defects are born with the code far more often than they are introduced by
+breaking working code.** For most real bugs there is no bug-introducing diff at all. That is a
+property of software, not of the tooling, and it undercuts the premise of "replay the diff that
+introduced the defect" more than any of the flaws above.
+
+So the criterion is not "is it a regression" — that empties the pool — but **where the buggy line
+was first written**, accepting a normal feature commit that added a class containing a latent
+defect. Those are reviewable, and they are the most realistic target there is: a change adding
+new code is exactly what a pre-push review sees. "Born with the file" only disqualifies when the
+file arrived in a wholesale import, which the file count detects.
+
+**The price is the post-cutoff control.** The fixes are recent; the introductions are from 2012,
+2023, 2026-01. That code is in training data in both its buggy and its fixed form. One leak is
+traded for another: the reverse patch put the answer in the diff, the archaeology may put it in
+the model. The second is weaker — it needs the model to recall that a 2012 commit carried a
+latent bug fixed in 2026 — but it is not zero, and nothing here measures it. Preferring recent
+introducing commits is the only clean mitigation, and only one of the six qualifies.
+
+### Open question, deferred
+
+**Add a younger repository to the set?** Both arms are mature libraries, which is precisely why
+their defects predate their history. A project a few years old would have introductions inside
+its own recent history, restoring both the reviewable diff and the post-cutoff control — at the
+cost of a thinner fix history and less certain issue linking. Not answered here.
 
 ## The pattern this makes three times
 
