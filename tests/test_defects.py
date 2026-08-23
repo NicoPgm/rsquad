@@ -96,3 +96,40 @@ def test_the_set_is_not_all_self_found(defects):
 def test_self_found_cases_declare_themselves(defects):
     for defect in defects:
         assert isinstance(defect["self_found"], bool), defect["id"]
+
+
+# ------------------------------------------------------------------ the step 7 pre-registration
+
+STEP7 = Path(__file__).resolve().parents[1] / "evaluation" / "step7.yaml"
+
+
+@pytest.fixture(scope="module")
+def step7():
+    return yaml.safe_load(STEP7.read_text(encoding="utf-8"))
+
+
+def test_every_case_carries_a_label_and_its_reasoning(step7):
+    """A label with no rationale cannot be audited afterwards, and being auditable afterwards is
+    the entire point of freezing this file before the run."""
+    for case in step7["cases"]:
+        assert case["detectable_from_diff"] in DETECTABILITY
+        assert case["label_rationale"].strip()
+
+
+def test_the_arms_stay_interleaved(step7):
+    """`--max-usd` stops between cases. If one arm ran first as a block, a budget truncation
+    would delete the comparison rather than shorten it."""
+    repos = [c["repo"] for c in step7["cases"]]
+    assert all(a != b for a, b in zip(repos, repos[1:])), repos
+
+
+def test_both_arms_carry_the_same_number_of_cases(step7):
+    counts = {arm["repo"]: sum(c["repo"] == arm["repo"] for c in step7["cases"])
+              for arm in step7["arms"]}
+    assert len(set(counts.values())) == 1, counts
+
+
+def test_the_hard_bound_does_not_drift_from_the_caps(step7):
+    """The bound is the number that gets quoted, so it must stay derived rather than typed."""
+    budget = step7["budget"]
+    assert budget["hard_bound_usd"] == budget["cap_usd_per_arm"] * len(step7["arms"])

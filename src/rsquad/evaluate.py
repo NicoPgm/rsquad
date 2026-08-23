@@ -81,8 +81,13 @@ def _case(defect: dict, findings: list[dict], failed: str | None) -> str:
              "| | |", "|---|---|",
              "| introduced in | `%s` |" % defect["introduced_in"],
              "| file | `%s` |" % defect["file"],
-             "| detectable from diff | %s |" % defect["detectable_from_diff"],
-             "| kind / severity | %s / %s |" % (defect["kind"], defect["severity"]), ""]
+             "| detectable from diff | %s |" % defect["detectable_from_diff"]]
+    # A set from another project need not carry this project's taxonomy. Absent is absent, not
+    # "None" — the report is read by a human deciding a verdict, not by a parser.
+    if defect.get("kind") or defect.get("severity"):
+        lines.append("| kind / severity | %s / %s |"
+                     % (defect.get("kind", "-"), defect.get("severity", "-")))
+    lines.append("")
 
     if failed:
         lines += ["**The replay did not run: %s**" % failed, ""]

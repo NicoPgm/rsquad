@@ -1,0 +1,204 @@
+# Step 7 — pre-registered selection, frozen 2026-08-23, before any case was run.
+#
+# WHY THIS FILE EXISTS
+#
+# `docs/evaluation.md` says the target, the commit range, the sampling rule and the labels have
+# to be fixed BEFORE running anything, or the denominator gets chosen after seeing the result.
+# Committing this file timestamps the pre-registration: git can prove the labels existed before
+# the numbers did. That is the only real protection, and it is why the labels below are already
+# filled in, with their reasoning.
+#
+# THE TWO REPOSITORIES ARE A CONTRAST, NOT A SAMPLE
+#
+# `docs/first-evaluation.md` proposes that the blind lenses find contradictions, not omissions.
+# One repository cannot test that, so there are two arms chosen for opposite bug shapes:
+#
+#   apache/commons-lang         pure-function logic bugs, self-contained in one method
+#                               -> the shape the hypothesis says the squad is GOOD at
+#   FasterXML/jackson-databind  framework bugs entangled in caching and serializer resolution
+#                               -> the shape it says the squad is BAD at
+#
+# Six cases decide nothing on their own. A large divergence between the arms would support the
+# hypothesis; similar results would refute it. Either is worth more than one blended number.
+#
+# SELECTION RULES, applied mechanically by `evaluation/step7_select.py`. No commit was chosen by
+# reading its subject.
+#
+#   1. committed since 2026-05-01 — after the model's knowledge cutoff, so a memorised fix
+#      cannot masquerade as a detection. The cheapest control available, and the reason the
+#      repositories had to be ACTIVE rather than large.
+#   2. the message matches a fix vocabulary AND references an issue — the label comes from
+#      somebody hitting the bug, not from a reading of the diff
+#   3. 1-2 changed .java files outside the test tree, at least one inside it, <= 6 files total
+#      (the review unit is one file: a fix touching six of them costs six times as much)
+#   4. the source diff changes at least one line that is not a comment, blank or import — a
+#      Javadoc correction is not a defect
+#   5. the source diff REMOVES at least one non-comment line. Reversing an addition-only fix
+#      deletes a guard together with the javadoc explaining why it is needed, which is far more
+#      conspicuous than the original omission ever was.
+#   6. the source diff adds NO net-new comment line. Reversing a fix that explains itself
+#      deletes that explanation, and a deleted comment naming the defect puts the answer in the
+#      diff — a leak, not merely an easier task. Comments only MOVED (removed and re-added
+#      unchanged) are fine, since reversing restores them.
+#   7. the N most recent that qualify, by date. No further choice.
+#
+# Rule 6 was added after running `step7_prepare.py` and reading its output: the reverse of the
+# Fraction.multiplyBy fix deleted three comment lines that named the defect outright. Reasoning
+# about the method had not surfaced it; running it did, which is this project's whole thesis
+# applied to its own measurement. **Known bias it introduces:** the set now selects against
+# fixes whose author documented the subtlety, which may correlate with the subtle ones.
+#
+# THE SQUAD IS SHOWN THE FIX REVERSED, AND THAT IS AN UPPER BOUND ON DETECTABILITY
+#
+# A review squad reads a diff, so the defect has to be IN the diff. These are fix commits: the
+# bug is gone. Finding the commit that introduced it means archaeology, and `git log -S` finds
+# when a LINE appeared, not when a DEFECT did — an error already made twice in
+# `evaluation/defects.yaml`, both times caught by running something rather than by rereading.
+#
+# So each case is replayed as a synthetic commit that applies the fix BACKWARDS to the source
+# file only, leaving the tests alone (`evaluation/step7_prepare.py`). The head file is the real
+# pre-fix code and the diff is a change that introduces a known bug — which is also what the
+# squad sees in deployment, reviewing a fresh change before a push.
+#
+# It is still easier than reality: the change is minimal and entirely about the defect, where a
+# real commit buries it in unrelated work. **Read the result asymmetrically — a miss is strong
+# evidence, a hit is weak evidence.**
+#
+# The tests are left as the fix wrote them, so they FAIL on these commits. Irrelevant to the
+# lenses, which never run tests, but it means **the gate cannot be run on these commits** and no
+# conclusion about step [0] may be drawn from this set.
+#
+# THE SYNTHETIC COMMITS CARRY AN EMPTY MESSAGE, so step [1] does not run: nobody stated an
+# intent for a change nobody wrote, and inventing one would hand the conformance lens a
+# contradiction that does not exist in the world. `conformance.gather` yields no parts on an
+# empty message, so `evaluate` skips the step by itself. What is measured here is **the four
+# blind lenses plus refutation** — not the whole squad.
+
+schema_version: 1
+
+budget:
+  cap_usd_per_arm: 7.0           # --max-usd, one invocation per arm; the guard reserves $3.00
+  hard_bound_usd: 14.0           # 2 arms; a case cannot start once spent + 3.00 exceeds the cap
+  expected_usd: 10.5             # 6 cases at the $1.75 average measured on 2026-08-23
+  note: >
+    **The cap is per invocation, and there is one invocation per arm** — `evaluate --repo` takes
+    a single repository. That is better than one shared budget: a per-arm cap makes it impossible
+    for the first arm to starve the second. The cap is the commitment, not the expectation; the
+    previous estimate was $4 against $7.05 billed. Cases the cap stops are reported as not
+    started, never as misses.
+
+run:
+  - python evaluation/step7_prepare.py <workspace>
+  - python -m rsquad evaluate --defects <workspace>/commons-lang.defects.yaml
+      --repo <workspace>/commons-lang --max-usd 7 --out evaluation/step7-lang.md --confirm
+  - python -m rsquad evaluate --defects <workspace>/jackson-databind.defects.yaml
+      --repo <workspace>/jackson-databind --max-usd 7 --out evaluation/step7-jackson.md --confirm
+
+arms:
+
+  - repo: apache/commons-lang
+    url: https://github.com/apache/commons-lang.git
+    shape: pure-function logic bugs, self-contained in one method
+    hypothesis: favourable — the defect is a contradiction visible inside the diff
+
+  - repo: FasterXML/jackson-databind
+    url: https://github.com/FasterXML/jackson-databind.git
+    shape: framework bugs in caching and serializer resolution
+    hypothesis: unfavourable — the code is correct-looking and wrong by context
+
+cases:
+
+  - id: lang-surrogate-false-match
+    repo: apache/commons-lang
+    fix: 4ee32aa56
+    issue: "#1771"
+    file: src/main/java/org/apache/commons/lang3/StringUtils.java
+    summary: >
+      The high-surrogate guard in containsAny/containsNone/indexOfAny short-circuits on
+      `!isHighSurrogate(ch)`, so a lone LOW surrogate matches the low half of a search pair.
+    detectable_from_diff: "weak"
+    label_rationale: >
+      The asymmetry is visible — the condition handles the high half of a symmetric problem and
+      not the low half, three times identically. Constructing the counterexample needs surrogate
+      pairing semantics, which the file does not state.
+
+  - id: jackson-stale-readonly-cache
+    repo: FasterXML/jackson-databind
+    fix: 07db93b60
+    issue: "#6143"
+    file: src/main/java/tools/jackson/databind/ser/SerializerCache.java
+    summary: >
+      `addTypedSerializer` invalidates the read-only copy only when the key was absent
+      (`put(...) == null`), so REPLACING a typed serializer leaves a stale copy in service.
+    detectable_from_diff: "yes"
+    label_rationale: >
+      The comment "let's invalidate the read-only copy, too, to get it updated" sits INSIDE the
+      conditional that stops it happening — a claim the adjacent code fails to honour, entirely
+      within the diff. The comment is moved rather than added, so rule 6 is satisfied and the
+      reversal restores it where it was.
+
+  - id: lang-strbuilder-empty-search
+    repo: apache/commons-lang
+    fix: b1aba6833
+    issue: "#1759"
+    file: src/main/java/org/apache/commons/lang3/text/StrBuilder.java
+    summary: >
+      `lastIndexOf(String)` starts the search at `size - 1`, so an empty search string is never
+      found at the end position where it belongs.
+    detectable_from_diff: "weak"
+    label_rationale: >
+      One character, and the boundary is right there. But knowing `size - 1` is wrong depends on
+      the convention that `lastIndexOf("")` returns the length — a library convention, not
+      something the file says.
+
+  - id: jackson-map-empty-wrong-variable
+    repo: FasterXML/jackson-databind
+    fix: faa77b3e4
+    issue: "#6101"
+    file: src/main/java/com/fasterxml/jackson/databind/ser/std/MapSerializer.java
+    summary: >
+      Inside a loop over entries, the NON_EMPTY check compares the suppressible value against
+      `value` instead of `elemValue` — the wrong variable, twice.
+    detectable_from_diff: "yes"
+    label_rationale: >
+      `elemValue` is computed two lines above and then not used in the else branch. A
+      wrong-variable bug is a contradiction in place, needing nothing from outside the file.
+      Note this commit is a backport; the same fix exists in the 3.x tree as ee072047d.
+
+  - id: lang-bitfield-sign-extension
+    repo: apache/commons-lang
+    fix: 98dc24990
+    issue: "#1749"
+    file: src/main/java/org/apache/commons/lang3/BitField.java
+    summary: >
+      `getValue` uses an arithmetic shift `>>` on a masked field, so a field including the top
+      bit is sign-extended and comes back negative.
+    detectable_from_diff: "yes"
+    label_rationale: >
+      Masked-field extraction requires `>>>`; the mask is applied in `getRawValue` in the same
+      class. Self-contained, and the classic form of this defect.
+
+  - id: jackson-builder-cache-defaults
+    repo: FasterXML/jackson-databind
+    fix: 7d114f50a
+    issue: "#6138"
+    file: src/main/java/tools/jackson/databind/cfg/DefaultCacheProvider.java
+    summary: >
+      Three Builder fields documented as "Maximum Size of the LookupCache instance" have no
+      initialiser, so the builder defaults every cache size to 0.
+    detectable_from_diff: "weak"
+    label_rationale: >
+      A field whose javadoc calls it a maximum size, defaulting to zero, is a smell available
+      from the diff. Knowing 0 is wrong rather than "unbounded" or "assigned later" needs the
+      Builder's callers. The closest case in this set to `words-per-video-invented`, which was
+      missed.
+
+# WHAT I EXPECTED, WRITTEN DOWN SO IT CAN BE WRONG
+#
+# The labels came out 1 yes / 2 weak for commons-lang and 2 yes / 1 weak for jackson — the
+# opposite way round from the arm hypothesis, which predicted the commons-lang shape would be
+# the more detectable one. That is the pre-registration doing its job: the labels were assigned
+# before any run and they do not flatter the prediction they exist to test.
+#
+# If the results follow the LABELS rather than the ARMS, the useful unit is the defect shape and
+# not the repository, and the two-arm design was the wrong axis. That would also be a finding.

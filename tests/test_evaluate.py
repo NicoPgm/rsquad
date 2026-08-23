@@ -112,3 +112,12 @@ def test_the_reserve_is_the_worst_cost_actually_measured():
     """Not a round number picked to feel safe: 4 cases billed $7.05 and the dearest was ~$2.90."""
     assert evaluate.within_budget(0.0, evaluate.WORST_CASE_USD) is True
     assert evaluate.within_budget(0.01, evaluate.WORST_CASE_USD) is False
+
+
+def test_a_case_without_this_project_s_taxonomy_still_renders():
+    """`step7.yaml` describes defects in other people's repositories. A set that does not carry
+    `kind`/`severity` must not print "None" into a report a human reads to decide a verdict."""
+    lean = {"id": "x", "summary": "s", "introduced_in": "abc", "file": "a.java",
+            "detectable_from_diff": "yes", "self_found": False}
+    text = evaluate.render([(lean, [], None)], [], "billed")
+    assert "None" not in text and "No finding survived" in text
