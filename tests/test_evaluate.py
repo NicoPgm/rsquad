@@ -93,3 +93,22 @@ def test_a_conformance_finding_renders_its_mismatch():
     text = evaluate.render([(REAL, [mismatch], None)], [], "billed")
     assert "the resolved revision is overwritten" in text
     assert "None" not in text
+
+
+# ------------------------------------------------------------------ the spend cap
+
+def test_without_a_cap_every_case_runs():
+    assert evaluate.within_budget(999.0, None) is True
+
+
+def test_a_case_that_could_cross_the_cap_does_not_start():
+    """What a case costs is known only once it is over — a finding pays for its own refuter —
+    so the guard reserves the worst case measured rather than stopping midway."""
+    assert evaluate.within_budget(10.0, 12.0) is False
+    assert evaluate.within_budget(9.0, 12.0) is True
+
+
+def test_the_reserve_is_the_worst_cost_actually_measured():
+    """Not a round number picked to feel safe: 4 cases billed $7.05 and the dearest was ~$2.90."""
+    assert evaluate.within_budget(0.0, evaluate.WORST_CASE_USD) is True
+    assert evaluate.within_budget(0.01, evaluate.WORST_CASE_USD) is False

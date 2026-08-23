@@ -27,6 +27,24 @@ import yaml
 #: A case belongs in a detection rate only if a careful reader of the diff could find it.
 SCORABLE = ("yes", "weak")
 
+#: The most a single case has cost, measured: 4 cases billed $7.05 on 2026-08-23 and the
+#: dearest was ~$2.90 — a case pays one refuter per finding, and one of the four produced 18.
+WORST_CASE_USD = 3.0
+
+
+def within_budget(spent: float, cap: float | None) -> bool:
+    """May another case start?
+
+    The cap is enforced by refusing to **start** a case that could cross it, never by stopping
+    one midway: what a case costs is only known once it is over, because every finding pays for
+    its own refuter. So the guard reserves `WORST_CASE_USD` and declines when that would not
+    fit.
+
+    Conservative on purpose. The estimate this replaces was $4 against $7.05 billed — a 76 %
+    overshoot, which is what an unbounded loop over cases does to a budget.
+    """
+    return cap is None or spent + WORST_CASE_USD <= cap
+
 
 def load(path: Path) -> list[dict]:
     return yaml.safe_load(Path(path).read_text(encoding="utf-8"))["defects"]

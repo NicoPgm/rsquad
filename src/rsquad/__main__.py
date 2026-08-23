@@ -241,6 +241,12 @@ def _evaluate(args: argparse.Namespace) -> int:
     for defect in scorable:
         print("  %-44s %s @ %s" % (defect["id"], defect["file"], defect["introduced_in"]))
 
+    if args.max_usd is not None and args.max_usd < evaluate.WORST_CASE_USD:
+        raise SystemExit(
+            "--max-usd %.2f is below the worst single case measured (%.2f), so nothing would "
+            "run at all. Raise it, or narrow the set with --case."
+            % (args.max_usd, evaluate.WORST_CASE_USD))
+
     if not args.confirm:
         print("\ndry run. --confirm to spend. Plus one further call per finding, to refute it.")
         return 0
@@ -249,6 +255,15 @@ def _evaluate(args: argparse.Namespace) -> int:
 
     cases, usages = [], []
     for defect in scorable:
+        spent = budget.total(args.model, usages).total
+        if not evaluate.within_budget(spent, args.max_usd):
+            # Not a miss. A case that never ran and a case that found nothing look identical in
+            # a total, and only one of them says anything about the squad.
+            reason = ("not started — %.4f USD spent, and one more case could cross the "
+                      "--max-usd %.2f cap" % (spent, args.max_usd))
+            print("\n--- %s\n  %s" % (defect["id"], reason), flush=True)
+            cases.append((defect, [], reason))
+            continue
         print("\n--- %s" % defect["id"], flush=True)
         try:
             head = resolve(defect["introduced_in"], repo)
@@ -405,6 +420,10 @@ def main(argv: list[str] | None = None) -> int:
     ev.add_argument("--model", default=lenses.MODEL, help="default: %s" % lenses.MODEL)
     ev.add_argument("--out", default="evaluation/report.md", help="where the report is written")
     ev.add_argument("--no-refute", action="store_true", help="skip step [3]")
+    ev.add_argument("--max-usd", type=float, default=None, metavar="USD",
+                    help="do not start a case that could cross this. Checked between cases and "
+                         "never mid-case: what a case costs is known only once it is over, "
+                         "since every finding pays for its own refuter")
     ev.add_argument("--confirm", action="store_true",
                     help="actually call the API and spend; without it, a dry run")
     ev.set_defaults(handler=_evaluate)
