@@ -39,6 +39,11 @@ SINCE = "2026-04-01"
 
 
 def run(args: list[str], cwd: Path | None = None, check: bool = True):
+    # `core.longpaths` is not optional on Windows. jackson-databind has test files whose paths
+    # exceed 260 characters once a workspace path is prepended, and checking one branch out
+    # fails with "Filename too long" halfway through — after two cases have already been built.
+    if args[0] == "git":
+        args = [args[0], "-c", "core.longpaths=true"] + args[1:]
     done = subprocess.run(args, cwd=cwd, capture_output=True, text=True,
                           encoding="utf-8", errors="replace")
     if check and done.returncode != 0:
