@@ -66,6 +66,19 @@ budget:
   note: >
     One `evaluate` invocation per repository, each with `--max-usd`, so neither arm can starve the
     other. Not yet spent: this file is frozen ahead of any run.
+  amendment_2026_08_23: >
+    **Raised to $21 after the first pass, on the user's decision, to run the five scorable cases
+    the cap had stopped.** Recorded rather than edited in place, because a bound moved after
+    seeing results is exactly the drift this file exists to prevent.
+
+    What makes it defensible: the amendment touches the BUDGET only. The selection was mechanical
+    and the labels were assigned blind, both committed at 0491ade before any case ran, and
+    neither is altered. Running the remaining cases therefore makes the sample MORE faithful to
+    the pre-registration, not less — stopping at 14 of 19 left a tail selected by cost, and cost
+    tracks the number of findings, which is not independent of the result.
+
+    What would NOT have been defensible, and was not done: adding cases, moving a label, or
+    changing the scoring rule.
 
 arms:
   - repo: langchain4j/langchain4j
