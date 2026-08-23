@@ -92,10 +92,10 @@ for c in cases:
     rows.append("""
   - id: %s-%s
     repo: %s
-    fix: %s
+    fix: "%s"
     fix_subject: >
       %s
-    origin: %s
+    origin: "%s"
     file: %s
     detectable_from_diff: "%s"
     label_rationale: >

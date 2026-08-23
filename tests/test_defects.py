@@ -173,3 +173,12 @@ def test_no_case_predates_the_young_repository_claim(step7b):
     """The whole reason for this second freeze is that these repositories have no code from
     before 2021. A case that did would mean the pool drifted back to the old problem."""
     assert all(int(c["origin_date"][:4]) >= 2021 for c in step7b["cases"])
+
+
+def test_every_revision_in_the_freeze_is_a_string(step7b):
+    """`632836213` is a valid git sha and a valid YAML integer. Unquoted, it reached
+    `git rev-parse` as an int and the case died with "expected str, bytes or os.PathLike object,
+    not int" — costing one case of a paid run. Same family as the `yes`/`no` boolean trap."""
+    for case in step7b["cases"]:
+        assert isinstance(case["fix"], str), case["id"]
+        assert isinstance(case["origin"], str), case["id"]

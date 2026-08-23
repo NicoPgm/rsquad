@@ -99,10 +99,10 @@ cases:
 
   - id: langchain4j-d5b13be
     repo: langchain4j/langchain4j
-    fix: d5b13be1e
+    fix: "d5b13be1e"
     fix_subject: >
       fix: Use the name of the provided Azure AI Search index when index creation is disabled (#5901)
-    origin: b099922a1
+    origin: "b099922a1"
     file: langchain4j-azure-ai-search/src/main/java/dev/langchain4j/store/embedding/azure/search/AbstractAzureAiSearchEmbeddingStore.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -112,10 +112,10 @@ cases:
     origin_creates_file: false
   - id: langchain4j-7e622bf
     repo: langchain4j/langchain4j
-    fix: 7e622bfdf
+    fix: "7e622bfdf"
     fix_subject: >
       Fix Pinecone segment text being overwritten by reserved metadata key (#6033)
-    origin: e848e6a88
+    origin: "e848e6a88"
     file: langchain4j-pinecone/src/main/java/dev/langchain4j/store/embedding/pinecone/PineconeHelper.java
     detectable_from_diff: "yes"
     label_rationale: >
@@ -125,10 +125,10 @@ cases:
     origin_creates_file: true
   - id: langchain4j-840330c
     repo: langchain4j/langchain4j
-    fix: 840330c24
+    fix: "840330c24"
     fix_subject: >
       Avoid NullPointerException when an async agent returns null (#5864)
-    origin: 9443ad9b2
+    origin: "9443ad9b2"
     file: langchain4j-agentic/src/main/java/dev/langchain4j/agentic/scope/DefaultAgenticScope.java
     detectable_from_diff: "yes"
     label_rationale: >
@@ -138,10 +138,10 @@ cases:
     origin_creates_file: false
   - id: langchain4j-771b0d2
     repo: langchain4j/langchain4j
-    fix: 771b0d265
+    fix: "771b0d265"
     fix_subject: >
       fix: support 3D logit output in OnnxScoringBertCrossEncoder (#5739)
-    origin: 1c0671617
+    origin: "1c0671617"
     file: langchain4j-onnx-scoring/src/main/java/dev/langchain4j/model/scoring/onnx/OnnxScoringBertCrossEncoder.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -151,10 +151,10 @@ cases:
     origin_creates_file: true
   - id: langchain4j-145ff45
     repo: langchain4j/langchain4j
-    fix: 145ff4526
+    fix: "145ff4526"
     fix_subject: >
       fix: treat an MCP $ref outside $defs as a plain schema, not a reference (#5790)
-    origin: 632836213
+    origin: "632836213"
     file: langchain4j-mcp/src/main/java/dev/langchain4j/mcp/client/ToolSpecificationHelper.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -164,10 +164,10 @@ cases:
     origin_creates_file: false
   - id: langchain4j-e59754e
     repo: langchain4j/langchain4j
-    fix: e59754e99
+    fix: "e59754e99"
     fix_subject: >
       fix: pass builder skipCreateVectorExtension to PgVectorEmbeddingStore (#5788)
-    origin: 313452c49
+    origin: "313452c49"
     file: langchain4j-pgvector/src/main/java/dev/langchain4j/store/embedding/pgvector/PgVectorEmbeddingStore.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -177,10 +177,10 @@ cases:
     origin_creates_file: false
   - id: langchain4j-196bc5d
     repo: langchain4j/langchain4j
-    fix: 196bc5dc1
+    fix: "196bc5dc1"
     fix_subject: >
       Follow up on AgentsRegistry implementation (#5719)
-    origin: ff9dfc1c7
+    origin: "ff9dfc1c7"
     file: langchain4j-agentic/src/main/java/dev/langchain4j/agentic/planner/AgentsRegistry.java
     detectable_from_diff: "yes"
     label_rationale: >
@@ -190,10 +190,10 @@ cases:
     origin_creates_file: true
   - id: langchain4j-96a3af9
     repo: langchain4j/langchain4j
-    fix: 96a3af9ee
+    fix: "96a3af9ee"
     fix_subject: >
       fix: Use UTF-8 when encoding Playwright page content for the document parser (#5686)
-    origin: 0e7374d64
+    origin: "0e7374d64"
     file: document-loaders/langchain4j-document-loader-playwright/src/main/java/dev/langchain4j/data/document/loader/playwright/PlaywrightDocumentLoader.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -203,10 +203,10 @@ cases:
     origin_creates_file: false
   - id: langchain4j-0626661
     repo: langchain4j/langchain4j
-    fix: 0626661ba
+    fix: "0626661ba"
     fix_subject: >
       fix: Include failing file URL in GitHubDocumentLoader load-failure exception message (#5684)
-    origin: aaddb9226
+    origin: "aaddb9226"
     file: document-loaders/langchain4j-document-loader-github/src/main/java/dev/langchain4j/data/document/loader/github/GitHubDocumentLoader.java
     detectable_from_diff: "yes"
     label_rationale: >
@@ -216,10 +216,10 @@ cases:
     origin_creates_file: true
   - id: langchain4j-f274731
     repo: langchain4j/langchain4j
-    fix: f274731d8
+    fix: "f274731d8"
     fix_subject: >
       fix: Encode page content as UTF-8 in SeleniumDocumentLoader (#5671)
-    origin: 36c175190
+    origin: "36c175190"
     file: document-loaders/langchain4j-document-loader-selenium/src/main/java/dev/langchain4j/data/document/loader/selenium/SeleniumDocumentLoader.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -229,10 +229,10 @@ cases:
     origin_creates_file: true
   - id: langchain4j-23098bd
     repo: langchain4j/langchain4j
-    fix: 23098bd55
+    fix: "23098bd55"
     fix_subject: >
       fix: Preserve binary bytes in Azure dynamic sessions file download (#5652)
-    origin: 1fab3b7e4
+    origin: "1fab3b7e4"
     file: code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java
     detectable_from_diff: "yes"
     label_rationale: >
@@ -242,10 +242,10 @@ cases:
     origin_creates_file: true
   - id: langchain4j-575eb46
     repo: langchain4j/langchain4j
-    fix: 575eb46fa
+    fix: "575eb46fa"
     fix_subject: >
       fix: Skip search results with unresolvable URIs in GoogleCustomWebSearchEngine (#5628)
-    origin: b246cfde7
+    origin: "b246cfde7"
     file: web-search-engines/langchain4j-web-search-engine-google-custom/src/main/java/dev/langchain4j/web/search/google/customsearch/GoogleCustomWebSearchEngine.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -255,10 +255,10 @@ cases:
     origin_creates_file: false
   - id: langchain4j-cc37ab3
     repo: langchain4j/langchain4j
-    fix: cc37ab335
+    fix: "cc37ab335"
     fix_subject: >
       fix: support Float and Double values in Qdrant equality metadata filters (#5598)
-    origin: 2a5189a78
+    origin: "2a5189a78"
     file: langchain4j-qdrant/src/main/java/dev/langchain4j/store/embedding/qdrant/QdrantFilterConverter.java
     detectable_from_diff: "no"
     label_rationale: >
@@ -268,10 +268,10 @@ cases:
     origin_creates_file: true
   - id: langchain4j-0d16d28
     repo: langchain4j/langchain4j
-    fix: 0d16d2884
+    fix: "0d16d2884"
     fix_subject: >
       fix: unanimousLastWord convergence to normalize verdict token (#5479)
-    origin: 8b6aeead7
+    origin: "8b6aeead7"
     file: langchain4j-agentic-patterns/src/main/java/dev/langchain4j/agentic/patterns/debate/ConvergenceStrategy.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -281,10 +281,10 @@ cases:
     origin_creates_file: true
   - id: langchain4j-34b8d34
     repo: langchain4j/langchain4j
-    fix: 34b8d34a7
+    fix: "34b8d34a7"
     fix_subject: >
       fix: Surface failed A2A tasks as exceptions instead of empty results (#5471)
-    origin: a24e4f9d3
+    origin: "a24e4f9d3"
     file: langchain4j-agentic-a2a/src/main/java/dev/langchain4j/agentic/a2a/DefaultA2AClientBuilder.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -294,10 +294,10 @@ cases:
     origin_creates_file: false
   - id: langchain4j-4aff9c9
     repo: langchain4j/langchain4j
-    fix: 4aff9c9af
+    fix: "4aff9c9af"
     fix_subject: >
       fix: swapped account and container names in Azure Blob Storage document source URL  (#5430)
-    origin: ab5e89255
+    origin: "ab5e89255"
     file: document-loaders/langchain4j-document-loader-azure-storage-blob/src/main/java/dev/langchain4j/data/document/loader/azure/storage/blob/AzureBlobStorageDocumentLoader.java
     detectable_from_diff: "no"
     label_rationale: >
@@ -307,10 +307,10 @@ cases:
     origin_creates_file: true
   - id: langchain4j-95a3aff
     repo: langchain4j/langchain4j
-    fix: 95a3affdd
+    fix: "95a3affdd"
     fix_subject: >
       Fix filtering for non-TextSegment entries in InMemoryEmbeddingStore (#5405)
-    origin: 2b2c09f05
+    origin: "2b2c09f05"
     file: langchain4j/src/main/java/dev/langchain4j/store/embedding/inmemory/InMemoryEmbeddingStore.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -320,10 +320,10 @@ cases:
     origin_creates_file: true
   - id: spring-ai-b1384c8
     repo: spring-projects/spring-ai
-    fix: b1384c846
+    fix: "b1384c846"
     fix_subject: >
       Fix `OpenAiAudioTranscriptionModel` leaking the stream on cancellation (#6759)
-    origin: fc9286cb3
+    origin: "fc9286cb3"
     file: models/spring-ai-openai/src/main/java/org/springframework/ai/openai/OpenAiAudioTranscriptionModel.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -333,10 +333,10 @@ cases:
     origin_creates_file: false
   - id: spring-ai-9ec7cfa
     repo: spring-projects/spring-ai
-    fix: 9ec7cfa3f
+    fix: "9ec7cfa3f"
     fix_subject: >
       Fix genai thinking level validation (#6339)
-    origin: b1535b909
+    origin: "b1535b909"
     file: models/spring-ai-google-genai/src/main/java/org/springframework/ai/google/genai/GoogleGenAiChatModel.java
     detectable_from_diff: "no"
     label_rationale: >
@@ -346,10 +346,10 @@ cases:
     origin_creates_file: false
   - id: spring-ai-698bde0
     repo: spring-projects/spring-ai
-    fix: 698bde0d0
+    fix: "698bde0d0"
     fix_subject: >
       Merge streaming tool call deltas by index
-    origin: d72057c82
+    origin: "d72057c82"
     file: models/spring-ai-openai/src/main/java/org/springframework/ai/openai/OpenAiChatModel.java
     detectable_from_diff: "no"
     label_rationale: >
@@ -359,10 +359,10 @@ cases:
     origin_creates_file: false
   - id: spring-ai-7bd3e1f
     repo: spring-projects/spring-ai
-    fix: 7bd3e1fb7
+    fix: "7bd3e1fb7"
     fix_subject: >
       Fix OpenSearchVectorStore document deserialization
-    origin: 197c51770
+    origin: "197c51770"
     file: vector-stores/spring-ai-opensearch-store/src/main/java/org/springframework/ai/vectorstore/opensearch/OpenSearchVectorStore.java
     detectable_from_diff: "no"
     label_rationale: >
@@ -372,10 +372,10 @@ cases:
     origin_creates_file: false
   - id: spring-ai-4fbb484
     repo: spring-projects/spring-ai
-    fix: 4fbb484bb
+    fix: "4fbb484bb"
     fix_subject: >
       Fix Milvus metadata integer values returned as Long instead of Double
-    origin: 0065949d5
+    origin: "0065949d5"
     file: vector-stores/spring-ai-milvus-store/src/main/java/org/springframework/ai/vectorstore/milvus/MilvusVectorStore.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -385,10 +385,10 @@ cases:
     origin_creates_file: false
   - id: spring-ai-c256cfa
     repo: spring-projects/spring-ai
-    fix: c256cfabf
+    fix: "c256cfabf"
     fix_subject: >
       Fix null parent for tool call observations in blocking mode
-    origin: 1dde55d1e
+    origin: "1dde55d1e"
     file: spring-ai-model/src/main/java/org/springframework/ai/model/tool/DefaultToolCallingManager.java
     detectable_from_diff: "weak"
     label_rationale: >
@@ -398,10 +398,10 @@ cases:
     origin_creates_file: true
   - id: spring-ai-ec1e052
     repo: spring-projects/spring-ai
-    fix: ec1e05282
+    fix: "ec1e05282"
     fix_subject: >
       Fix Redis vector store filter delete to paginate search results
-    origin: bca65de6a
+    origin: "bca65de6a"
     file: vector-stores/spring-ai-redis-store/src/main/java/org/springframework/ai/vectorstore/redis/RedisVectorStore.java
     detectable_from_diff: "weak"
     label_rationale: >

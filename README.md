@@ -98,6 +98,15 @@ kinds measure nothing. On four cases a 25 % detection rate and a 75 % one are th
 It will catch a squad that finds nothing; it cannot tell 40 % from 70 %. The method, the cost and
 what it cannot prove: [`docs/evaluation.md`](docs/evaluation.md).
 
+**Third replay, 2026-08-23: 12 of 14 on real bug-introducing commits from two young Java
+projects, $12.55.** The first campaign that measures what it claims to: the commit reviewed is
+the one that first wrote the buggy line, verified, so the correct version is not in the diff.
+**No memorisation gradient** — 3/3 on defects written after the knowledge cutoff. Both misses are
+omissions, and in both the squad returned a different real bug instead, which is the
+contradictions-not-omissions hypothesis holding on a set built not to favour it. Reader's cost,
+measured for the first time: 2.3 findings per case, 20 of 32 not the known defect.
+[`docs/step7b-first-run.md`](docs/step7b-first-run.md).
+
 **Second replay, 2026-08-23: six Java cases from two open-source repositories, 6 of 6 — and
 the number is not a detection rate.** The cases were fix commits replayed backwards, so the
 correct code sat on the minus side of every diff and the lenses read it there. What the run does
@@ -288,6 +297,7 @@ reports. A report says what happened, an ADR says what we do about it.
 | [`docs/first-run.md`](docs/first-run.md) | the first paid run, and the five defects it found in this repository |
 | [`docs/first-evaluation.md`](docs/first-evaluation.md) | the first replay against ground truth: 1 of 4, and what the misses have in common |
 | [`docs/step7-first-run.md`](docs/step7-first-run.md) | six Java cases, 6 of 6, and why that number measures the wrong thing |
+| [`docs/step7b-first-run.md`](docs/step7b-first-run.md) | 12 of 14 on real introducing commits, and no sign of memorisation |
 
 ## License and provenance
 
