@@ -14,9 +14,11 @@ from __future__ import annotations
 
 import argparse
 import sys
+from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import budget, chunking, conformance, config, job, lenses, ranking, refutation
+from . import (budget, chunking, conformance, config, evaluate, job, lenses, ranking,
+               refutation)
 from .gate import ADAPTERS, DEFAULT_ADAPTER, check, git, merge_base, report
 from .vcs import resolve
 
@@ -93,6 +95,62 @@ def _replay(args: argparse.Namespace, repo: Path | None, adapter) -> int:
     return 1 if (args.strict and total["suspect"]) else 0
 
 
+@dataclass
+class Outcome:
+    """What steps [1] to [3] produced on one set of units."""
+
+    runs: list = field(default_factory=list)
+    findings: list = field(default_factory=list)
+    dropped: list = field(default_factory=list)
+    verdicts: list = field(default_factory=list)
+    killed: list = field(default_factory=list)
+    errors: list = field(default_factory=list)
+
+
+def _run_squad(units, chosen, model, intent, refute: bool, quiet: bool = False) -> Outcome:
+    """Steps [1] to [3] over already-computed units.
+
+    `review` and `evaluate` both call this. Duplicating it would let the measured pipeline drift
+    from the deployed one, and a measurement of a pipeline nobody runs is worse than none — the
+    same argument that keeps both transports on one core (ADR-0005).
+
+    `intent` of None skips step [1] deliberately; `refute` of False skips step [3].
+    """
+    def say(*parts):
+        # `flush=True` is not cosmetic here. Piped or redirected, Python buffers stdout, so a
+        # command that spends money for minutes looks hung until it is finished — and the one
+        # moment you want to see it is while it is still cancellable.
+        if not quiet:
+            print(*parts, flush=True)
+
+    def told(run):
+        say("  %-10s %-40s %s" % (getattr(run, "lens", conformance.LENS), run.file[-40:],
+                                  run.error or "%d finding(s)" % len(run.findings)))
+
+    out = Outcome(runs=lenses.review(units, chosen, model, on_run=told))
+
+    if intent is not None:
+        say("\nconformance, against %s" % ", ".join(intent.sources))
+        out.runs += conformance.review(units, intent, model, on_run=told)
+
+    for run in out.runs:
+        out.findings += run.findings
+        out.dropped += run.dropped
+        if run.error:
+            out.errors.append("%s on %s: %s" % (getattr(run, "lens", conformance.LENS),
+                                                run.file, run.error))
+
+    if refute and out.findings:
+        say("\n%d finding(s) to refute" % len(out.findings))
+        out.verdicts = refutation.refute_all(
+            out.findings, {u.file: u for u in units}, model,
+            on_verdict=lambda v: say("  %-46s %s"
+                                     % ("%s:%s" % (v.finding["file"][-30:], v.finding["line"]),
+                                        v.error or v.verdict)))
+        out.findings, out.killed = refutation.survivors(out.verdicts)
+    return out
+
+
 def _review(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve() if args.repo else None
     head = resolve(args.head, repo)
@@ -131,46 +189,10 @@ def _review(args: argparse.Namespace) -> int:
             "no stated intent: the commit message is empty and no --spec was given.\n"
             "Pass --spec, or --no-conformance to skip step [1] deliberately.")
 
-    errors: list[str] = []
-
-    def progress(run):
-        # `flush=True` is not cosmetic here. Piped or redirected, Python buffers stdout, so a
-        # command that spends money for minutes looks hung until it is finished — and the one
-        # moment you want to see it is while it is still cancellable.
-        print("  %-10s %-40s %s" % (run.lens, run.file[-40:],
-                                    run.error or "%d finding(s)" % len(run.findings)),
-              flush=True)
-
-    runs = lenses.review(units, chosen, args.model, on_run=progress)
-
-    if not args.no_conformance:
-        print("\nconformance, against %s" % ", ".join(intent.sources), flush=True)
-        runs += conformance.review(units, intent, args.model, on_run=lambda r: print(
-            "  %-10s %-40s %s" % (conformance.LENS, r.file[-40:],
-                                  r.error or "%d finding(s)" % len(r.findings)), flush=True))
-
-    findings, dropped = [], []
-    for run in runs:
-        findings += run.findings
-        dropped += run.dropped
-        if run.error:
-            errors.append("%s on %s: %s" % (getattr(run, "lens", conformance.LENS),
-                                            run.file, run.error))
-
-    verdicts = []
-    if not args.no_refute and findings:
-        print("\n%d finding(s) to refute" % len(findings), flush=True)
-
-        def told(verdict):
-            print("  %-46s %s" % ("%s:%s" % (verdict.finding["file"][-30:],
-                                             verdict.finding["line"]),
-                                  verdict.error or verdict.verdict), flush=True)
-
-        verdicts = refutation.refute_all(findings, {u.file: u for u in units}, args.model,
-                                         on_verdict=told)
-        findings, killed = refutation.survivors(verdicts)
-    else:
-        killed = []
+    outcome = _run_squad(units, chosen, args.model, None if args.no_conformance else intent,
+                         refute=not args.no_refute)
+    findings, dropped, verdicts = outcome.findings, outcome.dropped, outcome.verdicts
+    killed, errors, runs = outcome.killed, outcome.errors, outcome.runs
 
     usages = [r.usage for r in runs] + [v.usage for v in verdicts]
     spend = budget.total(args.model, usages)
@@ -187,6 +209,74 @@ def _review(args: argparse.Namespace) -> int:
     print("%d survived refutation, %d refuted, %d dropped by the guards, %d lens failure(s)"
           " -> %s" % (len(findings), len(killed), len(dropped), len(errors), out))
     # Always 0. Only the gate blocks; opinions comment.
+    return 0
+
+
+def _evaluate(args: argparse.Namespace) -> int:
+    """Replay the squad on diffs known to contain a defect, and lay the evidence out.
+
+    It reports fractions with their denominators and computes no rate: on a handful of cases a
+    25 % detection rate and a 75 % one are the same measurement, and a percentage printed from
+    them would be believed. `docs/evaluation.md`.
+    """
+    defects = evaluate.load(Path(args.defects))
+    scorable, excluded = evaluate.partition(defects)
+    if args.case:
+        wanted = set(args.case)
+        excluded += [(d, "not selected by --case") for d in scorable if d["id"] not in wanted]
+        scorable = [d for d in scorable if d["id"] in wanted]
+
+    print("%d case(s) in the set: %d scorable, %d excluded"
+          % (len(defects), len(scorable), len(excluded)))
+    for defect, why in excluded:
+        print("  skip  %-44s %s" % (defect["id"], why))
+    if not scorable:
+        print("\nnothing to replay.")
+        return 0
+
+    repo = Path(args.repo).resolve()
+    chosen = list(lenses.LENSES)
+    print("\n%d case(s) to replay against %s, %d lens(es) each"
+          % (len(scorable), repo, len(chosen)))
+    for defect in scorable:
+        print("  %-44s %s @ %s" % (defect["id"], defect["file"], defect["introduced_in"]))
+
+    if not args.confirm:
+        print("\ndry run. --confirm to spend. Plus one further call per finding, to refute it.")
+        return 0
+    if not config.credential_available():
+        raise SystemExit("no %s in the environment or in %s." % (config.KEY, config.ENV))
+
+    cases, usages = [], []
+    for defect in scorable:
+        print("\n--- %s" % defect["id"], flush=True)
+        try:
+            head = resolve(defect["introduced_in"], repo)
+            base = merge_base("%s~1" % head, head, repo)
+            units = chunking.units(base, head, repo, [defect["file"]],
+                                   adapter=ADAPTERS[DEFAULT_ADAPTER])
+            if not units:
+                raise SystemExit("%s did not change in %s" % (defect["file"], head[:12]))
+            intent = conformance.gather(head, repo, None)
+            outcome = _run_squad(units, chosen, args.model,
+                                 intent if intent.parts else None, refute=not args.no_refute)
+        except Exception as error:                                   # noqa: BLE001
+            # One case must never end the replay of the others — the same rule the pipeline
+            # applies to a batch. A case that could not run is reported as such, never as a miss.
+            print("  did not run: %s" % error, flush=True)
+            cases.append((defect, [], str(error)))
+            continue
+        usages += [r.usage for r in outcome.runs] + [v.usage for v in outcome.verdicts]
+        cases.append((defect, outcome.findings, None))
+
+    spend = budget.total(args.model, usages)
+    footer = ("Model `%s`, %d call(s) across %d case(s), %.4f USD billed. %s"
+              % (args.model, len(usages), len(cases), spend.total, budget.cache_verdict(usages)))
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(evaluate.render(cases, excluded, footer), encoding="utf-8")
+    print("\n%s\n%d case(s) replayed -> %s. The verdicts are yours to fill in."
+          % (footer, len(cases), out))
     return 0
 
 
@@ -304,6 +394,20 @@ def main(argv: list[str] | None = None) -> int:
     review.add_argument("--confirm", action="store_true",
                         help="actually call the API and spend; without it, a dry run")
     review.set_defaults(handler=_review)
+
+    ev = sub.add_parser("evaluate", help="replay the squad on defects labelled by reality")
+    ev.add_argument("--defects", default="evaluation/defects.yaml",
+                    help="the ground-truth set (default: %(default)s)")
+    ev.add_argument("--repo", required=True,
+                    help="the repository the cases were recorded against")
+    ev.add_argument("--case", action="append", default=None,
+                    help="replay only this case id; repeatable. Bounds the spend")
+    ev.add_argument("--model", default=lenses.MODEL, help="default: %s" % lenses.MODEL)
+    ev.add_argument("--out", default="evaluation/report.md", help="where the report is written")
+    ev.add_argument("--no-refute", action="store_true", help="skip step [3]")
+    ev.add_argument("--confirm", action="store_true",
+                    help="actually call the API and spend; without it, a dry run")
+    ev.set_defaults(handler=_evaluate)
 
     for name, help_text in (("export", "write a job any harness can run"),
                             ("ingest", "read a harness's replies and advance one round")):
