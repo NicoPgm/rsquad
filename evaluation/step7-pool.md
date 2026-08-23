@@ -97,3 +97,47 @@ jackson-databind: 27 qualifying fix(es) -> {'no-history': 6, 'mass-import': 6, '
   24529da29 Fix #5981: `BasicPolymorphicTypeValidator` s  <- 2c94ecc19 (2025-02-13) Fix Javadoc errors                 9 file(s)
   6d028931a Apply per-property DYNAMIC typing override t  <- 67942a586 (2012-01-31) ...                                4 file(s)
 ```
+
+## Correction, same day: the pool is not 41. It is about 10, and 6 distinct diffs.
+
+Two defects in the classifier above, both found by running it:
+
+**Rule 4 was missing** — a Javadoc-only fix ("Fix two Javadoc errors in StringUtils") sat in the
+pool as a case. One entry removed; 41 usable.
+
+**And the paths are wrong.** `git log -L` follows renames, so it returns the right origin commit
+— but every check made afterwards used **today's** path. `Fraction.java` lived under
+`src/java/org/apache/commons/lang/` in 2002; `DefaultCacheProvider.java` under
+`com/fasterxml/jackson/` before the 3.x repackaging. Half the pool reported "0 lines changed",
+which reads as *nothing to review* rather than *wrong path*.
+
+A rename-walking resolver recovered some of them and misfired on others — two repackagings
+(`lang` → `lang3`, `com.fasterxml.jackson` → `tools.jackson`) across twenty years of history is
+not a problem to solve by iterating on a heuristic at the end of a long day.
+
+**What survives with certainty** — the path unchanged between origin and fix, and a non-empty
+diff:
+
+| repo | cases | distinct origin commits |
+|---|---:|---:|
+| apache/commons-lang | 8 | 4 |
+| FasterXML/jackson-databind | 2 | 2 |
+| | **10** | **6** |
+
+Three commons-lang cases share `6941f81cd`, two share `2541a62de`. So the independent sample is
+smaller than ten.
+
+**Ten cases give +/- 30 points.** That is the smoke test we were trying to escape, and freezing
+it would produce another number nobody can act on. The pool is not frozen.
+
+### This is the third distinct obstacle, and they share one cause
+
+1. defects are born with the code, so there are no regressions to replay;
+2. the introductions predate the knowledge cutoff by years, so the memorisation control is lost;
+3. the paths have been repackaged since, so the diff cannot be reconstructed reliably.
+
+All three are consequences of **the repositories being old**. A project a few years old has its
+introductions inside its own recent history, at paths that never moved, after the cutoff.
+
+The deferred question — *add a younger repository?* — is no longer an improvement to consider.
+It is the precondition.
