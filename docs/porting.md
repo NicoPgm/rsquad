@@ -1,6 +1,6 @@
 # Porting to another stack
 
-The core knows no language. Everything a stack changes fits into six questions, one abstract
+The core knows no language. Everything a stack changes fits into seven questions, one abstract
 class, `gate/adapters/base.py`.
 
 > **One adapter has ever been executed: Python with pytest.** The per-stack catalogue at the
@@ -9,16 +9,16 @@ class, `gate/adapters/base.py`.
 > found by running the gate and watching it be wrong — three times, each time while looking
 > green.
 
-## Before the six questions: the one rule
+## Before the seven questions: the one rule
 
 **Every defect in the original gate implementation was found by execution. None by review.** That
 is not a remark about code quality; it is the shape of the problem. A gate that is wrong reports
 success. It does not crash, it does not warn, and reading it will not tell you — a wrong
 question 4 makes every test "valid" and the run looks like a clean bill of health.
 
-So the porting procedure is not "implement six methods". It is:
+So the porting procedure is not "implement seven methods". It is:
 
-1. Implement the six methods, however crudely.
+1. Implement the seven methods, however crudely.
 2. **Replay against real history** — `rsquad gate --replay 20` — and read the *examined* count
    before the verdict.
 3. Hand-verify three commits: one that modified a test, one that added a test file, one that
@@ -27,7 +27,7 @@ So the porting procedure is not "implement six methods". It is:
 
 Step 3 is where the port is actually validated. Everything before it is typing.
 
-## The six questions
+## The seven questions
 
 ### 1. Which files in the diff are tests?
 
@@ -143,10 +143,28 @@ Measured on Python, 34 changed files: **65 % resolve at least one definition, 3.
 Leaf modules resolve nothing and need nothing; orchestration files resolve the most and need it
 most.
 
-### And assume a seventh
+### 7. What will the runner call the module a test lives in?
 
-Questions 5 and 6 both arrived *after* the protocol was declared complete — one from a crash, one
-from a conversation. The protocol has been "finished" once already.
+`tests/sub/test_beta.py` → `tests.sub.test_beta`, which is what pytest writes into the JUnit
+`classname`. Verified against a real report rather than assumed: a method in a class gets the
+class appended (`tests.test_alpha.TestGrouped`), so the core matches the module as a **dotted
+prefix**, not by equality.
+
+Without it a test name carries no file, and two files each holding a `test_roundtrip` are the
+same test: touch one and the other is examined and reported suspect for passing on the base —
+which is its job.
+
+**The default returns the path unchanged**, which no dotted classname will ever match. The core
+decides once per report whether the convention is recognised and, if not, falls back to matching
+bare names — the behaviour that existed before files were tracked. A stack nobody has taught this
+gets today's noise, never silence. That direction is not a detail: a gate that examines nothing
+reports "0 suspect", which reads as a clean bill of health.
+
+### And assume an eighth
+
+Questions 5, 6 and 7 all arrived *after* the protocol was declared complete — one from a crash,
+one from a conversation, one from the squad reviewing this gate's own ancestor. The protocol has
+been "finished" three times.
 
 ## The catalogue — hypotheses, not answers
 
@@ -162,6 +180,7 @@ Read every cell as "look here first".
 | 4 | **Two traps, not one.** `node_modules` resolution and workspace symlinks reaching back to the main checkout; and any build step — if tests run against `dist/`, a stale `dist/` built from head is the editable-install failure wearing different clothes. Also `tsconfig` path aliases pointing at absolute locations |
 | 5 | `Cannot find module`, `ReferenceError: x is not defined`. **Do not match `TypeError: x is not a function`** — that is also what a real defect looks like |
 | 6 | Resolution must honour `tsconfig` paths and package `exports`; more configuration-driven than Python, so expect a lower resolve rate |
+| 7 | Jest and Vitest write the file path, not a dotted module, into `classname` — so the prefix rule may not apply and the fallback may be all you get |
 
 ### Java, Maven / Surefire
 
@@ -173,6 +192,7 @@ Read every cell as "look here first".
 | 4 | The base worktree must be **compiled**, so this is not a path variable but a build. And a locally installed artifact of the project in `~/.m2` can shadow the worktree |
 | 5 | **This question may not exist in the same form.** A missing symbol is a *compilation* failure, so the base run produces no report at all rather than a classifiable failure. The core currently treats a missing report as `RunnerFailed` — correct for "the runner never started", wrong for "the base could not compile, which is exactly what a new test should do". **This is the deepest unknown in the catalogue** and probably needs a core change, not just an adapter |
 | 6 | Imports are explicit and resolvable; likely the best resolve rate of any stack here |
+| 7 | Surefire writes the fully-qualified class name, which is the closest of any stack here to what the core expects |
 
 ### Go
 

@@ -85,6 +85,44 @@ def changed_files(base: str, head: str, patterns: list[str],
     return [line.strip() for line in diff.stdout.splitlines() if line.strip()]
 
 
+def _selects(entries: set[str], function: str, classname: str, qualified: bool) -> bool:
+    """Is this JUnit case one of `entries`?
+
+    Entries are `module::function`. JUnit's `classname` is hierarchical and dotted in every
+    producer this seam targets — pytest writes `tests.test_alpha` for a module-level test and
+    `tests.test_alpha.TestGrouped` for a method — so an entry matches when its module *is* the
+    classname or is a dotted prefix of it.
+
+    `qualified` is decided once per report, by `_qualified_matches`. False means the module part
+    is ignored and only the name is compared, which is the behaviour that existed before files
+    were tracked at all.
+    """
+    for entry in entries:
+        module, _, name = entry.rpartition("::")
+        if name != function:
+            continue
+        if not qualified:
+            return True
+        if module and (classname == module or classname.startswith(module + ".")):
+            return True
+    return False
+
+
+def _qualified_matches(cases: list, entries: set[str]) -> bool:
+    """Does this runner's `classname` follow the convention the adapter's modules assume?
+
+    Decided once for the whole report, never per case. **The fallback is the point:** an adapter
+    that has not implemented `module_name`, or a runner that names things some other way, would
+    otherwise match nothing at all — and a gate that examines nothing reports "0 suspect", which
+    reads as a clean bill of health. Failing back to bare-name matching is wrong in the noisy
+    direction, which is the survivable one.
+    """
+    modules = {entry.rpartition("::")[0] for entry in entries if "::" in entry}
+    classnames = {case.get("classname", "") for case in cases if case.get("classname")}
+    return any(name == module or name.startswith(module + ".")
+               for module in modules if module for name in classnames)
+
+
 def parse_junit(path: Path, exempt: set[str], retained: set[str],
                 missing_symbol=None) -> list[Verdict]:
     """Classify every test case from the JUnit report produced against the base.
@@ -106,9 +144,12 @@ def parse_junit(path: Path, exempt: set[str], retained: set[str],
     """
     if not path.exists():
         return []
+    cases = list(ET.parse(path).getroot().iter("testcase"))
+    qualified = _qualified_matches(cases, retained | exempt)
     verdicts = []
-    for case in ET.parse(path).getroot().iter("testcase"):
-        identifier = "%s::%s" % (case.get("classname", ""), case.get("name", ""))
+    for case in cases:
+        classname = case.get("classname", "")
+        identifier = "%s::%s" % (classname, case.get("name", ""))
         name = case.get("name", "")
         # JUnit emits `test_x[param]`; we key on the function, not the parametrization.
         function = name.split("[", 1)[0]
@@ -123,7 +164,10 @@ def parse_junit(path: Path, exempt: set[str], retained: set[str],
         # filter turns into a no-op, and every passing test in the file is reported SUSPECT:
         # exactly the false-positive flood the per-function granularity exists to prevent, and
         # exit 1 under --strict. Found by the squad's own lenses on 2026-08-22.
-        if function not in retained and not collection_error:
+        # `_selects`, not `in`: names alone cannot say which file a test lives in, so two
+        # files each holding a `test_roundtrip` were indistinguishable and the untouched one
+        # was examined and reported suspect for passing on the base — which is its job.
+        if not _selects(retained, function, classname, qualified) and not collection_error:
             continue
         failure = case.find("failure")
         if case.find("error") is not None:
@@ -140,7 +184,7 @@ def parse_junit(path: Path, exempt: set[str], retained: set[str],
         # `function`, not `name`. JUnit reports a parametrized case as `test_x[1]` while the
         # marker scan collects the bare `test_x`, so matching on `name` silently loses the
         # exemption for every parametrized characterization or guard test.
-        elif function in exempt:
+        elif _selects(exempt, function, classname, qualified):
             verdicts.append(Verdict(identifier, VALID,
                                     "passes on the base, but marked exempt"))
         else:

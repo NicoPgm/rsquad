@@ -238,3 +238,47 @@ def test_a_failed_worktree_leaves_no_temporary_directory(monkeypatch, tmp_path):
     with pytest.raises(SystemExit):
         core.run_against_base("base", "head", ["tests/t.py"], object())
     assert removed == [str(work)], "the temp directory was stranded"
+
+
+# ------------------------------------------------------------------ which file a test lives in
+
+TWO_FILES = ('<testcase classname="tests.test_alpha" name="test_shared"/>'
+             '<testcase classname="tests.sub.test_beta" name="test_shared"/>')
+
+
+def test_a_same_named_test_in_an_untouched_file_is_not_examined(tmp_path):
+    """Names were compared bare, so a `test_roundtrip` in a file the change never touched was
+    examined and reported suspect for passing on the base — which is its job.
+
+    Found by the first `rsquad evaluate` run. Minor, because it fails toward the false positive
+    rather than toward silence, but that is the direction that gets a gate switched off.
+    """
+    v, = parse_junit(_report(tmp_path, TWO_FILES), set(), {"tests.test_alpha::test_shared"})
+    assert v.identifier == "tests.test_alpha::test_shared"
+
+
+def test_a_class_puts_itself_after_the_module_in_the_classname(tmp_path):
+    """pytest reports `tests.test_alpha.TestGrouped` for a method, so the module has to match
+    as a dotted prefix and not by equality. Verified against a real report, not assumed."""
+    body = '<testcase classname="tests.test_alpha.TestGrouped" name="test_inside"/>'
+    v, = parse_junit(_report(tmp_path, body), set(), {"tests.test_alpha::test_inside"})
+    assert v.state == SUSPECT
+
+
+def test_an_unrecognised_classname_falls_back_to_matching_by_name(tmp_path):
+    """A stack whose runner names things differently must get the old behaviour, never silence.
+
+    Qualified matching that failed to match anything would turn every verdict into "nothing
+    examined" — a gate reporting success on a run that verified nothing, which is the precise
+    failure this tool exists to name.
+    """
+    body = '<testcase classname="some::other::convention" name="test_a"/>'
+    v, = parse_junit(_report(tmp_path, body), set(), {"tests.t::test_a"})
+    assert v.state == SUSPECT
+
+
+def test_an_exemption_is_qualified_by_its_file_too(tmp_path):
+    body = '<testcase classname="tests.test_alpha" name="test_shared"/>'
+    v, = parse_junit(_report(tmp_path, body), {"tests.sub.test_beta::test_shared"},
+                     {"tests.test_alpha::test_shared"})
+    assert v.state == SUSPECT, "the exemption belongs to a different file"

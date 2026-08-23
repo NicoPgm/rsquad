@@ -169,7 +169,7 @@ would actually have caught, on data nobody arranged. Do that before trusting it.
 Summarised here; the operational version, with a per-stack catalogue of traps and an acceptance
 criterion for a port, is [`docs/porting.md`](docs/porting.md).
 
-The core knows no language. Everything stack-specific fits into six questions
+The core knows no language. Everything stack-specific fits into seven questions
 (`gate/adapters/base.py`):
 
 1. Which files in the diff are tests?
@@ -179,6 +179,7 @@ The core knows no language. Everything stack-specific fits into six questions
 5. Which base failures mean "the symbol does not exist yet" rather than "the test caught
    something"?
 6. Which definitions elsewhere in the repository does a change reference?
+7. What will the runner call the module a test lives in?
 
 Question 4 is the trap, and it differs in every ecosystem — editable installs, `node_modules`
 resolution, classpath, NuGet caches. Expect to find your version of it **by running the gate**,
@@ -204,8 +205,15 @@ neighbours without being handed file-reading tools. Measured on 34 changed files
 least one definition, 3.2 on average. Leaf modules resolve nothing and need nothing;
 orchestration files resolve the most and need it most.
 
-Assume a seventh question exists. Five and six both arrived after the protocol was declared
-complete — one from a crash, one from a conversation.
+**Question 7 is what the runner calls a test's module** — `tests/sub/test_beta.py` becomes
+`tests.sub.test_beta` in pytest's JUnit `classname`, and the core matches it as a dotted prefix
+so a method in a class still resolves. Without it a test name carries no file, and two files each
+holding a `test_roundtrip` are the same test. Its default returns the path unchanged, so a stack
+nobody has taught this falls back to bare-name matching: today's noise, never silence.
+
+**Assume an eighth exists.** Five, six and seven all arrived after the protocol was declared
+complete — one from a crash, one from a conversation, one from the squad reviewing this gate's
+own ancestor.
 
 ## What this will not do
 
@@ -264,7 +272,7 @@ reports. A report says what happened, an ADR says what we do about it.
 | | |
 |---|---|
 | [`docs/architecture.md`](docs/architecture.md) | why the shape is what it is, and what degrades first when you move it |
-| [`docs/porting.md`](docs/porting.md) | the six questions in operational detail, and a per-stack catalogue of traps |
+| [`docs/porting.md`](docs/porting.md) | the seven questions in operational detail, and a per-stack catalogue of traps |
 | [`docs/evaluation.md`](docs/evaluation.md) | how a detection rate would be measured, what it costs, and what it cannot prove |
 | [`docs/gate-baseline.md`](docs/gate-baseline.md) | what the gate actually catches, measured over 20 commits |
 | [`docs/transport-comparison.md`](docs/transport-comparison.md) | eight runs across both transports on one commit |

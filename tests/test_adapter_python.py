@@ -61,20 +61,21 @@ def test_only_new_or_modified_functions_are_retained(monkeypatch):
     """
     _stub(monkeypatch, {("base", "tests/t.py"): BEFORE, ("head", "tests/t.py"): AFTER})
     assert ADAPTER.changed_test_functions(["tests/t.py"], "base", "head") \
-        == {"test_loosened", "test_added"}
+        == {"tests.t::test_loosened", "tests.t::test_added"}
 
 
 def test_a_relaxed_assertion_counts_as_modified(monkeypatch):
     """`== 5` becoming `>= 5` is the failure mode this gate exists to catch."""
     _stub(monkeypatch, {("base", "tests/t.py"): BEFORE, ("head", "tests/t.py"): AFTER})
-    assert "test_loosened" in ADAPTER.changed_test_functions(["tests/t.py"], "base", "head")
+    assert "tests.t::test_loosened" in ADAPTER.changed_test_functions(
+        ["tests/t.py"], "base", "head")
 
 
 def test_a_brand_new_file_yields_all_its_tests(monkeypatch):
     """The file does not exist on the base — `file_at` returns None, not an empty string."""
     _stub(monkeypatch, {("head", "tests/t.py"): AFTER})
     assert ADAPTER.changed_test_functions(["tests/t.py"], "base", "head") \
-        == {"test_kept", "test_loosened", "test_added"}
+        == {"tests.t::test_kept", "tests.t::test_loosened", "tests.t::test_added"}
 
 
 def test_a_deleted_file_yields_nothing(monkeypatch):
@@ -186,12 +187,12 @@ def test_ordinary():
 
 
 def test_a_marked_test_is_exempt():
-    assert ADAPTER.exempt_names({"tests/t.py": MARKED}) == {"test_preserved"}
+    assert ADAPTER.exempt_names({"tests/t.py": MARKED}) == {"tests.t::test_preserved"}
 
 
 def test_the_marker_applies_only_to_the_next_test():
     """Otherwise one marker would silently exempt the rest of the file."""
-    assert "test_ordinary" not in ADAPTER.exempt_names({"tests/t.py": MARKED})
+    assert ADAPTER.exempt_names({"tests/t.py": MARKED}) == {"tests.t::test_preserved"}
 
 
 def test_a_bare_mention_of_the_word_is_not_a_marker():
@@ -216,4 +217,59 @@ def test_a_negative_guard_is_exempt_too():
     of five and gets switched off.
     """
     assert ADAPTER.exempt_names({"tests/t.py": GUARDED}) \
-        == {"test_muse_alone_is_not_linked_to_meta_muse_spark"}
+        == {"tests.t::test_muse_alone_is_not_linked_to_meta_muse_spark"}
+
+
+ASYNC_MARKED = '''
+@pytest.mark.guard
+async def test_muse_is_not_linked_to_meta(client):
+    assert True
+
+
+def test_plain_one():
+    assert True
+'''
+
+
+def test_a_marker_above_an_async_test_is_not_lost():
+    """`is_test_declaration` matched `def test`, so an `async def` line matched neither branch
+    of the scan and the async test lost its exemption.
+
+    Found by the first `rsquad evaluate` run, on the diff of the code this gate was extracted
+    from — while missing the defect that case was replaying.
+    """
+    assert ADAPTER.exempt_names({"tests/t.py": ASYNC_MARKED}) \
+        == {"tests.t::test_muse_is_not_linked_to_meta"}
+
+
+def test_a_marker_above_an_async_test_is_not_stolen_by_the_next_test():
+    """The worse half of the same branch, and the reason it is not `minor`.
+
+    `marked` stayed True past the unmatched line and landed on the next plain test, so the gate
+    reported VALID for a test carrying no marker at all — silently approving a
+    non-discriminating test, which is exactly what it exists to catch. Asserted as an exact set
+    because `not in` passes for free while the names are unqualified.
+    """
+    assert ADAPTER.exempt_names({"tests/t.py": ASYNC_MARKED}) \
+        == {"tests.t::test_muse_is_not_linked_to_meta"}
+
+
+def test_a_marker_does_not_leak_past_a_helper():
+    """The same mechanism reached without async: `marked` was cleared only by a *test*
+    declaration, so an intervening helper let the marker travel to the next test."""
+    source = ('@pytest.mark.guard\ndef helper():\n    return 1\n\n'
+              'def test_after_the_helper():\n    assert True\n')
+    assert ADAPTER.exempt_names({"tests/t.py": source}) == set()
+
+
+def test_a_marker_does_not_leak_into_the_next_file():
+    """`marked` was initialised once, outside the loop over files."""
+    trailing = '@pytest.mark.guard\ndef test_marked():\n    assert True\n\n@pytest.mark.guard\n'
+    following = 'def test_first_of_the_next_file():\n    assert True\n'
+    assert ADAPTER.exempt_names({"tests/a.py": trailing, "tests/b.py": following}) \
+        == {"tests.a::test_marked"}
+
+
+def test_a_test_name_is_qualified_by_the_module_the_runner_will_report():
+    """Bare names cannot tell two `test_roundtrip` apart, so the untouched one was examined."""
+    assert ADAPTER.module_name("tests/sub/test_beta.py") == "tests.sub.test_beta"

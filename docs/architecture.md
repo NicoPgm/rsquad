@@ -131,15 +131,17 @@ grouping into a review queue for the same reason.
 | both guards (anchoring, reproduction-or-nothing) | how to run a subset emitting JUnit XML |
 | chunking a diff into units | **how to force the base's code under test** |
 | ranking and grouping | which base failures mean "symbol does not exist yet" |
+| the JUnit classname prefix rule | what the runner calls a test's module |
 | both transports | resolving a symbol to its definition |
 
-The right-hand column is the adapter protocol: six questions, one abstract class, one
+The right-hand column is the adapter protocol: seven questions, one abstract class, one
 implementation today. `porting.md` covers it in operational detail, including the catalogue of
 per-stack traps — **explicitly labelled hypotheses**, since only the Python one has been executed.
 
-Two of those six questions arrived *after* the protocol was declared complete. Anyone porting
-should assume a seventh, and that only execution will surface it: every defect found in the
-original gate implementation was found by running it, none by reading it.
+Three of those seven arrived *after* the protocol was declared complete — the last one on
+2026-08-23, from the squad reviewing this gate's own ancestor. Anyone porting should assume an
+eighth: every defect found in the original gate implementation was found by running it, none by
+reading it.
 
 ## Two transports, one core
 

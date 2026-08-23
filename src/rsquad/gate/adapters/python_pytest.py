@@ -46,16 +46,25 @@ class PythonPytestAdapter(StackAdapter):
     def is_test_file(self, path: str) -> bool:
         return path.endswith(".py")
 
+    def module_name(self, path: str) -> str:
+        """`tests/sub/test_beta.py` -> `tests.sub.test_beta`, which is what pytest writes into
+        the JUnit `classname`. Verified against a real report rather than assumed; a method in
+        a class gets the class appended, so the core matches this as a dotted prefix."""
+        cleaned = path.replace("\\", "/")
+        return cleaned[:-3].replace("/", ".") if cleaned.endswith(".py") else cleaned
+
     # ------------------------------------------------------------------ question 2
     def changed_test_functions(self, files: list[str], base: str, head: str,
                                repo: Path | None = None) -> set[str]:
+        """As `module::function` — a bare name cannot say which file it came from."""
         touched: set[str] = set()
         for name in files:
             before = self.file_at(base, name, repo)
             after = self.file_at(head, name, repo)
             old = self._functions(before) if before is not None else {}
             new = self._functions(after) if after is not None else {}
-            touched |= {n for n, body in new.items() if old.get(n) != body}
+            touched |= {"%s::%s" % (self.module_name(name), n)
+                        for n, body in new.items() if old.get(n) != body}
         return touched
 
     @staticmethod

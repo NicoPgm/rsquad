@@ -1,8 +1,8 @@
-"""The stack adapter protocol — six questions, and nothing else.
+"""The stack adapter protocol — seven questions, and nothing else.
 
 This is the line between what ports and what does not. The gate's core (worktree, merge base,
 JUnit parsing, verdicts, reporting) knows no language. Everything a stack changes fits into the
-six methods below.
+seven methods below.
 
     1. Which files in the diff are tests?
     2. Which test functions are new or modified? (by comparing bodies across revisions)
@@ -11,6 +11,7 @@ six methods below.
     5. Which base failures mean "the symbol does not exist yet" rather than "the test caught
        something"?
     6. Which definitions elsewhere in the repository does a change reference?
+    7. What will the runner call the module a test lives in?
 
 Question 4 is the trap, and it is different in every ecosystem. On Python it is the editable
 install resolving back to the main checkout's `src/`. Expect the equivalent — and expect to find
@@ -25,6 +26,11 @@ running the gate on a commit that added a whole new test file and hearing it say
 Anyone porting to a new stack should assume there is a further question they have not found yet,
 and that only execution will surface it. Question 6 arrived the same day, from a conversation
 rather than a crash, which was cheaper.
+
+**Question 7 arrived on 2026-08-23, from the squad reviewing this gate's own ancestor** — the
+third time the protocol has been declared complete and was not. It is the smallest of the seven
+and has a safe default, which is why it went unnoticed: without it, test names carry no file, and
+two files each holding a `test_roundtrip` are the same test. Assume an eighth.
 """
 
 from __future__ import annotations
@@ -128,8 +134,22 @@ class StackAdapter(ABC):
         return []
 
     # ------------------------------------------------------------------ shared
+    def module_name(self, path: str) -> str:
+        """What this stack's runner will put in the JUnit `classname` for tests in `path`.
+
+        The seventh question, predicted in this docstring before it had a name and found by the
+        squad rather than by a crash. Test names alone cannot say which file a test lives in, so
+        two files each holding a `test_roundtrip` were indistinguishable: touch one and the
+        other was examined and reported suspect for passing on the base.
+
+        **The default returns the path unchanged**, which no dotted classname will ever match —
+        so a stack nobody has taught this falls back to bare-name matching, which is the old
+        behaviour. Wrong in the noisy direction, never the silent one.
+        """
+        return path
+
     def exempt_names(self, sources: dict[str, str]) -> set[str]:
-        """Test functions carrying an exemption marker.
+        """Test functions carrying an exemption marker, as `module::function`.
 
         `sources` maps path to file text **at the revision under test** — not the working tree.
         Reading the working tree instead is correct only when head happens to be checked out,
@@ -137,28 +157,39 @@ class StackAdapter(ABC):
 
         The default implementation covers any language where a marker sits on the line(s)
         directly above the test declaration. Override where that is not true.
+
+        **`marked` is cleared by any declaration and reset per file.** It used to be cleared
+        only by a *test* declaration and initialised once for the whole run, so a marker
+        travelled past anything the scan did not recognise — an `async def test_x`, a helper,
+        the end of a file — and landed on the next test, which carried no marker. That reports
+        VALID for a non-discriminating test: the gate approving exactly what it exists to catch.
+        Found by the first `rsquad evaluate` run, 2026-08-23.
         """
         exempt: set[str] = set()
-        marked = False
-        for text in sources.values():
+        for path, text in sources.items():
+            module, marked = self.module_name(path), False
             for line in text.splitlines():
                 bare = line.strip()
                 if any(m in bare for m in EXEMPT_MARKERS) and self.is_marker_line(bare):
                     marked = True
-                elif self.is_test_declaration(bare):
-                    if marked:
-                        exempt.add(self.declared_name(bare))
+                elif self.is_declaration(bare):
+                    if marked and self.is_test_declaration(bare):
+                        exempt.add("%s::%s" % (module, self.declared_name(bare)))
                     marked = False
         return exempt
 
     def is_marker_line(self, line: str) -> bool:
         return line.startswith("@")
 
+    def is_declaration(self, line: str) -> bool:
+        """Any function declaration — a marker must not survive one it does not recognise."""
+        return line.startswith("def ") or line.startswith("async def ")
+
     def is_test_declaration(self, line: str) -> bool:
-        return line.startswith("def test")
+        return self.is_declaration(line) and self.declared_name(line).startswith("test")
 
     def declared_name(self, line: str) -> str:
-        return line[4:].split("(", 1)[0].strip()
+        return line.split("def ", 1)[1].split("(", 1)[0].strip()
 
     # ------------------------------------------------------------------ helpers
     @staticmethod
