@@ -108,6 +108,15 @@ contradictions-not-omissions hypothesis holding on a set built not to favour it.
 measured for the first time: 2.6 findings per case, 35 of 50 not the known defect.
 [`docs/step7b-first-run.md`](docs/step7b-first-run.md).
 
+**The clean-commit corpus, 2026-08-23, on the harness: 1.5 findings per clean commit against 2.6
+per defective one — and silence on 4 of 8 clean commits, against 0 of 19 defective ones**
+(Fisher exact, two-tailed, p ≈ 0.008). The squad shuts up on half the code nobody has complained
+about and never once shut up on a diff carrying a defect. Reading the twelve findings matters:
+none is invented, so the honest figure is 1.5 *unrequested claims* per clean commit, of which an
+unknown share are real. 3.28 million tokens, $0 billed — noise on the harness, detection on the
+API, which is ADR-0005's operational split finally used rather than argued.
+[`docs/step7c-clean-corpus.md`](docs/step7c-clean-corpus.md).
+
 **Second replay, 2026-08-23: six Java cases from two open-source repositories, 6 of 6 — and
 the number is not a detection rate.** The cases were fix commits replayed backwards, so the
 correct code sat on the minus side of every diff and the lenses read it there. What the run does
@@ -298,7 +307,8 @@ reports. A report says what happened, an ADR says what we do about it.
 | [`docs/first-run.md`](docs/first-run.md) | the first paid run, and the five defects it found in this repository |
 | [`docs/first-evaluation.md`](docs/first-evaluation.md) | the first replay against ground truth: 1 of 4, and what the misses have in common |
 | [`docs/step7-first-run.md`](docs/step7-first-run.md) | six Java cases, 6 of 6, and why that number measures the wrong thing |
-| [`docs/step7b-first-run.md`](docs/step7b-first-run.md) | 12 of 14 on real introducing commits, and no sign of memorisation |
+| [`docs/step7b-first-run.md`](docs/step7b-first-run.md) | 15 of 19 on real introducing commits, and no sign of memorisation |
+| [`docs/step7c-clean-corpus.md`](docs/step7c-clean-corpus.md) | what the squad says about code nobody has complained about |
 
 ## License and provenance
 

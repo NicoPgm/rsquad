@@ -2,7 +2,7 @@
  * RSquad — Claude Code driver for the harness transport.
  *
  *   rsquad export <job> --head <rev> --repo <path>
- *   /workflows  →  this script, with args: { job: "<absolute path to job>" }
+ *   /workflows  →  this script, with args: { job: "<path>" } or { jobs: ["<path>", ...] }
  *   rsquad ingest <job>          (twice: once for the lenses, once for the refutations)
  *
  * This script does one thing: it runs the tasks RSquad wrote and saves the replies. It does not
@@ -29,15 +29,19 @@
 export const meta = {
   name: 'rsquad',
   description: 'Run an exported RSquad review job: one agent per task, replies written back',
-  whenToUse: 'After `rsquad export`. Pass args: { job: "<absolute path to the job directory>" }',
+  whenToUse: 'After `rsquad export`. Pass args: { job: "<path>" } or { jobs: ["<path>", ...] }',
   phases: [
     { title: 'Manifest', detail: 'read the job manifest and list the tasks' },
     { title: 'Tasks', detail: 'one agent per task, reply written back as JSON' },
   ],
 }
 
-const job = args && args.job
-if (!job) throw new Error('pass args: { job: "<absolute path to the job directory>" }')
+// One job or many. The clean-commit corpus is one job per commit, and running them one
+// invocation at a time would be a dozen round trips for a single measurement.
+const jobs = args && (args.jobs || (args.job ? [args.job] : null))
+if (!jobs || !jobs.length) {
+  throw new Error('pass args: { job: "<path>" } or { jobs: ["<path>", ...] }')
+}
 
 const MANIFEST = {
   type: 'object',
@@ -68,47 +72,61 @@ const DONE = {
   },
 }
 
+const name = (job) => job.replace(/[\\/]+$/, '').split(/[\\/]/).pop()
+
+const instruction = (job, round, task) =>
+  `You are running one task of a code review job.\n\n` +
+  `1. Read ${job}/round-${round}/tasks/${task.id}.md — it is a complete instruction, ` +
+  `including the code under review. Follow it exactly.\n` +
+  `2. Read ${job}/schema/${task.contract}.json. Your answer MUST validate against it: the ` +
+  `enumerated fields are closed, every required field is required, and no extra field is ` +
+  `allowed.\n` +
+  `3. Write your answer as raw JSON — no prose, no markdown fence — to ` +
+  `${job}/round-${round}/results/${task.id}.json\n\n` +
+  `Read no other file. Everything you need is in those two, and reaching for the ` +
+  `repository would answer a different question than the one the task asks.\n\n` +
+  `Then return the task id, whether you wrote the file, and one short note.`
+
 phase('Manifest')
+log(`${jobs.length} job(s)`)
 
-const listing = await agent(
-  `Read the JSON file at ${job}/manifest.json and return its "round" number and, for every ` +
-  `entry in its "tasks" array, that entry's "id" and "contract". Do not read anything else ` +
-  `and do not summarise: return every task.`,
-  { label: 'manifest', schema: MANIFEST, effort: 'low' },
+// A pipeline rather than a barrier: a job's tasks start as soon as its own manifest is read,
+// instead of every job waiting for the slowest manifest.
+const runs = await pipeline(
+  jobs,
+  (job) => agent(
+    `Read the JSON file at ${job}/manifest.json and return its "round" number and, for every ` +
+    `entry in its "tasks" array, that entry's "id" and "contract". Do not read anything else ` +
+    `and do not summarise: return every task.`,
+    { label: `manifest:${name(job)}`, schema: MANIFEST, effort: 'low', phase: 'Manifest' },
+  ),
+  async (listing, job) => {
+    if (!listing || !listing.tasks.length) {
+      log(`${name(job)}: no tasks in manifest`)
+      return { job, round: null, written: [], failed: [] }
+    }
+    const round = listing.round
+    const results = await parallel(listing.tasks.map((task) => () => agent(
+      instruction(job, round, task),
+      { label: `${name(job)}/${task.id}`, schema: DONE, phase: 'Tasks' },
+    )))
+    const written = results.filter((r) => r && r.written)
+    log(`${name(job)} round ${round}: ${written.length}/${listing.tasks.length} written`)
+    return {
+      job,
+      round,
+      written: written.map((r) => r.id),
+      failed: listing.tasks.map((t) => t.id).filter((id) => !written.some((r) => r.id === id)),
+    }
+  },
 )
-
-if (!listing || !listing.tasks.length) throw new Error(`no tasks in ${job}/manifest.json`)
-
-const round = listing.round
-log(`round ${round}: ${listing.tasks.length} task(s)`)
-
-phase('Tasks')
-
-const results = await parallel(listing.tasks.map((task) => async () => {
-  return agent(
-    `You are running one task of a code review job.\n\n` +
-    `1. Read ${job}/round-${round}/tasks/${task.id}.md — it is a complete instruction, ` +
-    `including the code under review. Follow it exactly.\n` +
-    `2. Read ${job}/schema/${task.contract}.json. Your answer MUST validate against it: the ` +
-    `enumerated fields are closed, every required field is required, and no extra field is ` +
-    `allowed.\n` +
-    `3. Write your answer as raw JSON — no prose, no markdown fence — to ` +
-    `${job}/round-${round}/results/${task.id}.json\n\n` +
-    `Read no other file. Everything you need is in those two, and reaching for the ` +
-    `repository would answer a different question than the one the task asks.\n\n` +
-    `Then return the task id, whether you wrote the file, and one short note.`,
-    { label: task.id, schema: DONE, phase: 'Tasks' },
-  )
-}))
-
-const written = results.filter((r) => r && r.written)
-log(`${written.length}/${listing.tasks.length} replies written`)
 
 // Deliberately no verdict here. Nothing in this script judges a finding, drops one, or ranks
 // anything — `rsquad ingest` validates every reply, runs both mechanical guards, and decides.
+const done = runs.filter(Boolean)
 return {
-  round,
-  written: written.map((r) => r.id),
-  failed: listing.tasks.map((t) => t.id).filter((id) => !written.some((r) => r.id === id)),
-  next: `rsquad ingest ${job}`,
+  jobs: done.length,
+  written: done.reduce((n, r) => n + r.written.length, 0),
+  failed: done.flatMap((r) => r.failed),
+  next: done.map((r) => `rsquad ingest ${r.job}`),
 }
