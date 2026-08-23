@@ -253,7 +253,7 @@ def _evaluate(args: argparse.Namespace) -> int:
     if not config.credential_available():
         raise SystemExit("no %s in the environment or in %s." % (config.KEY, config.ENV))
 
-    cases, usages = [], []
+    cases, usages, dropped = [], [], []
     for defect in scorable:
         spent = budget.total(args.model, usages).total
         if not evaluate.within_budget(spent, args.max_usd):
@@ -282,11 +282,17 @@ def _evaluate(args: argparse.Namespace) -> int:
             cases.append((defect, [], str(error)))
             continue
         usages += [r.usage for r in outcome.runs] + [v.usage for v in outcome.verdicts]
+        # What the guards refuse is a measurement of how the lenses are behaving, so it is
+        # reported rather than discarded — `review` has always done this and `evaluate` did not,
+        # which came to light only when a finished run could not answer "how many were dropped?".
+        dropped += outcome.dropped
         cases.append((defect, outcome.findings, None))
 
     spend = budget.total(args.model, usages)
-    footer = ("Model `%s`, %d call(s) across %d case(s), %.4f USD billed. %s"
-              % (args.model, len(usages), len(cases), spend.total, budget.cache_verdict(usages)))
+    footer = ("Model `%s`, %d call(s) across %d case(s), %.4f USD billed. "
+              "%d finding(s) refused by the guards. %s"
+              % (args.model, len(usages), len(cases), spend.total, len(dropped),
+                 budget.cache_verdict(usages)))
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(evaluate.render(cases, excluded, footer), encoding="utf-8")

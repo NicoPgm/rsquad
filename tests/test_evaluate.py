@@ -121,3 +121,12 @@ def test_a_case_without_this_project_s_taxonomy_still_renders():
             "detectable_from_diff": "yes", "self_found": False}
     text = evaluate.render([(lean, [], None)], [], "billed")
     assert "None" not in text and "No finding survived" in text
+
+
+def test_the_footer_carries_what_the_guards_refused():
+    """`review` reported it and `evaluate` discarded it — noticed only when a finished $5 run
+    could not answer "how many findings were dropped?"."""
+    text = evaluate.render([(REAL, [FINDING], None)], [],
+                           "Model `m`, 8 call(s), 1.0000 USD billed. 2 finding(s) refused by "
+                           "the guards. cache ok")
+    assert "refused by the guards" in text

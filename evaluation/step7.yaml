@@ -1,5 +1,14 @@
 # Step 7 — pre-registered selection, frozen 2026-08-23, before any case was run.
 #
+# ############################################################################################
+# RUN 2026-08-23: 6 of 6 detected, $5.06 — AND THE METHOD BELOW IS INVALID FOR MEASURING
+# DETECTION. A reverse patch shows the correct code on the minus side of the diff, so the lenses
+# were reading the fix and reporting its removal; eleven consequences cite the removed version
+# outright. Rules 5 and 6 guard the decoration around the change, not the change itself.
+# **Do not quote 6/6 as a detection rate.** See `docs/step7-first-run.md` for what the run does
+# establish and for the `git log -L` procedure a valid version needs.
+# ############################################################################################
+#
 # WHY THIS FILE EXISTS
 #
 # `docs/evaluation.md` says the target, the commit range, the sampling rule and the labels have

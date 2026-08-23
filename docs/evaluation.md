@@ -118,6 +118,17 @@ withdrawn — otherwise the team learns to skim the queue, and the other lenses 
 shaped around the kinds of defect this codebase produces, which is visible in the set itself: six
 of nine are `correctness`, one is `resource`, none is concurrency, none is security.
 
+## The first attempt at that measurement was invalid
+
+Run 2026-08-23 on six Java cases from commons-lang and jackson-databind: **6 of 6, $5.06** — and
+worthless as a rate. The cases were fix commits replayed backwards, which puts the correct code
+on the minus side of the diff, and the lenses read it there. `docs/step7-first-run.md` records
+what survives (the contract ports to Java; $0.84 per case) and the `git log -L` procedure that
+would produce diffs which do not contain their own answer.
+
+The pre-registration held: labels and sampling were frozen and committed first, so 6/6 could not
+be quietly reinterpreted as a success.
+
 ## What a real measurement needs
 
 The deferred work, with its selection criteria stated in advance so the choice cannot be made to

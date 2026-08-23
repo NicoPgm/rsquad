@@ -98,6 +98,13 @@ kinds measure nothing. On four cases a 25 % detection rate and a 75 % one are th
 It will catch a squad that finds nothing; it cannot tell 40 % from 70 %. The method, the cost and
 what it cannot prove: [`docs/evaluation.md`](docs/evaluation.md).
 
+**Second replay, 2026-08-23: six Java cases from two open-source repositories, 6 of 6 — and
+the number is not a detection rate.** The cases were fix commits replayed backwards, so the
+correct code sat on the minus side of every diff and the lenses read it there. What the run does
+establish is that the finding contract ports to a language it has never seen: 64 calls against
+Java with an empty context pack, every reply schema-valid and every snippet anchored.
+[`docs/step7-first-run.md`](docs/step7-first-run.md).
+
 **First replay, 2026-08-23: 1 detected of 4, $7.05.** The three misses share a shape — every one
 is a defect whose wrongness is invisible in the text, where the hit was a diff that contradicted
 itself. **The blind lenses find contradictions, not omissions**, and an omission has no anchor to
@@ -280,6 +287,7 @@ reports. A report says what happened, an ADR says what we do about it.
 | [`docs/extraction.md`](docs/extraction.md) | the extraction from the source project, verified function by function |
 | [`docs/first-run.md`](docs/first-run.md) | the first paid run, and the five defects it found in this repository |
 | [`docs/first-evaluation.md`](docs/first-evaluation.md) | the first replay against ground truth: 1 of 4, and what the misses have in common |
+| [`docs/step7-first-run.md`](docs/step7-first-run.md) | six Java cases, 6 of 6, and why that number measures the wrong thing |
 
 ## License and provenance
 
