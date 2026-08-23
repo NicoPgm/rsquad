@@ -4,6 +4,7 @@ An evaluation set that quietly loses a field, or labels a defect with a `kind` t
 longer has, produces a number nobody can interpret. That is worse than having no set.
 """
 
+import re
 from pathlib import Path
 
 import pytest
@@ -133,3 +134,42 @@ def test_the_hard_bound_does_not_drift_from_the_caps(step7):
     """The bound is the number that gets quoted, so it must stay derived rather than typed."""
     budget = step7["budget"]
     assert budget["hard_bound_usd"] == budget["cap_usd_per_arm"] * len(step7["arms"])
+
+
+# ------------------------------------------------------------------ the step 7b freeze
+
+STEP7B = Path(__file__).resolve().parents[1] / "evaluation" / "step7b.yaml"
+
+
+@pytest.fixture(scope="module")
+def step7b():
+    return yaml.safe_load(STEP7B.read_text(encoding="utf-8"))
+
+
+def test_every_frozen_case_carries_a_label_and_its_reasoning(step7b):
+    for case in step7b["cases"]:
+        assert case["detectable_from_diff"] in DETECTABILITY
+        assert case["label_rationale"].strip()
+        assert case["origin"] and case["file"].endswith(".java")
+
+
+def test_the_declared_counts_match_the_cases(step7b):
+    """The header numbers are what gets quoted, so they must stay derived from the list."""
+    counts = {k: sum(1 for c in step7b["cases"] if c["detectable_from_diff"] == k)
+              for k in DETECTABILITY}
+    assert counts == {k: step7b["labels"][k] for k in DETECTABILITY}
+    assert sum(a["cases"] for a in step7b["arms"]) == len(step7b["cases"])
+
+
+def test_every_case_records_the_memorisation_covariate(step7b):
+    """`origin_date` is reported beside the result, never used to exclude — so it has to exist
+    on every case or the split cannot be made afterwards."""
+    for case in step7b["cases"]:
+        assert re.fullmatch(r"\d{4}-\d{2}", case["origin_date"]), case["id"]
+        assert isinstance(case["origin_lines"], int)
+
+
+def test_no_case_predates_the_young_repository_claim(step7b):
+    """The whole reason for this second freeze is that these repositories have no code from
+    before 2021. A case that did would mean the pool drifted back to the old problem."""
+    assert all(int(c["origin_date"][:4]) >= 2021 for c in step7b["cases"])

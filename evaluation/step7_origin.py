@@ -12,10 +12,15 @@ import re, subprocess, sys
 FIX = re.compile(r"\b(fix(e[sd])?|bug|incorrect|wrong|regression|npe|fails?|broken)\b", re.I)
 ISSUE = re.compile(r"(#\d+|\b[A-Z]{2,}-\d+\b)")
 MAX_FILES_IN_ORIGIN = 10
+NOISE = re.compile(r"^[+-]\s*(//|\*|/\*|import\s|$)")
 
 def git(repo, args):
     return subprocess.run(["git", "-C", repo] + args, capture_output=True, text=True,
                           encoding="utf-8", errors="replace").stdout
+
+def nows(s):
+    return re.sub(r"\s+", "", s)
+
 
 def norm(s):
     return re.sub(r"\s+", " ", s.strip())
@@ -28,13 +33,25 @@ def removed(repo, fix, path):
         if m:
             old = int(m.group(1)); pending = []; continue
         if line.startswith("-") and not line.startswith("---"):
-            pending.append((old, line[1:])); old += 1
+            # **NOISE here too.** Without it, a fix that also adds an import pairs the import
+            # against a removed code line, and the history traced is the IMPORT's -- so the
+            # origin commit belongs to a line nobody cares about. Four of the first twelve
+            # dossiers had an `import` as their buggy line before this filter was applied.
+            if not NOISE.match(line):
+                pending.append((old, line[1:]))
+            old += 1
         elif line.startswith("+") and not line.startswith("+++"):
-            if pending:
+            if pending and not NOISE.match(line):
                 out.append(pending.pop(0))
         elif line.startswith(" "):
             old += 1
-    return out
+    # **Reformatting is not a change.** These projects run a formatter inside fix commits, so a
+    # removed line often reappears re-wrapped across two added lines. Pairing then traces the
+    # history of a line that nobody edited. A removed line counts only if its content, stripped
+    # of every space, does not survive in the concatenated additions.
+    joined = nows("".join(a[1:] for a in diff
+                          if a.startswith("+") and not a.startswith("+++")))
+    return [r for r in out if nows(r[1]) not in joined]
 
 def classify(repo, path, lineno, buggy, before):
     log = git(repo, ["log", "-L", "%d,%d:%s" % (lineno, lineno, path),
@@ -49,6 +66,19 @@ def classify(repo, path, lineno, buggy, before):
     parent = git(repo, ["show", "%s~1:%s" % (sha, path)])
     if parent and any(norm(l) == norm(buggy) for l in parent.splitlines()):
         return ("moved", sha, date, subject, len(files))
+    # **Path stability, checked instead of reconstructed.** `git log -L` follows renames, so the
+    # origin is right while today's path may not have existed then -- Fraction.java was under
+    # src/java/org/apache/commons/lang/ in 2002. A rename-walking resolver got some of those
+    # right and some wrong. Requiring the path to resolve AT the origin is exact, conservative,
+    # and needs no heuristic: if it does not, the case is dropped rather than guessed.
+    import subprocess as sp
+    if sp.run(["git", "-C", repo, "cat-file", "-e", "%s:%s" % (sha, path)],
+              capture_output=True).returncode != 0:
+        return ("renamed-since", sha, date, subject, len(files))
+    changed = [l for l in git(repo, ["show", "--format=", sha, "--", path]).splitlines()
+               if l[:1] in "+-" and not l.startswith(("+++", "---"))]
+    if not changed:
+        return ("empty-diff", sha, date, subject, len(files))
     return ("usable", sha, date, subject, len(files))
 
 def scan(repo):
@@ -63,6 +93,12 @@ def scan(repo):
         src = [n for n in files if "/test/" not in n]
         tests = [n for n in files if "/test/" in n]
         if len(src) != 1 or not tests or len(files) > 6:
+            continue
+        # Rule 4, carried over: a Javadoc correction is not a defect. `pool.py` had dropped it,
+        # and "Fix two Javadoc errors in StringUtils" was sitting in the pool as a case.
+        patch = git(repo, ["show", "--format=", fix, "--", src[0]]).splitlines()
+        if not [l for l in patch if l[:1] in "+-"
+                and not l.startswith(("+++", "---")) and not NOISE.match(l)]:
             continue
         verdict = None
         for lineno, buggy in removed(repo, fix, src[0])[:4]:

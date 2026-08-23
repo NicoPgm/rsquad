@@ -1,0 +1,411 @@
+# Step 7b — pre-registered selection on two young repositories. Frozen 2026-08-23, before any
+# case was run. **No API pass has been made against this file.**
+#
+# WHY THERE IS A SECOND FREEZE
+#
+# `evaluation/step7.yaml` is superseded. Its cases were fix commits replayed backwards, which put
+# the correct code on the minus side of every diff (`docs/step7-first-run.md`). Its successor, the
+# archaeology on mature libraries, died of three obstacles with one cause — no regressions to
+# replay, introductions predating the knowledge cutoff by years, and paths repackaged since. All
+# three follow from the repositories being old (`evaluation/step7-pool.md`).
+#
+# These two are not. Neither has a single case introduced before 2021.
+#
+# WHAT A CASE IS HERE
+#
+# The commit under review is the one that **first wrote the buggy line**, found with `git log -L`
+# and then verified: the buggy line must appear as an addition in that commit's diff for that
+# file. Eight candidates were dropped by that check rather than labelled.
+#
+# It is not a reverse patch and not a regression. It is the real commit that introduced the
+# defect, with unrelated correct code around it — which is the property the reverse patch
+# destroyed, and the most realistic target available: a change adding new code is what a pre-push
+# review actually sees.
+#
+# SELECTION, mechanical, by `evaluation/step7_origin.py`. No commit was chosen by reading it.
+#
+#   1. the FIX is since 2026-05-01 and its message matches a fix vocabulary AND names an issue
+#   2. exactly one changed .java outside the test tree, at least one inside it, <= 6 files
+#   3. the fix changes at least one line that is not a comment, blank or import
+#   4. the fix changes at least one line that is not pure reformatting — see below
+#   5. the origin commit touches <= 10 files (not a wholesale import) and did not merely MOVE the
+#      line
+#   6. today's path resolves AT the origin commit (`git cat-file -e <origin>:<path>`) — checked,
+#      never reconstructed
+#   7. the buggy line appears as an addition in the origin's diff for that file
+#
+# Rules 3, 4 and 6 all exist because of the same mistake made three times: **the line being traced
+# was not the line that mattered.** First imports and comments were paired against removed code.
+# Then reformatting was — these projects run a formatter inside fix commits, so a removed line
+# reappears re-wrapped and `git log -L` follows a line nobody edited; on `Utils.java` that traced
+# a method signature while the fix was about gzip decoding. Then today's path was used at a commit
+# where the file lived elsewhere, which reported "0 lines changed" and read as nothing-to-review.
+# Each was found by reading output, never by rereading code.
+#
+# LABELS were assigned against `evaluation/labelling-rubric.md`, committed first, from the ORIGIN
+# diff and never from the fix. Where torn, the lower value was taken.
+#
+# WHAT THIS CANNOT DO
+#
+# 19 scorable cases give roughly +/- 20 points, not the +/- 15 that 40 would. The pool shrank at
+# every correction, and correcting was right each time.
+#
+# The Java adapter resolves no context pack (question 6 is unimplemented for Java), so every lens
+# runs on the diff and the file alone. Case 16 is labelled `no` explicitly because of it. This
+# measures the squad **without** a facility it has on Python.
+#
+# And the labeller reads the results. Committing the rubric and the labels first bounds that; it
+# does not remove it.
+
+schema_version: 1
+
+budget:
+  cap_usd_per_arm: 8.0
+  hard_bound_usd: 16.0
+  expected_usd: 16.0             # 19 scorable cases at the $0.84 measured on Java
+  note: >
+    One `evaluate` invocation per repository, each with `--max-usd`, so neither arm can starve the
+    other. Not yet spent: this file is frozen ahead of any run.
+
+arms:
+  - repo: langchain4j/langchain4j
+    url: https://github.com/langchain4j/langchain4j.git
+    first_commit: "2023-06"
+    cases: 17
+  - repo: spring-projects/spring-ai
+    url: https://github.com/spring-projects/spring-ai.git
+    first_commit: "2023-07"
+    cases: 7
+
+strata:
+  note: >
+    `origin_date` is the memorisation covariate, and it is reported beside the result rather than
+    used to exclude. Post-cutoff cases are the only ones whose fixed form the model cannot have
+    read. Both repositories populate every stratum, which the mature pool could not do — there
+    "recent" was 80 % one repository, so an age contrast would have been a repository contrast.
+  scorable_by_stratum:
+    post-cutoff: 5               # origin after 2026-05
+    2025-to-2026-05: 7
+    2024-and-earlier: 7
+
+labels:
+  # Quoted, because YAML 1.1 reads bare `yes` and `no` as booleans — the same trap
+  # `defects.yaml` already carries a guard test for.
+  "yes": 5
+  "weak": 14
+  "no": 5                        # excluded from every rate, kept as a record of defect shapes
+
+cases:
+
+  - id: langchain4j-d5b13be
+    repo: langchain4j/langchain4j
+    fix: d5b13be1e
+    fix_subject: >
+      fix: Use the name of the provided Azure AI Search index when index creation is disabled (#5901)
+    origin: b099922a1
+    file: langchain4j-azure-ai-search/src/main/java/dev/langchain4j/store/embedding/azure/search/AbstractAzureAiSearchEmbeddingStore.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      The guard ties two unrelated concerns: whether the index is created or updated, and which name identifies it. A supplied `index` object has its name ignored under a flag about creation. The smell fits in six lines; confirming it needs to know that supplying an index without creating it is a supported path, which the file does not state.
+    origin_date: "2024-06"
+    origin_lines: 6
+    origin_creates_file: false
+  - id: langchain4j-7e622bf
+    repo: langchain4j/langchain4j
+    fix: 7e622bfdf
+    fix_subject: >
+      Fix Pinecone segment text being overwritten by reserved metadata key (#6033)
+    origin: e848e6a88
+    file: langchain4j-pinecone/src/main/java/dev/langchain4j/store/embedding/pinecone/PineconeHelper.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      Two writers to one Struct.Builder inside the diff: the segment text under `metadataTextKey`, then a loop putting arbitrary metadata keys into the same builder. A metadata key equal to metadataTextKey overwrites the text. Nothing outside the file is needed.
+    origin_date: "2024-07"
+    origin_lines: 59
+    origin_creates_file: true
+  - id: langchain4j-840330c
+    repo: langchain4j/langchain4j
+    fix: 840330c24
+    fix_subject: >
+      Avoid NullPointerException when an async agent returns null (#5864)
+    origin: 9443ad9b2
+    file: langchain4j-agentic/src/main/java/dev/langchain4j/agentic/scope/DefaultAgenticScope.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      `state.replaceAll(this::readStateBlocking)` mutates the map through a function that blocks on pending async writes to that same map. Both the call and `readStateBlocking` are in the file, so the hazard is reachable without leaving it.
+    origin_date: "2025-09"
+    origin_lines: 5
+    origin_creates_file: false
+  - id: langchain4j-771b0d2
+    repo: langchain4j/langchain4j
+    fix: 771b0d265
+    fix_subject: >
+      fix: support 3D logit output in OnnxScoringBertCrossEncoder (#5739)
+    origin: 1c0671617
+    file: langchain4j-onnx-scoring/src/main/java/dev/langchain4j/model/scoring/onnx/OnnxScoringBertCrossEncoder.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      An unchecked `(float[][])` cast of a generic `getValue()` is visible as a cast nobody guards. Knowing that some ONNX scoring models emit a 3D tensor is domain knowledge the file does not carry.
+    origin_date: "2024-09"
+    origin_lines: 116
+    origin_creates_file: true
+  - id: langchain4j-145ff45
+    repo: langchain4j/langchain4j
+    fix: 145ff4526
+    fix_subject: >
+      fix: treat an MCP $ref outside $defs as a plain schema, not a reference (#5790)
+    origin: 632836213
+    file: langchain4j-mcp/src/main/java/dev/langchain4j/mcp/client/ToolSpecificationHelper.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `extractReferenceKey(...)` flows straight into the builder with no null check, and that method is in the same class. What makes it a defect — that MCP permits a `$ref` outside `$defs` — is not in the file.
+    origin_date: "2026-03"
+    origin_lines: 73
+    origin_creates_file: false
+  - id: langchain4j-e59754e
+    repo: langchain4j/langchain4j
+    fix: e59754e99
+    fix_subject: >
+      fix: pass builder skipCreateVectorExtension to PgVectorEmbeddingStore (#5788)
+    origin: 313452c49
+    file: langchain4j-pgvector/src/main/java/dev/langchain4j/store/embedding/pgvector/PgVectorEmbeddingStore.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      The new constructor delegates a long positional argument list built from `builder.*`, and one field is missing from it. The builder's fields are enumerable in the same file, so it is findable in principle — but it is an omission with no anchor to quote, inside 292 changed lines.
+    origin_date: "2026-02"
+    origin_lines: 292
+    origin_creates_file: false
+  - id: langchain4j-196bc5d
+    repo: langchain4j/langchain4j
+    fix: 196bc5dc1
+    fix_subject: >
+      Follow up on AgentsRegistry implementation (#5719)
+    origin: ff9dfc1c7
+    file: langchain4j-agentic/src/main/java/dev/langchain4j/agentic/planner/AgentsRegistry.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      `allAgents()` returns the internal `mergedAgents` map directly. An accessor handing out mutable internal state is a contradiction in place; the field and the accessor are both in the diff.
+    origin_date: "2026-07"
+    origin_lines: 118
+    origin_creates_file: true
+  - id: langchain4j-96a3af9
+    repo: langchain4j/langchain4j
+    fix: 96a3af9ee
+    fix_subject: >
+      fix: Use UTF-8 when encoding Playwright page content for the document parser (#5686)
+    origin: 0e7374d64
+    file: document-loaders/langchain4j-document-loader-playwright/src/main/java/dev/langchain4j/data/document/loader/playwright/PlaywrightDocumentLoader.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `pageContent.getBytes()` with no charset, feeding a parser. The call is visible; that the platform default varies is a Java convention the file does not state.
+    origin_date: "2025-07"
+    origin_lines: 77
+    origin_creates_file: false
+  - id: langchain4j-0626661
+    repo: langchain4j/langchain4j
+    fix: 0626661ba
+    fix_subject: >
+      fix: Include failing file URL in GitHubDocumentLoader load-failure exception message (#5684)
+    origin: aaddb9226
+    file: document-loaders/langchain4j-document-loader-github/src/main/java/dev/langchain4j/data/document/loader/github/GitHubDocumentLoader.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      `new RuntimeException("Failed to load document from GitHub: {}", ioException)` uses an SLF4J placeholder in an exception message, which is never substituted — and two lines below, the sibling `IllegalArgumentException` builds its message by concatenation. The diff contradicts itself.
+    origin_date: "2024-01"
+    origin_lines: 154
+    origin_creates_file: true
+  - id: langchain4j-f274731
+    repo: langchain4j/langchain4j
+    fix: f274731d8
+    fix_subject: >
+      fix: Encode page content as UTF-8 in SeleniumDocumentLoader (#5671)
+    origin: 36c175190
+    file: document-loaders/langchain4j-document-loader-selenium/src/main/java/dev/langchain4j/data/document/loader/selenium/SeleniumDocumentLoader.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      Identical to case 8 in another loader: `pageContent.getBytes()` with no charset.
+    origin_date: "2024-05"
+    origin_lines: 87
+    origin_creates_file: true
+  - id: langchain4j-23098bd
+    repo: langchain4j/langchain4j
+    fix: 23098bd55
+    fix_subject: >
+      fix: Preserve binary bytes in Azure dynamic sessions file download (#5652)
+    origin: 1fab3b7e4
+    file: code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      `response.body().getBytes(StandardCharsets.UTF_8)` then Base64 — a file download routed bytes → String → bytes. The comment above says "Convert response body to Base64", and the surrounding method downloads a file, so the lossy round trip is visible in place.
+    origin_date: "2025-09"
+    origin_lines: 588
+    origin_creates_file: true
+  - id: langchain4j-575eb46
+    repo: langchain4j/langchain4j
+    fix: 575eb46fa
+    fix_subject: >
+      fix: Skip search results with unresolvable URIs in GoogleCustomWebSearchEngine (#5628)
+    origin: b246cfde7
+    file: web-search-engines/langchain4j-web-search-engine-google-custom/src/main/java/dev/langchain4j/web/search/google/customsearch/GoogleCustomWebSearchEngine.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `URI.create(result.getLink())` inside a stream over external search results, with no guard. The unguarded call is visible; that `URI.create` throws rather than returning null is an API contract outside the file.
+    origin_date: "2024-08"
+    origin_lines: 43
+    origin_creates_file: false
+  - id: langchain4j-cc37ab3
+    repo: langchain4j/langchain4j
+    fix: cc37ab335
+    fix_subject: >
+      fix: support Float and Double values in Qdrant equality metadata filters (#5598)
+    origin: 2a5189a78
+    file: langchain4j-qdrant/src/main/java/dev/langchain4j/store/embedding/qdrant/QdrantFilterConverter.java
+    detectable_from_diff: "no"
+    label_rationale: >
+      The type chain handles String, Boolean, Integer and Long and throws otherwise, and the error message enumerates exactly that set. The code is self-consistent: nothing in the diff says Float and Double ought to be supported.
+    origin_date: "2024-09"
+    origin_lines: 205
+    origin_creates_file: true
+  - id: langchain4j-0d16d28
+    repo: langchain4j/langchain4j
+    fix: 0d16d2884
+    fix_subject: >
+      fix: unanimousLastWord convergence to normalize verdict token (#5479)
+    origin: 8b6aeead7
+    file: langchain4j-agentic-patterns/src/main/java/dev/langchain4j/agentic/patterns/debate/ConvergenceStrategy.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `text.lastIndexOf(' ')` where a word separator is meant, in a method named `unanimousLastWord`. The narrowing to one whitespace character is visible; that the inputs contain other whitespace is not in the file.
+    origin_date: "2026-06"
+    origin_lines: 36
+    origin_creates_file: true
+  - id: langchain4j-34b8d34
+    repo: langchain4j/langchain4j
+    fix: 34b8d34a7
+    fix_subject: >
+      fix: Surface failed A2A tasks as exceptions instead of empty results (#5471)
+    origin: a24e4f9d3
+    file: langchain4j-agentic-a2a/src/main/java/dev/langchain4j/agentic/a2a/DefaultA2AClientBuilder.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `isTerminalState(...)` gates an unconditional `complete(...)`, so a terminal state is treated as a successful one. The conflation is visible; that FAILED is terminal lives in an enum outside the file.
+    origin_date: "2026-06"
+    origin_lines: 96
+    origin_creates_file: false
+  - id: langchain4j-4aff9c9
+    repo: langchain4j/langchain4j
+    fix: 4aff9c9af
+    fix_subject: >
+      fix: swapped account and container names in Azure Blob Storage document source URL  (#5430)
+    origin: ab5e89255
+    file: document-loaders/langchain4j-document-loader-azure-storage-blob/src/main/java/dev/langchain4j/data/document/loader/azure/storage/blob/AzureBlobStorageDocumentLoader.java
+    detectable_from_diff: "no"
+    label_rationale: >
+      The arguments are swapped in a constructor call. The call site reads plausibly and the parameter order lives in `AzureBlobStorageSource`, another file — which the Java adapter cannot resolve into a context pack. Nothing in the diff distinguishes it from a correct call.
+    origin_date: "2024-01"
+    origin_lines: 48
+    origin_creates_file: true
+  - id: langchain4j-95a3aff
+    repo: langchain4j/langchain4j
+    fix: 95a3affdd
+    fix_subject: >
+      Fix filtering for non-TextSegment entries in InMemoryEmbeddingStore (#5405)
+    origin: 2b2c09f05
+    file: langchain4j/src/main/java/dev/langchain4j/store/embedding/inmemory/InMemoryEmbeddingStore.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      An if / else-if chain over `entry.embedded` covering TextSegment and null, with the general case unhandled. The exhaustiveness gap is visible; what the fallthrough then returns decides whether it is a defect.
+    origin_date: "2024-06"
+    origin_lines: 33
+    origin_creates_file: true
+  - id: spring-ai-b1384c8
+    repo: spring-projects/spring-ai
+    fix: b1384c846
+    fix_subject: >
+      Fix `OpenAiAudioTranscriptionModel` leaking the stream on cancellation (#6759)
+    origin: fc9286cb3
+    file: models/spring-ai-openai/src/main/java/org/springframework/ai/openai/OpenAiAudioTranscriptionModel.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `Flux.create(sink -> ...subscribe(...))` starts an async subscription and registers no dispose or cancel hook. The pattern is visible; that `Flux.create` requires one to avoid leaking is a Reactor contract outside the file.
+    origin_date: "2026-06"
+    origin_lines: 108
+    origin_creates_file: false
+  - id: spring-ai-9ec7cfa
+    repo: spring-projects/spring-ai
+    fix: 9ec7cfa3f
+    fix_subject: >
+      Fix genai thinking level validation (#6339)
+    origin: b1535b909
+    file: models/spring-ai-google-genai/src/main/java/org/springframework/ai/google/genai/GoogleGenAiChatModel.java
+    detectable_from_diff: "no"
+    label_rationale: >
+      Rejecting {MINIMAL, MEDIUM} while the message says the supported levels are LOW and HIGH is internally consistent. That MEDIUM is in fact supported is a fact about the model, not about the code.
+    origin_date: "2026-02"
+    origin_lines: 56
+    origin_creates_file: false
+  - id: spring-ai-698bde0
+    repo: spring-projects/spring-ai
+    fix: 698bde0d0
+    fix_subject: >
+      Merge streaming tool call deltas by index
+    origin: d72057c82
+    file: models/spring-ai-openai/src/main/java/org/springframework/ai/openai/OpenAiChatModel.java
+    detectable_from_diff: "no"
+    label_rationale: >
+      The fix merges streaming tool-call deltas by index; the defect is that no index is used. An omission with no anchor, inside 389 changed lines, and knowing the delta type exposes an index requires the type.
+    origin_date: "2026-06"
+    origin_lines: 389
+    origin_creates_file: false
+  - id: spring-ai-7bd3e1f
+    repo: spring-projects/spring-ai
+    fix: 7bd3e1fb7
+    fix_subject: >
+      Fix OpenSearchVectorStore document deserialization
+    origin: 197c51770
+    file: vector-stores/spring-ai-opensearch-store/src/main/java/org/springframework/ai/vectorstore/opensearch/OpenSearchVectorStore.java
+    detectable_from_diff: "no"
+    label_rationale: >
+      The origin adds a null assertion on `hit.source()`, which reads as a correct hardening. Nothing in the diff reveals the deserialization problem the fix addresses.
+    origin_date: "2026-01"
+    origin_lines: 17
+    origin_creates_file: false
+  - id: spring-ai-4fbb484
+    repo: spring-projects/spring-ai
+    fix: 4fbb484bb
+    fix_subject: >
+      Fix Milvus metadata integer values returned as Long instead of Double
+    origin: 0065949d5
+    file: vector-stores/spring-ai-milvus-store/src/main/java/org/springframework/ai/vectorstore/milvus/MilvusVectorStore.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      A `Map<String, Object>` round-tripped through `new Gson()` — `toJson` then `fromJson` on the same object is visibly wasteful, which is the anchor. That default Gson widens every number to Double is a library behaviour outside the file.
+    origin_date: "2025-02"
+    origin_lines: 28
+    origin_creates_file: false
+  - id: spring-ai-c256cfa
+    repo: spring-projects/spring-ai
+    fix: c256cfabf
+    fix_subject: >
+      Fix null parent for tool call observations in blocking mode
+    origin: 1dde55d1e
+    file: spring-ai-model/src/main/java/org/springframework/ai/model/tool/DefaultToolCallingManager.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `getOrDefault(KEY, null)` produces a parent observation that is then used as a parent. Defaulting to null and using the result is visible in seven lines; whether a null parent is legal needs the observation API.
+    origin_date: "2026-06"
+    origin_lines: 7
+    origin_creates_file: true
+  - id: spring-ai-ec1e052
+    repo: spring-projects/spring-ai
+    fix: ec1e05282
+    fix_subject: >
+      Fix Redis vector store filter delete to paginate search results
+    origin: bca65de6a
+    file: vector-stores/spring-ai-redis-store/src/main/java/org/springframework/ai/vectorstore/redis/RedisVectorStore.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      A delete-by-filter enumerates matches with a single `ftSearch` call and no pagination. The mismatch between "delete everything matching" and one unbounded search is visible; that Redis returns ten results by default is outside the file.
+    origin_date: "2025-01"
+    origin_lines: 40
+    origin_creates_file: true
