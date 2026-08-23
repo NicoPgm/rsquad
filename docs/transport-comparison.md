@@ -1,90 +1,94 @@
-# Two transports on one commit — the first data point
+# Two transports on one commit — five runs
 
 **Date:** 2026-08-23
 **Commit:** `ai-video-digest@b404a93`, one file, `tools/portail_tests.py`.
-**Both runs:** same prompts, same schemas, same guards, same ranking, `claude-opus-5`.
-Only the transport differed.
+**Model:** `claude-opus-5` throughout. Same prompts, same schemas, same guards, same ranking.
 
-This is **one run each**. It is a data point, not the measurement ADR-0005 asks for — that one
-needs each transport run twice, and the number it turns on is self-variance.
+Five runs: three on the API transport, two on the harness transport. The two harness exports
+were verified **byte-identical** before running, so any difference on that side comes from the
+model and the harness, not from RSquad.
 
-## They agree on what matters
+## The places each run reported
 
-| Rank | API (five steps) | Harness (five steps) |
-|---|---|---|
-| 1 | `:272` — blocking · **5 lenses agree** | `:272` — blocking · **5 lenses agree** |
-| 2 | `:258` — significant · **3 lenses agree** | `:258` — significant · **3 lenses agree** |
-| 3 | — | `:137` — significant |
+| Run | Transport | Configuration | Places | Findings kept |
+|---|---|---|---|---:|
+| A | API | 4 blind lenses | `272` `258` `137` | 8 |
+| B | API | 4 lenses + refutation | `272` `259` `258` | 6 |
+| C | API | 5 steps, full | `272` `258` | 8 |
+| D | Harness | 5 steps, full | `272` `258` `137` | 9 |
+| E | Harness | 5 steps, full | `272` `258` `137` | 8 |
 
-Identical top two, down to the severity and the number of lenses that independently landed
-there. `:272` is `head-overwritten-before-use`, the best case in `evaluation/defects.yaml`; both
-transports put it first and both called it blocking.
+**`:272` is in every run, ranked first in every run, `blocking` in every run.** That is the
+ground-truth case, `head-overwritten-before-use`, and the top of the queue does not move.
 
-The harness found a third place, `:137` — the empty-retained-set defect, real and already fixed
-in this repository. **Do not read that as the harness finding more.** The API path produced 8, 6
-and 8 findings across three runs of this same commit; one extra entry is inside that spread.
-Attributing it to the transport would need repeats.
+**The two harness runs returned the identical place set, in the identical order, with identical
+severities.** The only difference between D and E is the corroboration on entry 2: three lenses
+agreed, then two.
 
-## What the harness cost in guard failures: nothing
+**The three API runs returned three different place sets.** But read that carefully: A, B and C
+had *different configurations* — A predates refutation, B predates the conformance lens. Only C
+is comparable to D and E. **There is no pair of identical-configuration API runs**, so the API's
+self-variance is not actually measured, and the apparent contrast is partly an artefact of how
+the runs happened.
 
-| | API | Harness |
+What can be said fairly:
+
+- The blind-lens stage produced 8, 6 and 7 findings on the API, and 8 and 7 on the harness.
+  Comparable spread; nothing distinguishes them.
+- The harness's two runs agreed on places; the API has no like-for-like pair to compare.
+- **Two runs do not give a variance, they give a difference.** They can show a transport is
+  unstable; they cannot show it is stable. "No difference observed across two runs" is the whole
+  claim.
+
+## Zero malformed replies, across 28 agents
+
+| | Run D | Run E |
 |---|---:|---:|
-| Findings after the guards | 8 | 9 |
-| **Dropped by the anchoring guard** | **0** | **0** |
-| **Malformed replies** | n/a — schema forced | **0** |
+| Findings after the guards | 9 | 8 |
+| Dropped by the anchoring guard | **0** | **0** |
+| **Malformed replies** | **0** | **0** |
 | Missing replies | 0 | 0 |
 | Refuted | 0 | 0 |
 
-The interesting cell is *malformed: 0*. On the API path the closed vocabulary is enforced by
-`output_config.format`. Here five agents read `schema/finding.json` and conformed **without any
-mechanical constraint**. That is the prediction in ADR-0008 — the constraint moves to ingest,
-where it costs a wasted call rather than a wrong finding — and the observed cost was zero wasted
-calls.
+On the API path the closed vocabulary is enforced by `output_config.format`. On the harness path
+nothing forces it: an agent reads `schema/finding.json` and conforms, or does not. Across four
+workflow invocations and 28 agents, **not one reply failed validation and not one snippet failed
+to anchor**.
 
-Do not over-read it either. Five replies from one capable harness say nothing about a weaker
-one, which is exactly why `ingest` validates regardless.
+That is the prediction of ADR-0008 holding twice — the constraint moves to ingest, where it costs
+a wasted call instead of a wrong finding, and the observed cost is still zero wasted calls. It
+remains a statement about one capable harness, which is why `ingest` validates regardless.
 
-## What it cost in tokens: several times more
+## Cost
 
-| | API | Harness |
+| | Run D | Run E |
 |---|---:|---:|
-| Model calls | 13 | 15 agents |
-| Billed | **$0.9968** | not itemised |
-| Subagent tokens | — | **820,844** |
+| Round 1 (5 lens tasks) | 331,680 | 330,144 |
+| Round 2 (refutations) | 489,164 | 433,784 |
+| **Total subagent tokens** | **820,844** | **763,928** |
 
-A bound rather than a figure: $0.9968 is between 40k tokens (if every token were output at
-$25/1M) and 199k (if every one were input at $5/1M). The harness spent 820,844. So it used
-**roughly four to twenty times** the tokens for the same work, and the true multiple sits in the
-middle of that range.
+Seven per cent apart. For a CI budget that stability may matter more than the stability of the
+findings: a budget is planned in advance, a queue is read after the fact.
 
-The reason is structural, not waste: each agent reads the task file, reads the schema, then
-writes a file. Those turns do not exist on the API path, where the payload is assembled once and
-sent.
+Run C, the comparable API run, billed **$0.9968** for 13 calls — which bounds it between 40k
+tokens (all output at $25/1M) and 199k (all input at $5/1M). The harness spends **four to twenty
+times** as many tokens for the same work. The gap is structural: each agent reads the task, reads
+the schema, then writes a file, and none of those turns exists when a payload is assembled once
+and sent.
 
-**And this is the argument that decides deployment, pointing the other way.** Under a
-subscription the larger number is invisible and needs no approval; the smaller number needs an
-API key, and at work an API key needs a chain of approvals — worse for CI than for a laptop
+**And that is the argument that decides deployment, pointing the other way.** Under a
+subscription the larger number is invisible and needs no approval; the smaller one needs an API
+key, and at work an API key needs a chain of approvals — worse for CI than for a laptop
 (ADR-0005). The cheaper transport is the one that cannot be deployed.
 
-## Two defects this run exposed, both in the transport
+## What five runs still do not establish
 
-**A finding with no refuter fell off the edge of the round.** Nine findings entered round 2,
-eight had refutation tasks, and the queue showed eight — the missing one was the only
-conformance account in the run. The API path never had the bug: `refute_all` emits a "no refuter
-for this claim shape" verdict and the finding survives. Across a job boundary there is no
-memory. Fixed: unrefutable findings ride in the manifest and reach the queue uncontested and
-marked as such.
+- **A like-for-like self-variance comparison.** It needs two API runs in the *same*
+  configuration as D and E. Until then the headline above is "no difference observed on the
+  harness across two runs", and nothing about the API.
+- **Blindness under a harness.** In D and E the agents had file tools and a repository within
+  reach: the lenses were blind by instruction, not by construction. The structural fix — a
+  filesystem holding only the job — was not in place.
+- **Anything beyond one file of one commit of one repository, in one language.**
 
-**A `rm -rf` was refused by the deny list** while setting the run up. Working as intended,
-recorded because a guard that never fires is a guard nobody has tested.
-
-## What this still does not establish
-
-- **Self-variance for the harness.** Zero data points. The API path has one comparison already:
-  8 findings then 6, with severities moving. Until the harness is run twice on the same commit,
-  ADR-0005's question is unanswered.
-- **Blindness under the harness.** In this run the lenses were blind *by instruction*: the
-  agents had file tools and a repository within reach. The structural fix — a filesystem holding
-  only the job — was not in place, and until it is, the harness's blindness is unmeasured rather
-  than absent.
-- **Anything about other commits, other files, other stacks.** One file.
+ADR-0005 stays `proposed`.
