@@ -92,10 +92,11 @@ refuse is a measurement of how the lenses are behaving.
 `evaluation/defects.yaml` holds real defects with the commit that introduced each one, so a
 squad can be replayed against diffs whose label came from reality rather than from a model.
 
-It is a **smoke test, not a measurement** — five cases today. It will catch a squad that finds
-nothing; it cannot tell 40 % from 70 %. Its most important field is `detectable_from_diff`:
-some real defects are simply not findable by reading the diff that introduced them, and scoring
-against those measures nothing.
+It is a **smoke test, not a measurement**. Nine entries today, of which **four are scorable** —
+the rest are either not findable from the diff at all, or were found by RSquad itself, and both
+kinds measure nothing. On four cases a 25 % detection rate and a 75 % one are the same number.
+It will catch a squad that finds nothing; it cannot tell 40 % from 70 %. The method, the cost and
+what it cannot prove: [`docs/evaluation.md`](docs/evaluation.md).
 
 ```bash
 rsquad gate                                  # HEAD against its parent
@@ -145,6 +146,9 @@ reused in place instead of copied. A secret duplicated is a secret with two plac
 would actually have caught, on data nobody arranged. Do that before trusting it.
 
 ## Porting to another stack
+
+Summarised here; the operational version, with a per-stack catalogue of traps and an acceptance
+criterion for a port, is [`docs/porting.md`](docs/porting.md).
 
 The core knows no language. Everything stack-specific fits into six questions
 (`gate/adapters/base.py`):
@@ -236,7 +240,17 @@ reports. A report says what happened, an ADR says what we do about it.
 | [0007](docs/adr/0007-the-conformance-lens-quotes-or-stays-quiet.md) | the conformance lens quotes its requirement, or stays quiet |
 | [0008](docs/adr/0008-the-seam-is-a-job-on-disk.md) | the second transport is a job on disk, not a workflow |
 
-First comparison of the two transports: [`docs/transport-comparison.md`](docs/transport-comparison.md).
+### The written-down parts
+
+| | |
+|---|---|
+| [`docs/architecture.md`](docs/architecture.md) | why the shape is what it is, and what degrades first when you move it |
+| [`docs/porting.md`](docs/porting.md) | the six questions in operational detail, and a per-stack catalogue of traps |
+| [`docs/evaluation.md`](docs/evaluation.md) | how a detection rate would be measured, what it costs, and what it cannot prove |
+| [`docs/gate-baseline.md`](docs/gate-baseline.md) | what the gate actually catches, measured over 20 commits |
+| [`docs/transport-comparison.md`](docs/transport-comparison.md) | seven runs across both transports on one commit |
+| [`docs/extraction.md`](docs/extraction.md) | the extraction from the source project, verified function by function |
+| [`docs/first-run.md`](docs/first-run.md) | the first paid run, and the five defects it found in this repository |
 
 ## License and provenance
 
