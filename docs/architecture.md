@@ -80,12 +80,16 @@ because they agree.
 So blindness is not a preference about prompt hygiene. It is what makes the second question —
 *what does this code actually do, and where does it break?* — a different question at all.
 
-**It is enforced structurally, and the two transports enforce it differently.** On the API path
-`request()` is a pure function of `(unit, lens, model)`: there is no parameter through which a
-specification could arrive, and a test asserts the signature. On the harness path the agent has
-file-reading tools, and the instruction not to use them is an instruction. The fix has the same
-shape as the original: run the harness against a job directory with no checkout beside it
-(ADR-0002, ADR-0008).
+**And the two transports do not enforce it equally.** On the API path `request()` is a pure
+function of `(unit, lens, model)`: there is no parameter through which a specification could
+arrive, and a test asserts the signature. On the harness path the agent has file-reading tools,
+and the instruction not to use them is an instruction.
+
+Measured across 46 harness agents: **not one read a file outside the job.** That is an
+observation, not a property — a transcript after the run where the API path has a test before the
+call. Relocating the job does not fix it either; the reach is the agent's tool permissions, not
+the job's neighbours. A real fix confines the agent, which is a sandbox and not a change to
+RSquad (ADR-0002, ADR-0008, `blindness-under-a-harness.md`).
 
 ### [3] Refutation exists to make finding expensive
 
@@ -104,8 +108,8 @@ Three things make it work, each a decision (ADR-0006):
 
 **Its own cost has not been isolated.** How many *true* findings the refuter kills is the number
 that decides whether it earns its calls, and measuring it needs labelled cases — the deferred
-work in `evaluation.md`. Across seven runs it has killed nothing, which is a weak signal in one
-direction and not a measurement.
+work in `evaluation.md`. Across eight runs it has killed exactly one claim, which is a weak
+signal in one direction and not a measurement.
 
 ### [4] The queue ranks and does not decide
 
@@ -152,7 +156,7 @@ contributes exactly one thing — a model call — and cannot change what a lens
 its answer must satisfy. Replies are validated at ingest regardless of what the harness could or
 could not constrain: the mechanical constraint moves, it does not disappear.
 
-**Seven runs on one commit, and the honest summary is that the choice is operational.** Both
+**Eight runs on one commit, and the honest summary is that the choice is operational.** Both
 transports returned the same set of places, run after run. The reproducibility argument ADR-0002
 made for the API path lost its empirical support the moment configurations were held constant.
 What survives is blindness a test can assert — and the cost, which points the other way: the

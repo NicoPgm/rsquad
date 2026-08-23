@@ -61,8 +61,24 @@ is not a property — the exact distinction ADR-0002 was written to defend.
 
 The mitigation is structural rather than textual: **run the harness against a job directory and
 nothing else.** A task file already carries the diff, the numbered file and the resolved context
-pack, so an agent needs no checkout to do its work. Copy the job somewhere with no repository
-beside it and blindness is restored by there being nothing to peek at.
+pack, so an agent needs no checkout to do its work. ~~Copy the job somewhere with no repository
+beside it and blindness is restored by there being nothing to peek at.~~
+
+> **That last sentence is wrong, and was corrected on 2026-08-23 by measuring it.** Relocating
+> the job removes proximity, not reach: a Claude Code agent reads absolute paths, and the
+> repository is still on the machine — and still the working directory its shell starts in. Runs
+> D and E had *already* exported their jobs to a temp directory, and a transcript shows an agent
+> running `git rev-parse` with no `cd`, which executed inside the repository under review.
+>
+> A structural fix has to confine the **agent** — a sandbox whose filesystem holds only the job,
+> or a harness whose tools cannot leave their working directory. Neither is a change to RSquad,
+> and neither was in place.
+>
+> What *was* measured, across 46 agents and 119 file operations in six workflow invocations:
+> **not one read a file outside the job.** Blindness on this transport is therefore **observed,
+> not enforced** — a transcript after the run, where the API path has a test before the call.
+> The check is free and repeatable, and it makes a breach detectable rather than impossible.
+> See `docs/blindness-under-a-harness.md`.
 
 Run it inside a working copy and the blind lenses are blind only by good manners. Both modes are
 usable; only one is defensible, and the driver says so at the top rather than in a footnote.
@@ -78,6 +94,12 @@ the edge of round 2, and the one that vanished was the only conformance account.
 never had it, because `refute_all` keeps such findings alive; across a job boundary there is no
 memory.
 
-**Still not measured:** self-variance for this transport — zero runs — which is the number
-ADR-0005 actually turns on. And blindness under a harness, since this run had a repository within
-the agents' reach.
+**Measured since.** Self-variance: three harness runs on the same commit returned the same three
+places (`transport-comparison.md`, `blindness-under-a-harness.md`). Blindness: 46 agents, zero
+reads outside the job — see the correction above for what that does and does not establish.
+
+**And one consequence nobody listed.** The agents used their tools to **verify claims
+empirically** — one built a throwaway git repository, ran `git rev-parse` against a nonexistent
+ref, and confirmed that git exits 128 while echoing the argument on stdout. The API path cannot
+do that at all. For a squad whose contract is "reproduction or nothing", a refuter that can run
+the reproduction is a different instrument, and it belongs in ADR-0005's comparison.

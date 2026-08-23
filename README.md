@@ -109,7 +109,15 @@ rsquad review --confirm                      # actually spend
 rsquad review --lens repro --confirm         # one lens only
 rsquad review --spec docs/specs/03.md --confirm   # give step [1] a document to check against
 rsquad review --no-refute --confirm          # skip step [3], cheaper and weaker
+
+rsquad evaluate --repo ../ai-video-digest        # which cases are scorable, and why the rest are not
+rsquad evaluate --repo ../ai-video-digest --confirm   # replay them and lay the evidence out
+rsquad evaluate --case head-overwritten-before-use --repo ../x --confirm   # one case, bounded spend
 ```
+
+`evaluate` writes a report and **no detection rate**. Whether a finding anchors at the defect is
+mechanical; whether its consequence is the actual failure is not, so each case carries a verdict
+line for a human. It states its denominator, and lists every case it excluded with the reason.
 
 ### Two transports
 
@@ -130,9 +138,14 @@ model call; it cannot change what a lens was asked or what its answer must satis
 
 **One caveat, in the driver's own header too.** A harness agent has file-reading tools, so a
 blind lens is blind only by instruction — unlike the API path, where a test asserts there is no
-channel for a spec at all. The fix is structural: run the harness against a job directory with no
-checkout beside it. A task carries the diff, the numbered file and the context pack, so it needs
-nothing else. See ADR-0008.
+channel for a spec at all.
+
+Measured across 46 harness agents and 119 file operations: **not one read a file outside the
+job.** That is an observation and not a property, and relocating the job does not make it one —
+the reach is the agent's tool permissions, not the job's neighbours. A real fix confines the
+agent, which is a sandbox and not a change to RSquad. The transcript check that produced this
+number is free and repeatable, and it makes a breach detectable rather than impossible.
+See [`docs/blindness-under-a-harness.md`](docs/blindness-under-a-harness.md) and ADR-0008.
 
 `rsquad review` is a dry run unless you pass `--confirm`, and the dry run prints **no cost
 estimate**. Two invented cost constants from the source project are sitting in
@@ -248,7 +261,8 @@ reports. A report says what happened, an ADR says what we do about it.
 | [`docs/porting.md`](docs/porting.md) | the six questions in operational detail, and a per-stack catalogue of traps |
 | [`docs/evaluation.md`](docs/evaluation.md) | how a detection rate would be measured, what it costs, and what it cannot prove |
 | [`docs/gate-baseline.md`](docs/gate-baseline.md) | what the gate actually catches, measured over 20 commits |
-| [`docs/transport-comparison.md`](docs/transport-comparison.md) | seven runs across both transports on one commit |
+| [`docs/transport-comparison.md`](docs/transport-comparison.md) | eight runs across both transports on one commit |
+| [`docs/blindness-under-a-harness.md`](docs/blindness-under-a-harness.md) | 46 agents, 119 file operations, and a mitigation that did not work |
 | [`docs/extraction.md`](docs/extraction.md) | the extraction from the source project, verified function by function |
 | [`docs/first-run.md`](docs/first-run.md) | the first paid run, and the five defects it found in this repository |
 

@@ -10,6 +10,7 @@ import pytest
 
 from rsquad import job
 from rsquad.chunking import Unit
+from rsquad.context import Definition
 from rsquad.conformance import Intent
 
 UNIT = Unit(
@@ -47,6 +48,27 @@ def test_a_task_carries_the_whole_instruction(tmp_path):
     assert "return fiches[0]" in text          # the unit
     assert "Reproduction or nothing" not in text or "reproduction" in text.lower()
     assert "{{" not in text                     # fully rendered before it left
+
+
+def test_a_task_needs_no_repository(tmp_path):
+    """Self-sufficiency is the precondition for isolating the harness (ADR-0008).
+
+    An agent can only be denied a repository if it does not need one. The code under review is
+    inline, and so is every definition of the context pack — a pack that cited `src/x.py:40`
+    instead of quoting it would force the agent back into the checkout, and blindness would go
+    with it. Cheaper to assert here than to discover mid-run.
+    """
+    definition = Definition(symbol="load", file="src/other.py", line=40,
+                            source="def load(path):\n    return open(path).read()")
+    unit = Unit(file=UNIT.file, diff=UNIT.diff, source=UNIT.source, numbered=UNIT.numbered,
+                context=[definition])
+    tasks = job.lens_tasks([unit], ["repro"], INTENT)
+    job.export(tmp_path, tasks, META)
+    for task in tasks:
+        text = (tmp_path / "round-1" / "tasks" / ("%s.md" % task.id)).read_text(encoding="utf-8")
+        assert unit.numbered in text                     # the code, not a path to it
+        assert "def load(path):" in text                 # the pack quotes, never cites
+        assert unit.diff in text
 
 
 def test_the_schema_crosses_too(tmp_path):

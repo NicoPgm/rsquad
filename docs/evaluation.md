@@ -34,9 +34,9 @@ visible, never as a percentage.
 
 ### What is already known about those four
 
-One of them has been replayed, by hand, seven times. `head-overwritten-before-use` at
+One of them has been replayed, by hand, eight times. `head-overwritten-before-use` at
 `tools/portail_tests.py:272` in `ai-video-digest@b404a93` was found **first and `blocking` in all
-seven runs**, across both transports and three configurations (`transport-comparison.md`).
+eight runs**, across both transports and three configurations (`transport-comparison.md`).
 
 That is 1/1 with high reliability, and it is worth stating precisely because it is so easy to
 inflate. It says the squad reliably finds *this* defect. It says nothing about a rate.
@@ -81,7 +81,7 @@ one refuter per refutable finding:
 | | |
 |---|---|
 | API transport | **$0.80 – $1.00 per case**, 11–13 calls (three runs) |
-| Harness transport | 764k – 821k tokens per case (two runs) |
+| Harness transport | 764k – 949k tokens per case (three runs) |
 
 So the current four scorable cases cost roughly **$4** on the API path, and replaying all nine
 costs under $10. That is cheap enough that the reason it has not been automated is not money.
@@ -98,8 +98,8 @@ things has not helped.
 
 **Nothing about the refuter's real cost.** How many *true* findings refutation kills is the
 number that decides whether it earns its calls. Measuring it means running each case twice —
-`--no-refute` and with — and comparing. Across seven runs the refuter has killed nothing, which is
-a weak signal in one direction and not a measurement.
+`--no-refute` and with — and comparing. Across eight runs the refuter has killed exactly one
+claim, which is a weak signal in one direction and not a measurement.
 
 **Nothing about relevance.** The gate can confirm a test discriminates perfectly and proves a
 property nobody needs. The same applies one layer up: a finding can be true, anchored, refutation-
