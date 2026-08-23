@@ -110,6 +110,29 @@ rsquad review --spec docs/specs/03.md --confirm   # give step [1] a document to 
 rsquad review --no-refute --confirm          # skip step [3], cheaper and weaker
 ```
 
+### Two transports
+
+`rsquad review` calls the Claude API directly. `rsquad export` / `rsquad ingest` write the same
+work as a job on disk that **any** harness can run — a Claude Code workflow, a Cursor rule, a
+shell loop, a person:
+
+```bash
+rsquad export ./job --head HEAD --repo .      # every prompt rendered, one task per call
+#   <harness runs each task, writes <task id>.json beside it>
+rsquad ingest ./job                           # validates, guards, writes the refutation round
+#   <harness runs those too>
+rsquad ingest ./job                           # writes the queue
+```
+
+Everything that makes a finding trustworthy stays on this side of the seam. The harness makes a
+model call; it cannot change what a lens was asked or what its answer must satisfy.
+
+**One caveat, in the driver's own header too.** A harness agent has file-reading tools, so a
+blind lens is blind only by instruction — unlike the API path, where a test asserts there is no
+channel for a spec at all. The fix is structural: run the harness against a job directory with no
+checkout beside it. A task carries the diff, the numbered file and the context pack, so it needs
+nothing else. See ADR-0008.
+
 `rsquad review` is a dry run unless you pass `--confirm`, and the dry run prints **no cost
 estimate**. Two invented cost constants from the source project are sitting in
 `evaluation/defects.yaml`; this tool reports what was billed, not what it guessed.
@@ -211,6 +234,7 @@ reports. A report says what happened, an ADR says what we do about it.
 | [0005](docs/adr/0005-two-transports-one-core.md) | two transports, one core — *proposed* |
 | [0006](docs/adr/0006-refutation-inherits-no-framing.md) | the refuter inherits no framing, and a broken refutation refutes nothing |
 | [0007](docs/adr/0007-the-conformance-lens-quotes-or-stays-quiet.md) | the conformance lens quotes its requirement, or stays quiet |
+| [0008](docs/adr/0008-the-seam-is-a-job-on-disk.md) | the second transport is a job on disk, not a workflow |
 
 ## License and provenance
 

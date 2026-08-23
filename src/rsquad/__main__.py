@@ -16,7 +16,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import budget, chunking, conformance, config, lenses, ranking, refutation
+from . import budget, chunking, conformance, config, job, lenses, ranking, refutation
 from .gate import ADAPTERS, DEFAULT_ADAPTER, check, git, merge_base, report
 from .vcs import resolve
 
@@ -190,6 +190,71 @@ def _review(args: argparse.Namespace) -> int:
     return 0
 
 
+def _units_and_intent(args, repo):
+    head = resolve(args.head, repo)
+    base = merge_base(args.base or "%s~1" % head, head, repo)
+    units = chunking.units(base, head, repo, args.path, adapter=ADAPTERS[DEFAULT_ADAPTER])
+    return head, base, units, conformance.gather(head, repo, args.spec)
+
+
+def _export(args: argparse.Namespace) -> int:
+    repo = Path(args.repo).resolve() if args.repo else None
+    head, base, units, intent = _units_and_intent(args, repo)
+    if not units:
+        print("nothing readable changed between %s and %s." % (base[:12], head[:12]))
+        return 0
+
+    tasks = job.lens_tasks(units, args.lens or list(lenses.LENSES),
+                           None if args.no_conformance else intent)
+    out = Path(args.job)
+    meta = {"base": base, "head": head, "repo": str(repo or Path.cwd()),
+            "specs": args.spec or [], "model": args.model}
+    round_dir = job.export(out, tasks, meta)
+
+    print("%s <- %s | %d task(s) written to %s"
+          % (head[:12], base[:12], len(tasks), round_dir / "tasks"))
+    print("\nRun each task and write its JSON reply to %s/<task id>.json."
+          % (round_dir / "results"))
+    print("Schemas the replies must satisfy are in %s." % (out / "schema"))
+    print("Then: rsquad ingest %s" % out)
+    return 0
+
+
+def _ingest(args: argparse.Namespace) -> int:
+    out = Path(args.job)
+    data = job.manifest(out)
+    repo = Path(data["repo"])
+    # Units are recomputed from the manifest rather than carried in it. They are a pure
+    # function of (base, head, repo), so recomputing is both cheaper and a check: if the
+    # revisions moved under the job, the anchors stop matching and the guards say so.
+    units = {u.file: u for u in chunking.units(data["base"], data["head"], repo, args.path,
+                                               adapter=ADAPTERS[DEFAULT_ADAPTER])}
+    intent = conformance.gather(data["head"], repo, data["specs"])
+    result = job.ingest(out, units, intent)
+
+    print("round %d: %d finding(s), %d dropped by the guards, %d missing, %d malformed"
+          % (data["round"], len(result.findings), len(result.dropped),
+             len(result.missing), len(result.malformed)))
+
+    if data["round"] == job.LENS_ROUND and not args.no_refute and result.findings:
+        tasks = job.refutation_tasks(result.findings, units)
+        # The findings ride in the manifest so round 2 needs nothing carried by hand.
+        round_dir = job.export(out, tasks, {k: data[k] for k in
+                                            ("base", "head", "repo", "specs", "model")},
+                               round_number=job.REFUTE_ROUND)
+        print("\n%d refutation task(s) written to %s" % (len(tasks), round_dir / "tasks"))
+        print("Run them, then: rsquad ingest %s" % out)
+        return 0
+
+    queue = Path(args.out)
+    queue.parent.mkdir(parents=True, exist_ok=True)
+    queue.write_text(job.queue(result, "Harness transport, job %s." % out), encoding="utf-8")
+    surviving, killed = refutation.survivors(result.verdicts)
+    print("%d survived, %d refuted -> %s"
+          % (len(surviving) if result.verdicts else len(result.findings), len(killed), queue))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="rsquad", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -237,6 +302,28 @@ def main(argv: list[str] | None = None) -> int:
     review.add_argument("--confirm", action="store_true",
                         help="actually call the API and spend; without it, a dry run")
     review.set_defaults(handler=_review)
+
+    for name, help_text in (("export", "write a job any harness can run"),
+                            ("ingest", "read a harness's replies and advance one round")):
+        sub_parser = sub.add_parser(name, help=help_text)
+        sub_parser.add_argument("job", help="the job directory")
+        sub_parser.add_argument("--path", action="append", default=None,
+                                help="restrict to these paths; repeatable")
+        sub_parser.add_argument("--out", default="review/queue.md",
+                                help="where the final queue is written (ingest)")
+        sub_parser.add_argument("--no-refute", action="store_true",
+                                help="do not write a refutation round")
+        if name == "export":
+            sub_parser.add_argument("--base", default=None)
+            sub_parser.add_argument("--head", default="HEAD")
+            sub_parser.add_argument("--repo", default=None)
+            sub_parser.add_argument("--spec", action="append", default=None)
+            sub_parser.add_argument("--lens", action="append", default=None,
+                                    choices=list(lenses.LENSES))
+            sub_parser.add_argument("--no-conformance", action="store_true")
+            sub_parser.add_argument("--model", default=lenses.MODEL,
+                                    help="recorded in the manifest for the harness to honour")
+        sub_parser.set_defaults(handler=_export if name == "export" else _ingest)
 
     args = parser.parse_args(argv)
     return args.handler(args)
