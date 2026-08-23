@@ -98,13 +98,14 @@ kinds measure nothing. On four cases a 25 % detection rate and a 75 % one are th
 It will catch a squad that finds nothing; it cannot tell 40 % from 70 %. The method, the cost and
 what it cannot prove: [`docs/evaluation.md`](docs/evaluation.md).
 
-**Third replay, 2026-08-23: 12 of 14 on real bug-introducing commits from two young Java
-projects, $12.55.** The first campaign that measures what it claims to: the commit reviewed is
+**Third replay, 2026-08-23: 15 of 19 on real bug-introducing commits from two young Java
+projects, $17.24.** The first campaign that measures what it claims to: the commit reviewed is
 the one that first wrote the buggy line, verified, so the correct version is not in the diff.
-**No memorisation gradient** — 3/3 on defects written after the knowledge cutoff. Both misses are
-omissions, and in both the squad returned a different real bug instead, which is the
+**The memorisation gradient runs the wrong way for the hypothesis** — 5/5 on defects written
+after the knowledge cutoff, 4/7 on the oldest, where recall would have helped most. All four misses returned a
+different real bug instead, which is the
 contradictions-not-omissions hypothesis holding on a set built not to favour it. Reader's cost,
-measured for the first time: 2.3 findings per case, 20 of 32 not the known defect.
+measured for the first time: 2.6 findings per case, 35 of 50 not the known defect.
 [`docs/step7b-first-run.md`](docs/step7b-first-run.md).
 
 **Second replay, 2026-08-23: six Java cases from two open-source repositories, 6 of 6 — and
