@@ -67,6 +67,17 @@ beside it and blindness is restored by there being nothing to peek at.
 Run it inside a working copy and the blind lenses are blind only by good manners. Both modes are
 usable; only one is defensible, and the driver says so at the top rather than in a footnote.
 
-**What is still not measured.** Whether the two transports find the same things, at what cost,
-and — the number ADR-0005 actually turns on — which one varies less against itself. The API path
-has one data point already: the same commit gave 8 findings then 6. Nothing yet for this one.
+**First measured, same day.** Run end to end on `ai-video-digest@b404a93` against the API path:
+identical top two entries, down to severity and the number of lenses that independently agreed;
+zero replies dropped by the anchoring guard; and **zero malformed replies without any mechanical
+constraint** — five agents read the schema and conformed. Roughly four to twenty times the tokens
+for the same work, invisible under a subscription. See `docs/transport-comparison.md`.
+
+The run also exposed a defect in this transport, now fixed: a finding with no refuter fell off
+the edge of round 2, and the one that vanished was the only conformance account. The API path
+never had it, because `refute_all` keeps such findings alive; across a job boundary there is no
+memory.
+
+**Still not measured:** self-variance for this transport — zero runs — which is the number
+ADR-0005 actually turns on. And blindness under a harness, since this run had a repository within
+the agents' reach.

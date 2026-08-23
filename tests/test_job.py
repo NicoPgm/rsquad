@@ -164,3 +164,29 @@ def test_the_manifest_carries_no_prompt(tmp_path):
     """The prompts are on disk once. A second copy in the manifest would be the stale one."""
     _export(tmp_path)
     assert "prompt" not in json.dumps(job.manifest(tmp_path))
+
+
+def test_a_finding_with_no_refuter_still_reaches_the_queue(tmp_path):
+    """It fell off the edge of the round, and the missing one was the only conformance account.
+
+    On the API path `refute_all` emits a "no refuter for this claim shape" verdict and the
+    finding survives. Across a job boundary there is no memory: round 2's manifest holds only
+    what it asked for. Nine findings in, eight in the queue, found by running it end to end.
+    """
+    mismatch = {"file": "src/a.py", "line": 2, "snippet": "return fiches[0]",
+                "requirement": "Return None when the corpus is empty.",
+                "mismatch": "it indexes", "kind": "unimplemented", "severity": "minor",
+                "lens": "conformance"}
+    tasks = job.refutation_tasks([FINDING, mismatch], UNITS)
+    riding = job.carried([FINDING, mismatch], UNITS)
+    assert len(tasks) == 1 and riding == [mismatch]
+
+    job.export(tmp_path, tasks, dict(META, carried=riding), round_number=job.REFUTE_ROUND)
+    _answer(tmp_path, tasks[0].id,
+            {"verdict": "stands", "reason": "holds", "evidence_line": 2,
+             "evidence_snippet": "return fiches[0]"}, round_number=2)
+
+    result = job.ingest(tmp_path, UNITS, INTENT)
+    text = job.queue(result)
+    assert len(result.verdicts) == 2
+    assert "**Requirement**" in text, "the conformance account vanished between rounds"

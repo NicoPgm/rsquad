@@ -236,6 +236,8 @@ reports. A report says what happened, an ADR says what we do about it.
 | [0007](docs/adr/0007-the-conformance-lens-quotes-or-stays-quiet.md) | the conformance lens quotes its requirement, or stays quiet |
 | [0008](docs/adr/0008-the-seam-is-a-job-on-disk.md) | the second transport is a job on disk, not a workflow |
 
+First comparison of the two transports: [`docs/transport-comparison.md`](docs/transport-comparison.md).
+
 ## License and provenance
 
 The gate began in a private project as `tools/portail_tests.py` and was extracted here,

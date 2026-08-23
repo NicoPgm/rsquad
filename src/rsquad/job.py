@@ -103,8 +103,24 @@ def lens_tasks(units: list[Unit], lens_names: list[str],
     return tasks
 
 
+def carried(findings: list[dict], units: dict[str, Unit]) -> list[dict]:
+    """Findings that get no refutation task and must ride to the queue anyway.
+
+    Conformance claims have no refuter (ADR-0007). On the API path they still reach the reader,
+    because `refute_all` emits a "no refuter for this claim shape" verdict and the finding
+    survives. Across a job boundary there is no memory: the second round's manifest holds only
+    what it asked for, so anything without a task simply vanished — nine findings in, eight in
+    the queue, and the missing one was the only conformance account in the run.
+
+    Found by running the transport end to end. It is the same shape of mistake as documenting a
+    gap and not closing it: the rule existed, and the new path around it did not know.
+    """
+    return [f for f in findings
+            if units.get(f["file"]) is not None and not refutation.refutable(f)]
+
+
 def refutation_tasks(findings: list[dict], units: dict[str, Unit]) -> list[Task]:
-    """One task per refutable finding. Conformance claims have no refuter (ADR-0007)."""
+    """One task per refutable finding. The rest ride in the manifest — see `carried`."""
     tasks = []
     for position, finding in enumerate(findings, 1):
         unit = units.get(finding["file"])
@@ -199,9 +215,16 @@ def ingest(job: Path, units: dict[str, Unit],
                     verdict.error = refutation.UNANCHORED
                 out.verdicts.append(verdict)
         except Exception as error:                               # noqa: BLE001
+            # noqa keeps the broad catch: a harness can return anything, and one bad reply
+            # must not end the ingest of every other.
             # Malformed is reported, never silently skipped: a harness that returns prose
             # instead of JSON must show up as a number, not as a quiet absence of findings.
             out.malformed.append((entry["id"], "%s: %s" % (type(error).__name__, error)))
+
+    # Findings that had no task still reach the queue, uncontested and marked as such.
+    for finding in data.get("carried", []):
+        out.verdicts.append(refutation.Verdict(finding=finding,
+                                               error=refutation.NOT_REFUTABLE))
     return out
 
 

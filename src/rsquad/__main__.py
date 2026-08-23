@@ -238,11 +238,13 @@ def _ingest(args: argparse.Namespace) -> int:
 
     if data["round"] == job.LENS_ROUND and not args.no_refute and result.findings:
         tasks = job.refutation_tasks(result.findings, units)
-        # The findings ride in the manifest so round 2 needs nothing carried by hand.
-        round_dir = job.export(out, tasks, {k: data[k] for k in
-                                            ("base", "head", "repo", "specs", "model")},
-                               round_number=job.REFUTE_ROUND)
-        print("\n%d refutation task(s) written to %s" % (len(tasks), round_dir / "tasks"))
+        # Findings with no refuter ride in the manifest rather than falling off the edge of the
+        # round. The queue must show every finding that survived the guards, contested or not.
+        meta = {k: data[k] for k in ("base", "head", "repo", "specs", "model")}
+        meta["carried"] = job.carried(result.findings, units)
+        round_dir = job.export(out, tasks, meta, round_number=job.REFUTE_ROUND)
+        print("\n%d refutation task(s) written to %s (%d finding(s) carried, no refuter)"
+              % (len(tasks), round_dir / "tasks", len(meta["carried"])))
         print("Run them, then: rsquad ingest %s" % out)
         return 0
 
