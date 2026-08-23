@@ -123,6 +123,20 @@ def _qualified_matches(cases: list, entries: set[str]) -> bool:
                for module in modules if module for name in classnames)
 
 
+def _fit(text: str, width: int = 64) -> str:
+    """Elide the middle, never the head.
+
+    The identifier used to be truncated from the left, which kept the test name and dropped the
+    module — and since question 7 the module is what tells two same-named tests apart. Reporting
+    `adapter_python::test_x` where the file was `tests.test_adapter_python` is a report you have
+    to decode.
+    """
+    if len(text) <= width:
+        return text
+    head = (width - 1) // 2
+    return text[:head] + "…" + text[-(width - head - 1):]
+
+
 def parse_junit(path: Path, exempt: set[str], retained: set[str],
                 missing_symbol=None) -> list[Verdict]:
     """Classify every test case from the JUnit report produced against the base.
@@ -281,7 +295,7 @@ def report(verdicts: list[Verdict], strict: bool, out=print) -> int:
             continue
         out("\n%s (%d)" % (title, len(batch)))
         for v in batch:
-            out("  %-64s %s" % (v.identifier[-64:], v.detail))
+            out("  %-64s %s" % (_fit(v.identifier), v.detail))
 
     s = summarize(verdicts)
     out("")

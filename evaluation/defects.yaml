@@ -159,7 +159,7 @@ defects:
       landing the exemption on the next plain test - which never carried a marker.
     repo: rsquad
     introduced_in: 2a21282        # inherited from the source project at the extraction
-    fixed_in: pending
+    fixed_in: bef62fa
     file: src/rsquad/gate/adapters/base.py
     kind: correctness
     severity: significant
@@ -179,7 +179,7 @@ defects:
       and reported suspect.
     repo: rsquad
     introduced_in: 2a21282        # inherited from the source project at the extraction
-    fixed_in: pending
+    fixed_in: bef62fa
     file: src/rsquad/gate/core.py
     kind: correctness
     severity: minor

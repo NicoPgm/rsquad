@@ -282,3 +282,13 @@ def test_an_exemption_is_qualified_by_its_file_too(tmp_path):
     v, = parse_junit(_report(tmp_path, body), {"tests.sub.test_beta::test_shared"},
                      {"tests.test_alpha::test_shared"})
     assert v.state == SUSPECT, "the exemption belongs to a different file"
+
+
+def test_a_long_identifier_keeps_both_its_module_and_its_name(tmp_path):
+    """It was truncated from the left, which dropped the module — and since question 7 the
+    module is what tells two same-named tests apart."""
+    long_name = "tests.test_adapter_python::test_a_marker_above_an_async_test_is_not_lost"
+    lines = []
+    report([Verdict(long_name, VALID, "fails on the base")], strict=False, out=lines.append)
+    shown = "\n".join(lines)
+    assert "tests.test_adapter" in shown and "is_not_lost" in shown
