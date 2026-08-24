@@ -47,7 +47,7 @@ Fix `OpenAiAudioTranscriptionModel` leaking the stream on cancellation (#6759)
   `OpenAiAudioTranscriptionOptions mergedOptions = OpenAiAudioTranscriptionOptions.builder()`
   Beyond adding streaming, the change rewrites the existing non-streaming call() path: the explicit instanceof check that rejected foreign prompt options with `IllegalArgumentException("Prompt options are not of type OpenAiAudioTranscriptionOptions: ...")` is removed and replaced by an unconditional builder merge. Callers relying on that documented failure mode for a wrong options type now get whatever merge() does instead, and the intent mentions no change to call().
 
-**Detected?** `?` — replace with `yes` or `no`. It counts as detected only if a
+**Detected?** `yes` — replace with `yes` or `no`. It counts as detected only if a
 finding above anchors at the defect **and** its consequence describes the actual
 failure. A finding that points at the right line for the wrong reason is a
 coincidence, and counting it inflates every later number.
@@ -76,7 +76,7 @@ Fix Milvus metadata integer values returned as Long instead of Double
   `.metadata((metadata != null) ? gson.fromJson(metadata, type) : Map.of())`
   Gson's ObjectTypeAdapter deserializes every JSON number as Double when the target value type is Object, so the returned Document.getMetadata() holds Double 2024.0 and Double 3.0 instead of Integer 2024 and Long 3. The previous JSONObject.getInnerMap() preserved Integer/Long. Callers doing metadata.get("year").equals(2024) now get false, and a cast such as (Integer) metadata.get("year") throws ClassCastException. The same applies to the injected DocumentMetadata.DISTANCE value, which changes from Float to Double.
 
-**Detected?** `?` — replace with `yes` or `no`. It counts as detected only if a
+**Detected?** `yes` — replace with `yes` or `no`. It counts as detected only if a
 finding above anchors at the defect **and** its consequence describes the actual
 failure. A finding that points at the right line for the wrong reason is a
 coincidence, and counting it inflates every later number.
@@ -129,7 +129,7 @@ Fix Redis vector store filter delete to paginate search results
   `matchingIds.add(docId.replace(key(""), ""));`
   key("") is the bare prefix and String.replace strips every occurrence, not just the leading one: "docdoc-42" becomes "-42", so key(id) rebuilds "doc-42" and pipeline.jsonDel targets a key that does not exist. jsonDel returns 0L, RESPONSE_DEL_OK fails, and the method throws IllegalStateException("Failed to delete documents by filter") while the document is still present. toDocument() strips the same prefix correctly with substring(this.prefix.length()).
 
-**Detected?** `?` — replace with `yes` or `no`. It counts as detected only if a
+**Detected?** `yes` — replace with `yes` or `no`. It counts as detected only if a
 finding above anchors at the defect **and** its consequence describes the actual
 failure. A finding that points at the right line for the wrong reason is a
 coincidence, and counting it inflates every later number.

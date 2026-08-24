@@ -79,6 +79,11 @@ rubric measures the evidence in the diff; the model brings its own.
 50 surviving findings across 19 cases — **2.6 per case**, of which **35 were not the known
 defect**.
 
+> **Corrected 2026-08-24.** 50 is the number of distinct `file:line` **places**, not of findings:
+> several lenses reaching the same line collapse to one. The finding count is **97**, i.e. **5.1
+> per case**, of which 82 were not the known defect. Both units are legitimate and this document
+> used the wrong word for the one it counted. See `docs/transport-calibration-19.md`.
+
 Calling those false positives would be wrong: several are real, and every one of the four misses
 found a genuine bug instead. But 35 unlabelled claims is what a reader actually pays, and it is
 the number that decides whether anyone keeps the tool. It has never been measurable before —

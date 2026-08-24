@@ -11,6 +11,9 @@ import re, subprocess, sys
 
 FIX = re.compile(r"\b(fix(e[sd])?|bug|incorrect|wrong|regression|npe|fails?|broken)\b", re.I)
 ISSUE = re.compile(r"(#\d+|\b[A-Z]{2,}-\d+\b)")
+# The bound stays 10 by default, so every earlier run of this script reproduces exactly.
+# `--max-files N` raises it, and the reason must be recorded before any labelling —
+# `evaluation/step7-young-repos.md` names it as the one tunable and says so.
 MAX_FILES_IN_ORIGIN = 10
 NOISE = re.compile(r"^[+-]\s*(//|\*|/\*|import\s|$)")
 
@@ -114,7 +117,13 @@ def scan(repo):
             pool.append((fix[:9], msg.splitlines()[0][:44], verdict, src[0]))
     return tally, pool
 
-for repo in sys.argv[1:]:
+argv = sys.argv[1:]
+if "--max-files" in argv:
+    i = argv.index("--max-files")
+    MAX_FILES_IN_ORIGIN = int(argv[i + 1])
+    del argv[i:i + 2]
+
+for repo in argv:
     tally, pool = scan(repo)
     total = sum(tally.values())
     print("=" * 104)

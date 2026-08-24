@@ -1,5 +1,15 @@
 # Calibrating the harness against the API — same cases, and they disagree
 
+> **Superseded 2026-08-24 by `docs/transport-calibration-19.md`**, which ran all nineteen cases
+> on both transports for $0 — because the API half was already bought, so the replay had to go
+> the *other* way. On nineteen cases the two agree on eighteen, and the whole disagreement is the
+> single case named below. The sentence "the transports are not interchangeable per case" was
+> built on a four-case window and does not survive.
+>
+> Two corrections of fact: the counts below labelled "findings" are **distinct places** (19
+> findings against 16, for 10 places against 6), and the closing recommendation to spend the API
+> budget on calibration is wrong — calibration turned out to be free.
+
 **Date:** 2026-08-24
 **Cases:** the four scorable spring-ai cases of `step7b.yaml`, run on both transports.
 **Cost:** 46 agents, 2.65 million tokens, **$0** — the API half was already paid for on 2026-08-23.

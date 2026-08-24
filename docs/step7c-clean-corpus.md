@@ -14,11 +14,17 @@ known defect, and that number is uninterpretable without this one.
 | | clean commits | defect cases |
 |---|---:|---:|
 | cases | 8 | 19 |
-| surviving findings | **12** | 50 |
-| per case | **1.5** | 2.6 |
+| surviving findings | **12** | ~~50~~ **97** |
+| per case | **1.5** | ~~2.6~~ **5.1** |
 | **cases with no finding at all** | **4 / 8** | **0 / 19** |
 | refuted | 0 | 1 |
 | refused by the guards | 0 | 0 |
+
+> **Corrected 2026-08-24.** The two columns were counted in different units: 12 is raw findings,
+> 50 was distinct `file:line` places. In matching units it is 12 against 97, so **1.5 per case
+> against 5.1** — the contrast is more than threefold, not less than twofold. In places it is 0.8
+> against 2.6, the same ratio. The correction strengthens this page's argument, which is why it
+> had to be looked for. `docs/transport-calibration-19.md`.
 
 **The second-to-last row is the result.** The squad said nothing on half the clean commits, and
 never once said nothing on a diff that contained a defect. On 4/8 against 0/19 that is Fisher
