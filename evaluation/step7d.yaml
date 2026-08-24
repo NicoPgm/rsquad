@@ -1,0 +1,452 @@
+# Step 7d — the extension that takes the detection set from 19 scorable cases to 38.
+# Frozen before any of its cases was run. `evaluation/step7b.yaml` is NOT altered by this file.
+#
+# WHY THERE IS A THIRD FREEZE
+#
+# `step7b.yaml` says it in its own words: "19 scorable cases give roughly +/- 20 points, not the
+# +/- 15 that 40 would." Its API pass is bought and reported — 15/19, `docs/step7b-first-run.md`
+# — and all 19 have since been replayed on the harness for nothing
+# (`docs/transport-calibration-19.md`). Scaling further on the API would cost about $20; on the
+# harness a case costs tokens and no dollars, so the scale-up runs there. That is ADR-0005's
+# division of labour applied to the measurement rather than to the review.
+#
+# **The number this produces is a harness number.** On the nineteen cases where both transports
+# have now run, they agree on eighteen — much closer than the four-case calibration suggested —
+# but "close" is not "transferable", and nothing here assumes a transfer.
+#
+# WHERE THE NEW CASES COME FROM
+#
+# **The one tunable, raised — and it was named in writing before any of this.**
+# `evaluation/step7-young-repos.md` says of `MAX_FILES_IN_ORIGIN = 10`:
+#
+#   "in a young, fast-moving project a twelve-file commit is an ordinary feature, and the review
+#    unit is one file regardless of how many the commit touched. Raising it would raise the yield.
+#    Deciding that after seeing which cases it admits would be the post-hoc adjustment this whole
+#    exercise exists to avoid, so it stays at 10 unless it is changed for a stated reason, before
+#    any labelling, and recorded here."
+#
+# It is raised to **20**, for that reason and no other. The condition attached to it is met in
+# form: the reason was written before the change, the change is recorded, and the cases it admits
+# were labelled blind afterwards.
+#
+# The condition is **not** met in spirit, and saying so is the point of this paragraph: the bound
+# is being raised after the 15/19 result is known. What bounds that is structural — the 24 frozen
+# cases are untouched and were rerun unchanged, so a report can show the old subset and the new
+# one side by side. If widening the pool moved the number, that will be visible rather than
+# absorbed.
+#
+# A SELECTION THAT DID NOT REPRODUCE, FOUND WHILE DOING THIS
+#
+# `evaluation/step7-young-repos.md` prints a raw listing of **43 usable candidates**. Today's
+# committed `step7_origin.py`, at the same bound of 10, produces **33** (22 langchain4j, 11
+# spring-ai). The published listing was printed by a version of the script from before the
+# reformatting filter was added, and the document was never regenerated.
+#
+# **`step7b.yaml` itself is unaffected, and that was checked rather than assumed:** all 24 frozen
+# cases still come out of today's script with exactly the origins the freeze records — including
+# `840330c24`, whose origin the freeze corrects from the published listing's `fcf18fda1` to
+# `9443ad9b2`, which is what the corrected script returns. Zero absent, zero altered.
+#
+# WHAT IS NOT ALLOWED TO CHANGE, AND DOES NOT
+#
+#   - the six other selection rules, verbatim from `step7b.yaml`
+#   - rule 7, now a committed script (`evaluation/step7_verify.py`) rather than a scratch file
+#   - `evaluation/labelling-rubric.md`, unchanged since `a97f883`
+#   - the scoring rule: a finding counts only if it anchors at the defect AND its consequence
+#     describes the actual failure
+#   - every label and every case already in `step7b.yaml`
+#
+# LABELS are assigned from the ORIGIN diff, never from the fix, taking the lower value where
+# torn. `no` cases stay in the set and out of every rate.
+
+schema_version: 1
+
+budget:
+  usd: 0.0
+  note: >
+    **Nothing here is paid for.** Every case runs on the harness transport
+    (`rsquad evaluate --jobs <dir> --export/--ingest`), where a case costs tokens against a
+    subscription and no dollars. That is the division of labour ADR-0005 records, applied to the
+    measurement rather than to the review, and it is the only reason forty cases are affordable:
+    on the API this set would have cost roughly $20 on top of the $17.24 `step7b.yaml` already
+    spent.
+
+arms:
+  - repo: langchain4j/langchain4j
+    url: https://github.com/langchain4j/langchain4j.git
+    cases: 19
+  - repo: spring-projects/spring-ai
+    url: https://github.com/spring-projects/spring-ai.git
+    cases: 3
+
+selection:
+  scan: "python evaluation/step7_origin.py --max-files 20 langchain4j spring-ai"
+  verify: "python evaluation/step7_verify.py <scan output>   # rule 7: keep only VERIFIED >= 1"
+  candidates_at_bound_20: 67
+  passing_rule_7: 51
+  already_in_step7b: 24
+  new_candidates: 27
+  dropped_duplicate_unit: 4
+  dropped_rubric_rule_5: 1
+  frozen_here: 22
+
+deduplication:
+  note: >
+    **One case per (origin commit, file).** Two fixes can trace back to the same commit and the
+    same file, and the two cases are then the *same review unit*: the squad would be handed an
+    identical diff twice and the two outcomes would not be independent. Four such collisions
+    appeared in the widened pool and none in `step7b.yaml`, which is itself a consequence of
+    raising the bound. The tie is broken mechanically — **keep the case whose fix is newer** —
+    and no case was chosen by reading it.
+  collisions:
+    - unit: ApacheHttpClient.java @ f368ec038
+      kept: "e1dc39172"
+      dropped: "b44723943"
+    - unit: InfinispanMetadataFilterMapper.java @ 1d81014af
+      kept: "f00ea5f79"
+      dropped: "0d3f1b97b"
+    - unit: ElasticsearchContentRetriever.java @ 2c170dd43
+      kept: "525273985"
+      dropped: "cfd41109c"
+    - unit: TencentCosDocumentLoader.java @ e43f86809
+      kept: "765b56474"
+      dropped: "e4e71560e"
+
+dropped_by_rubric_rule_5:
+  - fix: "12f5cbe61"
+    repo: spring-ai
+    why: >
+      the traced line is `return internalStream(requestPrompt, null)`, a prompt-building refactor. The defect the fix addresses is the buffering inside `internalStream`, whose body appears as context in the origin diff, not as an addition. Dropped, not labelled `no` (rubric rule 5).
+
+strata:
+  note: >
+    `origin_date` stays a covariate reported beside the result, never a filter. Raising the file
+    bound admitted larger commits, so this set is **not** distributed like `step7b.yaml`: its
+    origin diffs are much bigger and most of them create the file. That is recorded per case as
+    `origin_lines` and `origin_creates_file`, and it has to be read with the result, because
+    reviewing a whole new class is a different task from reviewing a five-line change.
+  post_cutoff_note: >
+    **This extension adds no post-cutoff scorable case.** Two candidates have an origin after the
+    May 2026 cutoff and both were labelled `no`, so they are out of every rate. The memorisation
+    contrast therefore stays exactly where `step7b.yaml` left it — five cases — and nothing in
+    this set strengthens or weakens it. Said here rather than discovered later, because the
+    strata are the reason the young-repository pool was built at all.
+  scorable_by_stratum:
+    post-cutoff: 0
+    2025-to-2026-05: 14
+    2024-and-earlier: 5
+
+labels:
+  "yes": 7
+  "weak": 12
+  "no": 3
+
+cases:
+
+  - id: langchain4j-4a36c67
+    repo: langchain4j/langchain4j
+    fix: "4a36c67fe"
+    fix_subject: >
+      fix: Escape single quotes in Azure AI Search
+    origin: "abc957a80"
+    file: langchain4j-azure-ai-search/src/main/java/dev/langchain4j/rag/content/retriever/azure/search/DefaultAzureAiSearchFilterMapper.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      Metadata keys and values are concatenated straight into single-quoted OData literals in `formatComparisonFilter`, the one place every comparison funnels through. Interpolation into a quoted literal with no escaping is visible; that the OData grammar requires a single quote to be doubled is a grammar the file does not carry.
+    origin_date: "2024-07"
+    origin_lines: 117
+    origin_creates_file: true
+
+  - id: langchain4j-229309d
+    repo: langchain4j/langchain4j
+    fix: "229309d27"
+    fix_subject: >
+      Fix Bedrock stop-reason mapping for AWS-adde
+    origin: "13d276992"
+    file: langchain4j-bedrock/src/main/java/dev/langchain4j/model/bedrock/AbstractBedrockChatModel.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `finishReasonFrom` maps four `StopReason` values and throws `IllegalArgumentException` on everything else. The exhaustiveness gap and the hard failure are both in the diff; knowing that other valid values exist and arrive on successful responses lives in the AWS SDK enum, outside the file.
+    origin_date: "2025-04"
+    origin_lines: 481
+    origin_creates_file: true
+
+  - id: langchain4j-e1dc391
+    repo: langchain4j/langchain4j
+    fix: "e1dc39172"
+    fix_subject: >
+      fix: Read error response body as UTF-8 witho
+    origin: "f368ec038"
+    file: http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `new InputStreamReader(inputStream)` with no charset, feeding an error-message builder. The call is visible; that the platform default varies is a Java convention the file does not state. Same shape as the two document-loader cases of `step7b.yaml`, labelled the same way.
+    origin_date: "2026-02"
+    origin_lines: 270
+    origin_creates_file: true
+
+  - id: langchain4j-10cd693
+    repo: langchain4j/langchain4j
+    fix: "10cd6932b"
+    fix_subject: >
+      Fix Bedrock guardrail assessment handling fo
+    origin: "9c4892323"
+    file: langchain4j-bedrock/src/main/java/dev/langchain4j/model/bedrock/AbstractBedrockChatModel.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `if (trace == null) return null;` then four unguarded `trace.guardrail()` dereferences. The code demonstrates it does not trust `trace` and then trusts its member; whether `guardrail` is independently optional is `ConverseTrace`'s contract, outside the file.
+    origin_date: "2026-01"
+    origin_lines: 241
+    origin_creates_file: false
+
+  - id: langchain4j-7ddb6ff
+    repo: langchain4j/langchain4j
+    fix: "7ddb6ff8c"
+    fix_subject: >
+      fix: Return generated text when GPULlama3 ge
+    origin: "245b18392"
+    file: langchain4j-gpu-llama3/src/main/java/dev/langchain4j/model/gpullama3/GPULlama3BaseModel.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      `responseText` is decoded, then discarded on the `stopToken == null` path in favour of a hard-coded English notice returned as the model's answer. A value computed and then not used, with the discard visible in the same six lines. Nothing outside the file is needed.
+    origin_date: "2025-10"
+    origin_lines: 250
+    origin_creates_file: true
+
+  - id: langchain4j-b2923fe
+    repo: langchain4j/langchain4j
+    fix: "b2923fe7c"
+    fix_subject: >
+      fix: Correct mislabeled safeSearch field in
+    origin: "d28f5ab47"
+    file: langchain4j-core/src/main/java/dev/langchain4j/web/search/WebSearchRequest.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      `toString()` prints `", siteRestrict=" + safeSearch`. Every other entry in the same expression pairs a label with the field of that name, and the class has no `siteRestrict` field. The contradiction is inside one statement.
+    origin_date: "2024-05"
+    origin_lines: 312
+    origin_creates_file: true
+
+  - id: langchain4j-5252739
+    repo: langchain4j/langchain4j
+    fix: "525273985"
+    fix_subject: >
+      fix: Default ElasticsearchContentRetriever m
+    origin: "2c170dd43"
+    file: langchain4j-elasticsearch/src/main/java/dev/langchain4j/rag/content/retriever/elasticsearch/ElasticsearchContentRetriever.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `private int maxResults;` is the only builder field left without a default, beside `indexName = "default"` and a built `configuration`. The omission is visible; that a primitive zero is then rejected downstream by `EmbeddingSearchRequest` is outside the file.
+    origin_date: "2026-01"
+    origin_lines: 179
+    origin_creates_file: true
+
+  - id: langchain4j-3699d82
+    repo: langchain4j/langchain4j
+    fix: "3699d8221"
+    fix_subject: >
+      fix: use the exact metadata key in Coherence
+    origin: "9af8f8d08"
+    file: langchain4j-coherence/src/main/java/dev/langchain4j/store/embedding/coherence/CoherenceMetadataFilterMapper.java
+    detectable_from_diff: "no"
+    label_rationale: >
+      `Extractors.extract(field)` is a well-formed call with a well-formed argument. That Coherence normalises the name into a JavaBean canonical name, silently rewriting keys such as `isbn`, is library behaviour with no trace in the diff.
+    origin_date: "2024-11"
+    origin_lines: 135
+    origin_creates_file: true
+
+  - id: langchain4j-f00ea5f
+    repo: langchain4j/langchain4j
+    fix: "f00ea5f79"
+    fix_subject: >
+      Fixes Ickle injection issue (#5856)
+    origin: "1d81014af"
+    file: langchain4j-infinispan/src/main/java/dev/langchain4j/store/embedding/infinispan/InfinispanMetadataFilterMapper.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      Ickle query strings are assembled by concatenating metadata keys and values into single-quoted literals. String concatenation into a query language is the anchor; that Ickle needs a doubled quote, and that this is an injection rather than a formatting slip, is outside the file.
+    origin_date: "2025-07"
+    origin_lines: 194
+    origin_creates_file: true
+
+  - id: langchain4j-1023c67
+    repo: langchain4j/langchain4j
+    fix: "1023c6753"
+    fix_subject: >
+      fix: do not consume the response body on the
+    origin: "423d2fc27"
+    file: http-clients/langchain4j-http-client-okhttp/src/main/java/dev/langchain4j/http/client/okhttp/OkHttpClient.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      The streaming path calls `fromOkHttpResponse(response)` and then parses the same response body. The converter is in the same file, so the double read is reachable without leaving it; that OkHttp's body is one-shot and `bytes()` closes it is an OkHttp contract.
+    origin_date: "2026-04"
+    origin_lines: 191
+    origin_creates_file: true
+
+  - id: langchain4j-765b564
+    repo: langchain4j/langchain4j
+    fix: "765b56474"
+    fix_subject: >
+      fix: Paginate ListObjects in TencentCosDocum
+    origin: "e43f86809"
+    file: document-loaders/langchain4j-document-loader-tencent-cos/src/main/java/dev/langchain4j/data/document/loader/tencent/cos/TencentCosDocumentLoader.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `loadDocuments` calls `listObjects` once and processes the returned page. The mismatch between "load every document under a prefix" and one call is visible; that Tencent COS truncates at 1000 and exposes `isTruncated()` is outside the file. Same shape as the Redis pagination case of `step7b.yaml`.
+    origin_date: "2024-01"
+    origin_lines: 157
+    origin_creates_file: true
+
+  - id: langchain4j-cfd90e5
+    repo: langchain4j/langchain4j
+    fix: "cfd90e52f"
+    fix_subject: >
+      fix: Avoid StringIndexOutOfBoundsException w
+    origin: "504aa173d"
+    file: experimental/langchain4j-experimental-sql/src/main/java/dev/langchain4j/experimental/rag/content/retriever/sql/SqlDatabaseContentRetriever.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      `substring(indexOf("```sql") + 6, lastIndexOf("```"))` computes both bounds from the same string in one expression, with no check that the second is past the first. When there is no closing fence, `lastIndexOf` returns the opening one. The whole hazard is in the line.
+    origin_date: "2024-05"
+    origin_lines: 349
+    origin_creates_file: true
+
+  - id: langchain4j-c2aa578
+    repo: langchain4j/langchain4j
+    fix: "c2aa57844"
+    fix_subject: >
+      fix: Avoid StringIndexOutOfBoundsException w
+    origin: "0b5e2c6b6"
+    file: experimental/langchain4j-experimental-hibernate/src/main/java/dev/langchain4j/rag/content/retriever/hibernate/HibernateContentRetriever.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      Identical to case 12 in another retriever: three `substring(indexOf(fence) + n, lastIndexOf("```"))` branches, none checking that the end is past the start.
+    origin_date: "2026-03"
+    origin_lines: 310
+    origin_creates_file: true
+
+  - id: langchain4j-7fe3e3e
+    repo: langchain4j/langchain4j
+    fix: "7fe3e3e4f"
+    fix_subject: >
+      fix: Parse Ollama timestamps with variable-l
+    origin: "b818baa1e"
+    file: langchain4j-ollama/src/main/java/dev/langchain4j/model/ollama/OllamaDateDeserializer.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      The method locates the fractional-second run with `indexOf('+')`/`indexOf('Z')` and then throws that position away by calling `date.replaceAll(nanoseconds, "")`, which is global and regex. The comment above states the narrower intent. That `replaceAll` is both is a Java convention outside the file.
+    origin_date: "2024-09"
+    origin_lines: 32
+    origin_creates_file: true
+
+  - id: langchain4j-f31fb34
+    repo: langchain4j/langchain4j
+    fix: "f31fb340f"
+    fix_subject: >
+      fix: skip recording token usage metric when
+    origin: "898beedd4"
+    file: langchain4j-micrometer-metrics/src/main/java/dev/langchain4j/micrometer/metrics/listeners/MicrometerMetricsChatModelListener.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `tokenUsage().inputTokenCount()` is passed into an `int` parameter. The call and the signature are both in the diff; that `TokenUsage` documents each component as null-if-unknown is outside it.
+    origin_date: "2026-02"
+    origin_lines: 105
+    origin_creates_file: true
+
+  - id: langchain4j-787f95c
+    repo: langchain4j/langchain4j
+    fix: "787f95c08"
+    fix_subject: >
+      fix: Preserve BigInteger values when convert
+    origin: "e8bfc9b13"
+    file: langchain4j-mcp/src/main/java/dev/langchain4j/mcp/client/ToolExecutionHelper.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      `case LONG, BIG_INTEGER -> content.asLong();` sits beside `case FLOAT, DOUBLE, BIG_DECIMAL -> content.asDouble();`. The switch names a type whose reason to exist is exceeding `long`, then converts it with `asLong`. The contradiction is inside the switch.
+    origin_date: "2025-09"
+    origin_lines: 65
+    origin_creates_file: false
+
+  - id: langchain4j-45e3ab8
+    repo: langchain4j/langchain4j
+    fix: "45e3ab8a9"
+    fix_subject: >
+      fix: Omit blank/null Content-Type part heade
+    origin: "f368ec038"
+    file: http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/MultipartBodyPublisher.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `"Content-Type: " + file.contentType()` is concatenated unguarded, while `addField` two methods up builds a part with no Content-Type line at all. The asymmetry is visible; that `contentType()` may be null on a normal path is outside the file.
+    origin_date: "2026-02"
+    origin_lines: 74
+    origin_creates_file: true
+
+  - id: langchain4j-6020c8a
+    repo: langchain4j/langchain4j
+    fix: "6020c8a1c"
+    fix_subject: >
+      fix: Decode Markdown as UTF-8 instead of the
+    origin: "63f4e02c5"
+    file: document-parsers/langchain4j-document-parser-markdown/src/main/java/dev/langchain4j/data/document/parser/markdown/MarkdownDocumentParser.java
+    detectable_from_diff: "weak"
+    label_rationale: >
+      `new InputStreamReader(inputStream)` with no charset. Same shape as case 2 and as the two document-loader cases of `step7b.yaml`.
+    origin_date: "2025-09"
+    origin_lines: 40
+    origin_creates_file: true
+
+  - id: langchain4j-ca3b112
+    repo: langchain4j/langchain4j
+    fix: "ca3b112b2"
+    fix_subject: >
+      fix(elasticsearch): apply hybrid filters to
+    origin: "2c170dd43"
+    file: langchain4j-elasticsearch/src/main/java/dev/langchain4j/store/embedding/elasticsearch/ElasticsearchConfigurationHybrid.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      The filter is applied to the KNN retriever and the full-text retriever is built without it, both in the same method, both feeding the same RRF combination. One half of a symmetric pair handled and the other not — the rubric's own example.
+    origin_date: "2026-01"
+    origin_lines: 136
+    origin_creates_file: true
+
+  - id: spring-ai-61c076a
+    repo: spring-projects/spring-ai
+    fix: "61c076a54"
+    fix_subject: >
+      Improve logs in StructuredOutputValidationAd
+    origin: "323c590cd"
+    file: spring-ai-client-chat/src/main/java/org/springframework/ai/chat/client/advisor/StructuredOutputValidationAdvisor.java
+    detectable_from_diff: "yes"
+    label_rationale: >
+      The loop maintains `repeatCounter` and the debug line prints `this.maxRepeatAttempts`, a constant, as "Attempts left". The variable that holds the answer is in scope and unused in the message. The defect is cosmetic, and the evidence for it is complete.
+    origin_date: "2025-10"
+    origin_lines: 331
+    origin_creates_file: true
+
+  - id: spring-ai-a3e0b1e
+    repo: spring-projects/spring-ai
+    fix: "a3e0b1efa"
+    fix_subject: >
+      Fix tool-search advisor auto-config ordering
+    origin: "151af2dcf"
+    file: auto-configurations/advisors/spring-ai-autoconfigure-tool-search-advisor/src/main/java/org/springframework/ai/chat/client/advisor/toolsearch/autoconfigure/ToolSearchAdvisorAutoConfiguration.java
+    detectable_from_diff: "no"
+    label_rationale: >
+      `@AutoConfiguration(beforeName = "...ChatClientAutoConfiguration")` is well-formed. That it also needs `after = ToolCallingAutoConfiguration.class` for a `@ConditionalOnBean` elsewhere to see its bean is Spring Boot ordering semantics, and nothing in the diff distinguishes the annotation from a correct one.
+    origin_date: "2026-06"
+    origin_lines: 214
+    origin_creates_file: true
+
+  - id: spring-ai-5a53710
+    repo: spring-projects/spring-ai
+    fix: "5a5371024"
+    fix_subject: >
+      Recover from stale connections in Anthropic
+    origin: "b900cd0b0"
+    file: models/spring-ai-anthropic/src/main/java/org/springframework/ai/anthropic/http/okhttp/SpringAiAnthropicHttpClient.java
+    detectable_from_diff: "no"
+    label_rationale: >
+      `.retryOnConnectionFailure(false)` carries a comment justifying it — the SDK owns retries. That the same switch also governs recovery from stale pooled connections is OkHttp behaviour the file does not mention. A correct-looking constant with a rationale beside it.
+    origin_date: "2026-05"
+    origin_lines: 651
+    origin_creates_file: true

@@ -64,6 +64,23 @@ Raising it would raise the yield. **Deciding that after seeing which cases it ad
 post-hoc adjustment this whole exercise exists to avoid**, so it stays at 10 unless it is changed
 for a stated reason, before any labelling, and recorded here.
 
+## The listing below does not reproduce — corrected 2026-08-24
+
+Re-running today's committed `step7_origin.py` at the same bound of 10 gives **33** usable
+candidates in the two chosen arms (22 langchain4j, 11 spring-ai), not the 43 printed below. The
+listing was produced by a version of the script from **before the reformatting filter was
+added**, and this document was never regenerated afterwards. The "43 usable cases — the size that
+buys ±15 points" sentence above is therefore wrong: at bound 10 the pool is 33, and rule 7 then
+takes it lower.
+
+**`evaluation/step7b.yaml` is unaffected, and that was checked rather than assumed.** All 24
+frozen cases still come out of today's script with exactly the origins the freeze records —
+including `840330c24`, where the freeze already carries `9443ad9b2` rather than this listing's
+`fcf18fda1`, because the correction had been applied before freezing. Zero absent, zero altered.
+
+`evaluation/step7d.yaml` widens the bound to 20 and re-derives its candidates from the corrected
+script, so nothing downstream depends on the numbers below.
+
 ## Raw
 
 ```
