@@ -212,6 +212,98 @@ def _review(args: argparse.Namespace) -> int:
     return 0
 
 
+def _case_units(defect: dict, repo: Path):
+    """The one unit a case is reviewed on: its file, at the commit that introduced the defect."""
+    head = resolve(defect["introduced_in"], repo)
+    base = merge_base("%s~1" % head, head, repo)
+    units = chunking.units(base, head, repo, [defect["file"]],
+                           adapter=ADAPTERS[DEFAULT_ADAPTER])
+    return head, base, units
+
+
+def _evaluate_export(args, scorable, excluded, repo: Path, chosen) -> int:
+    """Write one job per case, for a harness to run.
+
+    The same selection, the same scoring rule and the same report as the API path — only the
+    transport differs, which is ADR-0005 applied to the measurement rather than to the review.
+    It matters here for a reason the ADR did not anticipate: **scaling the case count costs
+    tokens on this path and dollars on the other**, and a detection rate wants cases.
+    """
+    workspace = Path(args.jobs)
+    written = 0
+    for defect in scorable:
+        try:
+            head, base, units = _case_units(defect, repo)
+            if not units:
+                raise SystemExit("%s did not change in %s" % (defect["file"], head[:12]))
+            intent = conformance.gather(head, repo, None)
+            tasks = job.lens_tasks(units, chosen, intent if intent.parts else None)
+        except Exception as error:                                   # noqa: BLE001
+            print("  %-44s not exported: %s" % (defect["id"], error))
+            continue
+        # `path` rides in the manifest so ingest rebuilds the SAME unit. Without it the review
+        # would be one file and the ingest a whole commit, and the two would stop lining up.
+        job.export(workspace / defect["id"], tasks,
+                   {"base": base, "head": head, "repo": str(repo), "specs": [],
+                    "model": args.model, "path": defect["file"], "case": defect["id"]})
+        written += 1
+        print("  %-44s %d task(s)" % (defect["id"], len(tasks)))
+
+    print("\n%d job(s) in %s. Run them, then: rsquad evaluate --ingest --jobs %s ..."
+          % (written, workspace, workspace))
+    return 0
+
+
+def _evaluate_ingest(args, scorable, excluded, repo: Path, chosen) -> int:
+    """Read the harness's replies for every case, advancing one round or writing the report."""
+    workspace = Path(args.jobs)
+    cases, advanced, dropped = [], 0, []
+    for defect in scorable:
+        folder = workspace / defect["id"]
+        if not (folder / "manifest.json").exists():
+            cases.append((defect, [], "no job in %s" % folder))
+            continue
+        data = job.manifest(folder)
+        here = Path(data["repo"])
+        units = {u.file: u for u in chunking.units(
+            data["base"], data["head"], here,
+            [data["path"]] if data.get("path") else None,
+            adapter=ADAPTERS[DEFAULT_ADAPTER])}
+        intent = conformance.gather(data["head"], here, data["specs"])
+        result = job.ingest(folder, units, intent)
+        dropped += result.dropped
+
+        if data["round"] == job.LENS_ROUND and not args.no_refute and result.findings:
+            meta = {k: data[k] for k in ("base", "head", "repo", "specs", "model")}
+            meta["path"] = data.get("path")
+            meta["carried"] = job.carried(result.findings, units)
+            job.export(folder, job.refutation_tasks(result.findings, units), meta,
+                       round_number=job.REFUTE_ROUND)
+            advanced += 1
+            continue
+
+        surviving = (refutation.survivors(result.verdicts)[0] if result.verdicts
+                     else result.findings)
+        note = None
+        if result.missing:
+            note = "%d task(s) had no reply from the harness" % len(result.missing)
+        cases.append((defect, surviving, note))
+
+    if advanced:
+        print("%d case(s) advanced to the refutation round. Run the harness again, then ingest "
+              "again." % advanced)
+        return 0
+
+    footer = ("Harness transport, %d case(s), %d finding(s) refused by the guards. **No dollar "
+              "cost**: the tokens are the harness's. That is the point of running the scaling "
+              "measurement here." % (len(cases), len(dropped)))
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(evaluate.render(cases, excluded, footer), encoding="utf-8")
+    print("%d case(s) ingested -> %s. The verdicts are yours to fill in." % (len(cases), out))
+    return 0
+
+
 def _evaluate(args: argparse.Namespace) -> int:
     """Replay the squad on diffs known to contain a defect, and lay the evidence out.
 
@@ -240,6 +332,12 @@ def _evaluate(args: argparse.Namespace) -> int:
           % (len(scorable), repo, len(chosen)))
     for defect in scorable:
         print("  %-44s %s @ %s" % (defect["id"], defect["file"], defect["introduced_in"]))
+
+    if args.export or args.ingest:
+        if not args.jobs:
+            raise SystemExit("--export and --ingest need --jobs <workspace>")
+        handler = _evaluate_export if args.export else _evaluate_ingest
+        return handler(args, scorable, excluded, repo, chosen)
 
     if args.max_usd is not None and args.max_usd < evaluate.WORST_CASE_USD:
         raise SystemExit(
@@ -432,6 +530,15 @@ def main(argv: list[str] | None = None) -> int:
                          "since every finding pays for its own refuter")
     ev.add_argument("--confirm", action="store_true",
                     help="actually call the API and spend; without it, a dry run")
+    ev.add_argument("--jobs", default=None, metavar="DIR",
+                    help="workspace for the harness transport, one job directory per case")
+    ev.add_argument("--export", action="store_true",
+                    help="write a job per case for a harness to run, instead of calling the "
+                         "API. Same selection, same scoring rule, same report — scaling the "
+                         "case count then costs tokens rather than dollars")
+    ev.add_argument("--ingest", action="store_true",
+                    help="read the harness's replies for every case; run it twice, once for "
+                         "the lenses and once for the refutations")
     ev.set_defaults(handler=_evaluate)
 
     for name, help_text in (("export", "write a job any harness can run"),

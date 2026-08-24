@@ -212,3 +212,13 @@ def test_a_finding_with_no_refuter_still_reaches_the_queue(tmp_path):
     text = job.queue(result)
     assert len(result.verdicts) == 2
     assert "**Requirement**" in text, "the conformance account vanished between rounds"
+
+
+def test_extra_meta_rides_in_the_manifest(tmp_path):
+    """`evaluate --export` records the reviewed path there, and `--ingest` rebuilds the unit
+    from it. Without that the review is one file and the ingest is the whole commit, and the
+    two stop lining up — silently, since both halves succeed."""
+    tasks = _export(tmp_path)
+    job.export(tmp_path, tasks, dict(META, path="src/a.py", case="some-case"))
+    data = job.manifest(tmp_path)
+    assert data["path"] == "src/a.py" and data["case"] == "some-case"
