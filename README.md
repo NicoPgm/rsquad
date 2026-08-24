@@ -309,6 +309,7 @@ reports. A report says what happened, an ADR says what we do about it.
 | [`docs/step7-first-run.md`](docs/step7-first-run.md) | six Java cases, 6 of 6, and why that number measures the wrong thing |
 | [`docs/step7b-first-run.md`](docs/step7b-first-run.md) | 15 of 19 on real introducing commits, and no sign of memorisation |
 | [`docs/step7c-clean-corpus.md`](docs/step7c-clean-corpus.md) | what the squad says about code nobody has complained about |
+| [`docs/transport-calibration.md`](docs/transport-calibration.md) | the same four cases on both transports, and why they disagree |
 
 ## License and provenance
 

@@ -67,3 +67,27 @@ second is not a technical argument but it is a real one.
 
 Nothing here is measured yet. This ADR records a constraint and a plan, not a result, and should
 be superseded by one.
+
+## Measured since, and it adds a use the plan did not have
+
+**2026-08-23** — eight runs on one commit: both transports stable on places, the reproducibility
+argument above loses its support, and the choice becomes operational
+(`docs/transport-comparison.md`).
+
+**2026-08-24** — the transports now also carry a *division of labour*, which this ADR did not
+anticipate. Measuring costs money on one path and tokens on the other, and the two measurements
+want opposite things:
+
+- **noise wants volume and no human verdict** — the clean-commit corpus is a count, so it belongs
+  on the harness. 3.28 million tokens, nothing billed (`docs/step7c-clean-corpus.md`).
+- **detection wants a human verdict per case** and does not scale by paying more, so the API
+  budget is better spent there.
+
+`rsquad evaluate --jobs <dir> --export/--ingest` exists so the same selection, scoring rule and
+report run on either path.
+
+**But a number does not transfer between them.** On four identical cases the harness scored 3/4
+against the API's 4/4 and returned 6 findings against 10 — the opposite direction from the one
+earlier divergence, where it found more. So the deferred API budget should buy **calibration**,
+not more cases: cases are free on the harness, and only the bridge costs
+(`docs/transport-calibration.md`).
