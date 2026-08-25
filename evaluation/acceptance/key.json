@@ -1,0 +1,1865 @@
+[
+ {
+  "n": 1,
+  "set": "step7b",
+  "case": "langchain4j-771b0d2",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-onnx-scoring/src/main/java/dev/langchain4j/model/scoring/onnx/OnnxScoringBertCrossEncoder.java",
+  "line": 36
+ },
+ {
+  "n": 2,
+  "set": "step7b",
+  "case": "langchain4j-145ff45",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-mcp/src/main/java/dev/langchain4j/mcp/client/ToolSpecificationHelper.java",
+  "line": 44
+ },
+ {
+  "n": 3,
+  "set": "step7d",
+  "case": "langchain4j-7fe3e3e",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-ollama/src/main/java/dev/langchain4j/model/ollama/OllamaDateDeserializer.java",
+  "line": 24
+ },
+ {
+  "n": 4,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 61
+ },
+ {
+  "n": 5,
+  "set": "step7b",
+  "case": "langchain4j-23098bd",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java",
+  "line": 272
+ },
+ {
+  "n": 6,
+  "set": "step7b",
+  "case": "langchain4j-0d16d28",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-patterns/src/main/java/dev/langchain4j/agentic/patterns/debate/ConvergenceStrategy.java",
+  "line": 25
+ },
+ {
+  "n": 7,
+  "set": "step7b",
+  "case": "langchain4j-34b8d34",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-a2a/src/main/java/dev/langchain4j/agentic/a2a/DefaultA2AClientBuilder.java",
+  "line": 187
+ },
+ {
+  "n": 8,
+  "set": "step7b",
+  "case": "langchain4j-f274731",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-selenium/src/main/java/dev/langchain4j/data/document/loader/selenium/SeleniumDocumentLoader.java",
+  "line": 59
+ },
+ {
+  "n": 9,
+  "set": "clean",
+  "case": "f6c227eb9",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "auto-configurations/vector-stores/spring-ai-autoconfigure-vector-store-mongodb-atlas/src/main/java/org/springframework/ai/vectorstore/mongodb/autoconfigure/MongoDBAtlasVectorStoreAutoConfiguration.java",
+  "line": 81
+ },
+ {
+  "n": 10,
+  "set": "step7b",
+  "case": "langchain4j-f274731",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-selenium/src/main/java/dev/langchain4j/data/document/loader/selenium/SeleniumDocumentLoader.java",
+  "line": 59
+ },
+ {
+  "n": 11,
+  "set": "step7d",
+  "case": "spring-ai-61c076a",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "spring-ai-client-chat/src/main/java/org/springframework/ai/chat/client/advisor/StructuredOutputValidationAdvisor.java",
+  "line": 151
+ },
+ {
+  "n": 12,
+  "set": "step7b",
+  "case": "spring-ai-ec1e052",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "vector-stores/spring-ai-redis-store/src/main/java/org/springframework/ai/vectorstore/redis/RedisVectorStore.java",
+  "line": 308
+ },
+ {
+  "n": 13,
+  "set": "step7d",
+  "case": "langchain4j-765b564",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-tencent-cos/src/main/java/dev/langchain4j/data/document/loader/tencent/cos/TencentCosDocumentLoader.java",
+  "line": 76
+ },
+ {
+  "n": 14,
+  "set": "step7d",
+  "case": "langchain4j-6020c8a",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "document-parsers/langchain4j-document-parser-markdown/src/main/java/dev/langchain4j/data/document/parser/markdown/MarkdownDocumentParser.java",
+  "line": 25
+ },
+ {
+  "n": 15,
+  "set": "step7d",
+  "case": "langchain4j-f31fb34",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-micrometer-metrics/src/main/java/dev/langchain4j/micrometer/metrics/listeners/MicrometerMetricsChatModelListener.java",
+  "line": 70
+ },
+ {
+  "n": 16,
+  "set": "step7b",
+  "case": "langchain4j-0d16d28",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-patterns/src/main/java/dev/langchain4j/agentic/patterns/debate/ConvergenceStrategy.java",
+  "line": 25
+ },
+ {
+  "n": 17,
+  "set": "step7b",
+  "case": "langchain4j-0626661",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-github/src/main/java/dev/langchain4j/data/document/loader/github/GitHubDocumentLoader.java",
+  "line": 119
+ },
+ {
+  "n": 18,
+  "set": "step7b",
+  "case": "langchain4j-34b8d34",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-a2a/src/main/java/dev/langchain4j/agentic/a2a/DefaultA2AClientBuilder.java",
+  "line": 178
+ },
+ {
+  "n": 19,
+  "set": "step7d",
+  "case": "langchain4j-c2aa578",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-hibernate/src/main/java/dev/langchain4j/rag/content/retriever/hibernate/HibernateContentRetriever.java",
+  "line": 121
+ },
+ {
+  "n": 20,
+  "set": "step7d",
+  "case": "spring-ai-61c076a",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "spring-ai-client-chat/src/main/java/org/springframework/ai/chat/client/advisor/StructuredOutputValidationAdvisor.java",
+  "line": 151
+ },
+ {
+  "n": 21,
+  "set": "step7d",
+  "case": "langchain4j-45e3ab8",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/MultipartBodyPublisher.java",
+  "line": 38
+ },
+ {
+  "n": 22,
+  "set": "step7d",
+  "case": "langchain4j-229309d",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-bedrock/src/main/java/dev/langchain4j/model/bedrock/AbstractBedrockChatModel.java",
+  "line": 345
+ },
+ {
+  "n": 23,
+  "set": "step7d",
+  "case": "langchain4j-1023c67",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-okhttp/src/main/java/dev/langchain4j/http/client/okhttp/OkHttpClient.java",
+  "line": 39
+ },
+ {
+  "n": 24,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 160
+ },
+ {
+  "n": 25,
+  "set": "step7d",
+  "case": "langchain4j-45e3ab8",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/MultipartBodyPublisher.java",
+  "line": 38
+ },
+ {
+  "n": 26,
+  "set": "step7b",
+  "case": "langchain4j-23098bd",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java",
+  "line": 387
+ },
+ {
+  "n": 27,
+  "set": "step7b",
+  "case": "langchain4j-f274731",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-selenium/src/main/java/dev/langchain4j/data/document/loader/selenium/SeleniumDocumentLoader.java",
+  "line": 55
+ },
+ {
+  "n": 28,
+  "set": "step7d",
+  "case": "langchain4j-5252739",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-elasticsearch/src/main/java/dev/langchain4j/rag/content/retriever/elasticsearch/ElasticsearchContentRetriever.java",
+  "line": 123
+ },
+ {
+  "n": 29,
+  "set": "step7d",
+  "case": "langchain4j-f00ea5f",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-infinispan/src/main/java/dev/langchain4j/store/embedding/infinispan/InfinispanMetadataFilterMapper.java",
+  "line": 155
+ },
+ {
+  "n": 30,
+  "set": "step7b",
+  "case": "langchain4j-23098bd",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java",
+  "line": 429
+ },
+ {
+  "n": 31,
+  "set": "step7b",
+  "case": "langchain4j-f274731",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-selenium/src/main/java/dev/langchain4j/data/document/loader/selenium/SeleniumDocumentLoader.java",
+  "line": 59
+ },
+ {
+  "n": 32,
+  "set": "step7b",
+  "case": "langchain4j-0d16d28",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-patterns/src/main/java/dev/langchain4j/agentic/patterns/debate/ConvergenceStrategy.java",
+  "line": 26
+ },
+ {
+  "n": 33,
+  "set": "step7d",
+  "case": "langchain4j-7ddb6ff",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-gpu-llama3/src/main/java/dev/langchain4j/model/gpullama3/GPULlama3BaseModel.java",
+  "line": 152
+ },
+ {
+  "n": 34,
+  "set": "clean",
+  "case": "f16130b98",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-guardrails/src/main/java/dev/langchain4j/guardrails/PatternBasedPromptInjectionGuardrail.java",
+  "line": 123
+ },
+ {
+  "n": 35,
+  "set": "step7d",
+  "case": "langchain4j-f00ea5f",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-infinispan/src/main/java/dev/langchain4j/store/embedding/infinispan/InfinispanMetadataFilterMapper.java",
+  "line": 29
+ },
+ {
+  "n": 36,
+  "set": "step7d",
+  "case": "langchain4j-229309d",
+  "lens": "contract",
+  "refuter": "misread",
+  "file": "langchain4j-bedrock/src/main/java/dev/langchain4j/model/bedrock/AbstractBedrockChatModel.java",
+  "line": 371
+ },
+ {
+  "n": 37,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 61
+ },
+ {
+  "n": 38,
+  "set": "step7d",
+  "case": "langchain4j-ca3b112",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-elasticsearch/src/main/java/dev/langchain4j/store/embedding/elasticsearch/ElasticsearchConfigurationHybrid.java",
+  "line": 133
+ },
+ {
+  "n": 39,
+  "set": "step7b",
+  "case": "spring-ai-ec1e052",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "vector-stores/spring-ai-redis-store/src/main/java/org/springframework/ai/vectorstore/redis/RedisVectorStore.java",
+  "line": 312
+ },
+ {
+  "n": 40,
+  "set": "step7d",
+  "case": "langchain4j-787f95c",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-mcp/src/main/java/dev/langchain4j/mcp/client/ToolExecutionHelper.java",
+  "line": 69
+ },
+ {
+  "n": 41,
+  "set": "step7d",
+  "case": "langchain4j-1023c67",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-okhttp/src/main/java/dev/langchain4j/http/client/okhttp/OkHttpClient.java",
+  "line": 80
+ },
+ {
+  "n": 42,
+  "set": "step7b",
+  "case": "spring-ai-ec1e052",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "vector-stores/spring-ai-redis-store/src/main/java/org/springframework/ai/vectorstore/redis/RedisVectorStore.java",
+  "line": 312
+ },
+ {
+  "n": 43,
+  "set": "step7b",
+  "case": "langchain4j-575eb46",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "web-search-engines/langchain4j-web-search-engine-google-custom/src/main/java/dev/langchain4j/web/search/google/customsearch/GoogleCustomWebSearchEngine.java",
+  "line": 171
+ },
+ {
+  "n": 44,
+  "set": "step7b",
+  "case": "spring-ai-4fbb484",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "vector-stores/spring-ai-milvus-store/src/main/java/org/springframework/ai/vectorstore/milvus/MilvusVectorStore.java",
+  "line": 381
+ },
+ {
+  "n": 45,
+  "set": "step7b",
+  "case": "langchain4j-0626661",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-github/src/main/java/dev/langchain4j/data/document/loader/github/GitHubDocumentLoader.java",
+  "line": 119
+ },
+ {
+  "n": 46,
+  "set": "step7b",
+  "case": "langchain4j-7e622bf",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-pinecone/src/main/java/dev/langchain4j/store/embedding/pinecone/PineconeHelper.java",
+  "line": 26
+ },
+ {
+  "n": 47,
+  "set": "step7d",
+  "case": "langchain4j-cfd90e5",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-sql/src/main/java/dev/langchain4j/experimental/rag/content/retriever/sql/SqlDatabaseContentRetriever.java",
+  "line": 333
+ },
+ {
+  "n": 48,
+  "set": "step7d",
+  "case": "langchain4j-5252739",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-elasticsearch/src/main/java/dev/langchain4j/rag/content/retriever/elasticsearch/ElasticsearchContentRetriever.java",
+  "line": 75
+ },
+ {
+  "n": 49,
+  "set": "step7b",
+  "case": "langchain4j-e59754e",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-pgvector/src/main/java/dev/langchain4j/store/embedding/pgvector/PgVectorEmbeddingStore.java",
+  "line": 565
+ },
+ {
+  "n": 50,
+  "set": "step7d",
+  "case": "langchain4j-787f95c",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-mcp/src/main/java/dev/langchain4j/mcp/client/ToolExecutionHelper.java",
+  "line": 69
+ },
+ {
+  "n": 51,
+  "set": "step7d",
+  "case": "langchain4j-5252739",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-elasticsearch/src/main/java/dev/langchain4j/rag/content/retriever/elasticsearch/ElasticsearchContentRetriever.java",
+  "line": 123
+ },
+ {
+  "n": 52,
+  "set": "step7d",
+  "case": "langchain4j-5252739",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-elasticsearch/src/main/java/dev/langchain4j/rag/content/retriever/elasticsearch/ElasticsearchContentRetriever.java",
+  "line": 75
+ },
+ {
+  "n": 53,
+  "set": "step7b",
+  "case": "spring-ai-b1384c8",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "models/spring-ai-openai/src/main/java/org/springframework/ai/openai/OpenAiAudioTranscriptionModel.java",
+  "line": 149
+ },
+ {
+  "n": 54,
+  "set": "step7d",
+  "case": "langchain4j-ca3b112",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-elasticsearch/src/main/java/dev/langchain4j/store/embedding/elasticsearch/ElasticsearchConfigurationHybrid.java",
+  "line": 133
+ },
+ {
+  "n": 55,
+  "set": "step7d",
+  "case": "langchain4j-4a36c67",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/rag/content/retriever/azure/search/DefaultAzureAiSearchFilterMapper.java",
+  "line": 68
+ },
+ {
+  "n": 56,
+  "set": "step7d",
+  "case": "spring-ai-61c076a",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "spring-ai-client-chat/src/main/java/org/springframework/ai/chat/client/advisor/StructuredOutputValidationAdvisor.java",
+  "line": 151
+ },
+ {
+  "n": 57,
+  "set": "step7d",
+  "case": "langchain4j-cfd90e5",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-sql/src/main/java/dev/langchain4j/experimental/rag/content/retriever/sql/SqlDatabaseContentRetriever.java",
+  "line": 147
+ },
+ {
+  "n": 58,
+  "set": "step7b",
+  "case": "spring-ai-c256cfa",
+  "lens": "bounds",
+  "refuter": "no-consequence",
+  "file": "spring-ai-model/src/main/java/org/springframework/ai/model/tool/DefaultToolCallingManager.java",
+  "line": 243
+ },
+ {
+  "n": 59,
+  "set": "step7b",
+  "case": "langchain4j-f274731",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-selenium/src/main/java/dev/langchain4j/data/document/loader/selenium/SeleniumDocumentLoader.java",
+  "line": 55
+ },
+ {
+  "n": 60,
+  "set": "step7b",
+  "case": "langchain4j-e59754e",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-pgvector/src/main/java/dev/langchain4j/store/embedding/pgvector/PgVectorEmbeddingStore.java",
+  "line": 546
+ },
+ {
+  "n": 61,
+  "set": "step7b",
+  "case": "langchain4j-95a3aff",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j/src/main/java/dev/langchain4j/store/embedding/inmemory/InMemoryEmbeddingStore.java",
+  "line": 101
+ },
+ {
+  "n": 62,
+  "set": "step7b",
+  "case": "spring-ai-b1384c8",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "models/spring-ai-openai/src/main/java/org/springframework/ai/openai/OpenAiAudioTranscriptionModel.java",
+  "line": 157
+ },
+ {
+  "n": 63,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 61
+ },
+ {
+  "n": 64,
+  "set": "step7d",
+  "case": "langchain4j-f31fb34",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-micrometer-metrics/src/main/java/dev/langchain4j/micrometer/metrics/listeners/MicrometerMetricsChatModelListener.java",
+  "line": 70
+ },
+ {
+  "n": 65,
+  "set": "step7b",
+  "case": "langchain4j-34b8d34",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-a2a/src/main/java/dev/langchain4j/agentic/a2a/DefaultA2AClientBuilder.java",
+  "line": 181
+ },
+ {
+  "n": 66,
+  "set": "step7b",
+  "case": "langchain4j-840330c",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-agentic/src/main/java/dev/langchain4j/agentic/scope/DefaultAgenticScope.java",
+  "line": 143
+ },
+ {
+  "n": 67,
+  "set": "step7d",
+  "case": "langchain4j-cfd90e5",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-sql/src/main/java/dev/langchain4j/experimental/rag/content/retriever/sql/SqlDatabaseContentRetriever.java",
+  "line": 296
+ },
+ {
+  "n": 68,
+  "set": "step7d",
+  "case": "langchain4j-b2923fe",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-core/src/main/java/dev/langchain4j/web/search/WebSearchRequest.java",
+  "line": 51
+ },
+ {
+  "n": 69,
+  "set": "step7b",
+  "case": "langchain4j-145ff45",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-mcp/src/main/java/dev/langchain4j/mcp/client/ToolSpecificationHelper.java",
+  "line": 76
+ },
+ {
+  "n": 70,
+  "set": "step7b",
+  "case": "spring-ai-b1384c8",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "models/spring-ai-openai/src/main/java/org/springframework/ai/openai/OpenAiAudioTranscriptionModel.java",
+  "line": 149
+ },
+ {
+  "n": 71,
+  "set": "step7d",
+  "case": "langchain4j-f00ea5f",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-infinispan/src/main/java/dev/langchain4j/store/embedding/infinispan/InfinispanMetadataFilterMapper.java",
+  "line": 77
+ },
+ {
+  "n": 72,
+  "set": "step7b",
+  "case": "langchain4j-840330c",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-agentic/src/main/java/dev/langchain4j/agentic/scope/DefaultAgenticScope.java",
+  "line": 143
+ },
+ {
+  "n": 73,
+  "set": "step7d",
+  "case": "langchain4j-f00ea5f",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-infinispan/src/main/java/dev/langchain4j/store/embedding/infinispan/InfinispanMetadataFilterMapper.java",
+  "line": 77
+ },
+ {
+  "n": 74,
+  "set": "step7d",
+  "case": "langchain4j-c2aa578",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-hibernate/src/main/java/dev/langchain4j/rag/content/retriever/hibernate/HibernateContentRetriever.java",
+  "line": 184
+ },
+ {
+  "n": 75,
+  "set": "step7d",
+  "case": "langchain4j-10cd693",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-bedrock/src/main/java/dev/langchain4j/model/bedrock/AbstractBedrockChatModel.java",
+  "line": 530
+ },
+ {
+  "n": 76,
+  "set": "step7b",
+  "case": "langchain4j-23098bd",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java",
+  "line": 213
+ },
+ {
+  "n": 77,
+  "set": "step7d",
+  "case": "langchain4j-ca3b112",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-elasticsearch/src/main/java/dev/langchain4j/store/embedding/elasticsearch/ElasticsearchConfigurationHybrid.java",
+  "line": 133
+ },
+ {
+  "n": 78,
+  "set": "step7d",
+  "case": "langchain4j-45e3ab8",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/MultipartBodyPublisher.java",
+  "line": 71
+ },
+ {
+  "n": 79,
+  "set": "step7d",
+  "case": "spring-ai-61c076a",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "spring-ai-client-chat/src/main/java/org/springframework/ai/chat/client/advisor/StructuredOutputValidationAdvisor.java",
+  "line": 103
+ },
+ {
+  "n": 80,
+  "set": "step7d",
+  "case": "langchain4j-cfd90e5",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-sql/src/main/java/dev/langchain4j/experimental/rag/content/retriever/sql/SqlDatabaseContentRetriever.java",
+  "line": 147
+ },
+ {
+  "n": 81,
+  "set": "step7b",
+  "case": "langchain4j-23098bd",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java",
+  "line": 91
+ },
+ {
+  "n": 82,
+  "set": "step7b",
+  "case": "langchain4j-7e622bf",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-pinecone/src/main/java/dev/langchain4j/store/embedding/pinecone/PineconeHelper.java",
+  "line": 26
+ },
+ {
+  "n": 83,
+  "set": "step7b",
+  "case": "langchain4j-96a3af9",
+  "lens": "tests",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-playwright/src/main/java/dev/langchain4j/data/document/loader/playwright/PlaywrightDocumentLoader.java",
+  "line": 66
+ },
+ {
+  "n": 84,
+  "set": "step7b",
+  "case": "langchain4j-0626661",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-github/src/main/java/dev/langchain4j/data/document/loader/github/GitHubDocumentLoader.java",
+  "line": 119
+ },
+ {
+  "n": 85,
+  "set": "step7d",
+  "case": "langchain4j-f00ea5f",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-infinispan/src/main/java/dev/langchain4j/store/embedding/infinispan/InfinispanMetadataFilterMapper.java",
+  "line": 173
+ },
+ {
+  "n": 86,
+  "set": "step7d",
+  "case": "langchain4j-5252739",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-elasticsearch/src/main/java/dev/langchain4j/rag/content/retriever/elasticsearch/ElasticsearchContentRetriever.java",
+  "line": 123
+ },
+ {
+  "n": 87,
+  "set": "step7b",
+  "case": "langchain4j-7e622bf",
+  "lens": "tests",
+  "refuter": "stands",
+  "file": "langchain4j-pinecone/src/main/java/dev/langchain4j/store/embedding/pinecone/PineconeHelper.java",
+  "line": 26
+ },
+ {
+  "n": 88,
+  "set": "clean",
+  "case": "f16130b98",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-guardrails/src/main/java/dev/langchain4j/guardrails/PatternBasedPromptInjectionGuardrail.java",
+  "line": 130
+ },
+ {
+  "n": 89,
+  "set": "step7d",
+  "case": "langchain4j-f00ea5f",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-infinispan/src/main/java/dev/langchain4j/store/embedding/infinispan/InfinispanMetadataFilterMapper.java",
+  "line": 143
+ },
+ {
+  "n": 90,
+  "set": "step7d",
+  "case": "langchain4j-7ddb6ff",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-gpu-llama3/src/main/java/dev/langchain4j/model/gpullama3/GPULlama3BaseModel.java",
+  "line": 152
+ },
+ {
+  "n": 91,
+  "set": "step7d",
+  "case": "langchain4j-4a36c67",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/rag/content/retriever/azure/search/DefaultAzureAiSearchFilterMapper.java",
+  "line": 111
+ },
+ {
+  "n": 92,
+  "set": "clean",
+  "case": "f6c227eb9",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "auto-configurations/vector-stores/spring-ai-autoconfigure-vector-store-mongodb-atlas/src/main/java/org/springframework/ai/vectorstore/mongodb/autoconfigure/MongoDBAtlasVectorStoreAutoConfiguration.java",
+  "line": 81
+ },
+ {
+  "n": 93,
+  "set": "step7b",
+  "case": "langchain4j-771b0d2",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-onnx-scoring/src/main/java/dev/langchain4j/model/scoring/onnx/OnnxScoringBertCrossEncoder.java",
+  "line": 37
+ },
+ {
+  "n": 94,
+  "set": "step7d",
+  "case": "langchain4j-229309d",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-bedrock/src/main/java/dev/langchain4j/model/bedrock/AbstractBedrockChatModel.java",
+  "line": 311
+ },
+ {
+  "n": 95,
+  "set": "clean",
+  "case": "6bfa53a88",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "models/spring-ai-transformers/src/main/java/org/springframework/ai/transformers/TransformersEmbeddingModel.java",
+  "line": 271
+ },
+ {
+  "n": 96,
+  "set": "step7b",
+  "case": "langchain4j-0d16d28",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-patterns/src/main/java/dev/langchain4j/agentic/patterns/debate/ConvergenceStrategy.java",
+  "line": 9
+ },
+ {
+  "n": 97,
+  "set": "step7d",
+  "case": "langchain4j-4a36c67",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/rag/content/retriever/azure/search/DefaultAzureAiSearchFilterMapper.java",
+  "line": 68
+ },
+ {
+  "n": 98,
+  "set": "step7d",
+  "case": "langchain4j-6020c8a",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "document-parsers/langchain4j-document-parser-markdown/src/main/java/dev/langchain4j/data/document/parser/markdown/MarkdownDocumentParser.java",
+  "line": 25
+ },
+ {
+  "n": 99,
+  "set": "step7d",
+  "case": "langchain4j-1023c67",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-okhttp/src/main/java/dev/langchain4j/http/client/okhttp/OkHttpClient.java",
+  "line": 80
+ },
+ {
+  "n": 100,
+  "set": "step7b",
+  "case": "langchain4j-d5b13be",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/store/embedding/azure/search/AbstractAzureAiSearchEmbeddingStore.java",
+  "line": 74
+ },
+ {
+  "n": 101,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 101
+ },
+ {
+  "n": 102,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 136
+ },
+ {
+  "n": 103,
+  "set": "step7b",
+  "case": "langchain4j-0d16d28",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-patterns/src/main/java/dev/langchain4j/agentic/patterns/debate/ConvergenceStrategy.java",
+  "line": 26
+ },
+ {
+  "n": 104,
+  "set": "step7b",
+  "case": "langchain4j-96a3af9",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-playwright/src/main/java/dev/langchain4j/data/document/loader/playwright/PlaywrightDocumentLoader.java",
+  "line": 66
+ },
+ {
+  "n": 105,
+  "set": "step7d",
+  "case": "langchain4j-45e3ab8",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/MultipartBodyPublisher.java",
+  "line": 38
+ },
+ {
+  "n": 106,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 164
+ },
+ {
+  "n": 107,
+  "set": "step7d",
+  "case": "langchain4j-c2aa578",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-hibernate/src/main/java/dev/langchain4j/rag/content/retriever/hibernate/HibernateContentRetriever.java",
+  "line": 136
+ },
+ {
+  "n": 108,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 74
+ },
+ {
+  "n": 109,
+  "set": "step7b",
+  "case": "langchain4j-7e622bf",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-pinecone/src/main/java/dev/langchain4j/store/embedding/pinecone/PineconeHelper.java",
+  "line": 50
+ },
+ {
+  "n": 110,
+  "set": "step7b",
+  "case": "spring-ai-ec1e052",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "vector-stores/spring-ai-redis-store/src/main/java/org/springframework/ai/vectorstore/redis/RedisVectorStore.java",
+  "line": 312
+ },
+ {
+  "n": 111,
+  "set": "step7d",
+  "case": "langchain4j-6020c8a",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "document-parsers/langchain4j-document-parser-markdown/src/main/java/dev/langchain4j/data/document/parser/markdown/MarkdownDocumentParser.java",
+  "line": 25
+ },
+ {
+  "n": 112,
+  "set": "step7b",
+  "case": "langchain4j-771b0d2",
+  "lens": "bounds",
+  "refuter": "misread",
+  "file": "langchain4j-onnx-scoring/src/main/java/dev/langchain4j/model/scoring/onnx/OnnxScoringBertCrossEncoder.java",
+  "line": 83
+ },
+ {
+  "n": 113,
+  "set": "step7d",
+  "case": "langchain4j-45e3ab8",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/MultipartBodyPublisher.java",
+  "line": 19
+ },
+ {
+  "n": 114,
+  "set": "step7d",
+  "case": "langchain4j-4a36c67",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/rag/content/retriever/azure/search/DefaultAzureAiSearchFilterMapper.java",
+  "line": 115
+ },
+ {
+  "n": 115,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 101
+ },
+ {
+  "n": 116,
+  "set": "step7d",
+  "case": "langchain4j-787f95c",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-mcp/src/main/java/dev/langchain4j/mcp/client/ToolExecutionHelper.java",
+  "line": 69
+ },
+ {
+  "n": 117,
+  "set": "step7b",
+  "case": "spring-ai-4fbb484",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "vector-stores/spring-ai-milvus-store/src/main/java/org/springframework/ai/vectorstore/milvus/MilvusVectorStore.java",
+  "line": 381
+ },
+ {
+  "n": 118,
+  "set": "step7d",
+  "case": "langchain4j-229309d",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-bedrock/src/main/java/dev/langchain4j/model/bedrock/AbstractBedrockChatModel.java",
+  "line": 345
+ },
+ {
+  "n": 119,
+  "set": "step7d",
+  "case": "spring-ai-61c076a",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "spring-ai-client-chat/src/main/java/org/springframework/ai/chat/client/advisor/StructuredOutputValidationAdvisor.java",
+  "line": 198
+ },
+ {
+  "n": 120,
+  "set": "step7b",
+  "case": "spring-ai-ec1e052",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "vector-stores/spring-ai-redis-store/src/main/java/org/springframework/ai/vectorstore/redis/RedisVectorStore.java",
+  "line": 308
+ },
+ {
+  "n": 121,
+  "set": "step7b",
+  "case": "langchain4j-0d16d28",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-patterns/src/main/java/dev/langchain4j/agentic/patterns/debate/ConvergenceStrategy.java",
+  "line": 26
+ },
+ {
+  "n": 122,
+  "set": "step7b",
+  "case": "langchain4j-840330c",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-agentic/src/main/java/dev/langchain4j/agentic/scope/DefaultAgenticScope.java",
+  "line": 143
+ },
+ {
+  "n": 123,
+  "set": "step7d",
+  "case": "langchain4j-cfd90e5",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-sql/src/main/java/dev/langchain4j/experimental/rag/content/retriever/sql/SqlDatabaseContentRetriever.java",
+  "line": 147
+ },
+ {
+  "n": 124,
+  "set": "step7d",
+  "case": "langchain4j-c2aa578",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-hibernate/src/main/java/dev/langchain4j/rag/content/retriever/hibernate/HibernateContentRetriever.java",
+  "line": 170
+ },
+ {
+  "n": 125,
+  "set": "step7b",
+  "case": "langchain4j-196bc5d",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-agentic/src/main/java/dev/langchain4j/agentic/planner/AgentsRegistry.java",
+  "line": 90
+ },
+ {
+  "n": 126,
+  "set": "step7b",
+  "case": "langchain4j-7e622bf",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-pinecone/src/main/java/dev/langchain4j/store/embedding/pinecone/PineconeHelper.java",
+  "line": 26
+ },
+ {
+  "n": 127,
+  "set": "step7d",
+  "case": "langchain4j-229309d",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-bedrock/src/main/java/dev/langchain4j/model/bedrock/AbstractBedrockChatModel.java",
+  "line": 345
+ },
+ {
+  "n": 128,
+  "set": "step7b",
+  "case": "langchain4j-771b0d2",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-onnx-scoring/src/main/java/dev/langchain4j/model/scoring/onnx/OnnxScoringBertCrossEncoder.java",
+  "line": 36
+ },
+ {
+  "n": 129,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 136
+ },
+ {
+  "n": 130,
+  "set": "step7d",
+  "case": "langchain4j-cfd90e5",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-sql/src/main/java/dev/langchain4j/experimental/rag/content/retriever/sql/SqlDatabaseContentRetriever.java",
+  "line": 296
+ },
+ {
+  "n": 131,
+  "set": "clean",
+  "case": "f16130b98",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-guardrails/src/main/java/dev/langchain4j/guardrails/PatternBasedPromptInjectionGuardrail.java",
+  "line": 123
+ },
+ {
+  "n": 132,
+  "set": "step7b",
+  "case": "spring-ai-4fbb484",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "vector-stores/spring-ai-milvus-store/src/main/java/org/springframework/ai/vectorstore/milvus/MilvusVectorStore.java",
+  "line": 381
+ },
+ {
+  "n": 133,
+  "set": "step7d",
+  "case": "langchain4j-4a36c67",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/rag/content/retriever/azure/search/DefaultAzureAiSearchFilterMapper.java",
+  "line": 115
+ },
+ {
+  "n": 134,
+  "set": "step7b",
+  "case": "spring-ai-ec1e052",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "vector-stores/spring-ai-redis-store/src/main/java/org/springframework/ai/vectorstore/redis/RedisVectorStore.java",
+  "line": 308
+ },
+ {
+  "n": 135,
+  "set": "step7d",
+  "case": "langchain4j-765b564",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-tencent-cos/src/main/java/dev/langchain4j/data/document/loader/tencent/cos/TencentCosDocumentLoader.java",
+  "line": 76
+ },
+ {
+  "n": 136,
+  "set": "step7d",
+  "case": "langchain4j-7ddb6ff",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-gpu-llama3/src/main/java/dev/langchain4j/model/gpullama3/GPULlama3BaseModel.java",
+  "line": 197
+ },
+ {
+  "n": 137,
+  "set": "step7d",
+  "case": "langchain4j-f00ea5f",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-infinispan/src/main/java/dev/langchain4j/store/embedding/infinispan/InfinispanMetadataFilterMapper.java",
+  "line": 137
+ },
+ {
+  "n": 138,
+  "set": "step7b",
+  "case": "langchain4j-196bc5d",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-agentic/src/main/java/dev/langchain4j/agentic/planner/AgentsRegistry.java",
+  "line": 57
+ },
+ {
+  "n": 139,
+  "set": "step7b",
+  "case": "langchain4j-d5b13be",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/store/embedding/azure/search/AbstractAzureAiSearchEmbeddingStore.java",
+  "line": 71
+ },
+ {
+  "n": 140,
+  "set": "step7d",
+  "case": "langchain4j-f00ea5f",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-infinispan/src/main/java/dev/langchain4j/store/embedding/infinispan/InfinispanMetadataFilterMapper.java",
+  "line": 137
+ },
+ {
+  "n": 141,
+  "set": "step7b",
+  "case": "langchain4j-e59754e",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-pgvector/src/main/java/dev/langchain4j/store/embedding/pgvector/PgVectorEmbeddingStore.java",
+  "line": 546
+ },
+ {
+  "n": 142,
+  "set": "step7b",
+  "case": "spring-ai-b1384c8",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "models/spring-ai-openai/src/main/java/org/springframework/ai/openai/OpenAiAudioTranscriptionModel.java",
+  "line": 157
+ },
+ {
+  "n": 143,
+  "set": "step7d",
+  "case": "langchain4j-1023c67",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-okhttp/src/main/java/dev/langchain4j/http/client/okhttp/OkHttpClient.java",
+  "line": 80
+ },
+ {
+  "n": 144,
+  "set": "step7d",
+  "case": "langchain4j-4a36c67",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/rag/content/retriever/azure/search/DefaultAzureAiSearchFilterMapper.java",
+  "line": 68
+ },
+ {
+  "n": 145,
+  "set": "step7d",
+  "case": "langchain4j-5252739",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-elasticsearch/src/main/java/dev/langchain4j/rag/content/retriever/elasticsearch/ElasticsearchContentRetriever.java",
+  "line": 101
+ },
+ {
+  "n": 146,
+  "set": "step7b",
+  "case": "spring-ai-c256cfa",
+  "lens": "repro",
+  "refuter": "no-consequence",
+  "file": "spring-ai-model/src/main/java/org/springframework/ai/model/tool/DefaultToolCallingManager.java",
+  "line": 243
+ },
+ {
+  "n": 147,
+  "set": "step7d",
+  "case": "langchain4j-4a36c67",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/rag/content/retriever/azure/search/DefaultAzureAiSearchFilterMapper.java",
+  "line": 111
+ },
+ {
+  "n": 148,
+  "set": "step7d",
+  "case": "langchain4j-7fe3e3e",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-ollama/src/main/java/dev/langchain4j/model/ollama/OllamaDateDeserializer.java",
+  "line": 26
+ },
+ {
+  "n": 149,
+  "set": "step7d",
+  "case": "langchain4j-765b564",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-tencent-cos/src/main/java/dev/langchain4j/data/document/loader/tencent/cos/TencentCosDocumentLoader.java",
+  "line": 76
+ },
+ {
+  "n": 150,
+  "set": "step7b",
+  "case": "langchain4j-840330c",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-agentic/src/main/java/dev/langchain4j/agentic/scope/DefaultAgenticScope.java",
+  "line": 143
+ },
+ {
+  "n": 151,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 160
+ },
+ {
+  "n": 152,
+  "set": "step7d",
+  "case": "langchain4j-f00ea5f",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-infinispan/src/main/java/dev/langchain4j/store/embedding/infinispan/InfinispanMetadataFilterMapper.java",
+  "line": 137
+ },
+ {
+  "n": 153,
+  "set": "step7b",
+  "case": "langchain4j-196bc5d",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-agentic/src/main/java/dev/langchain4j/agentic/planner/AgentsRegistry.java",
+  "line": 90
+ },
+ {
+  "n": 154,
+  "set": "step7d",
+  "case": "langchain4j-7fe3e3e",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-ollama/src/main/java/dev/langchain4j/model/ollama/OllamaDateDeserializer.java",
+  "line": 26
+ },
+ {
+  "n": 155,
+  "set": "clean",
+  "case": "6bfa53a88",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "models/spring-ai-transformers/src/main/java/org/springframework/ai/transformers/TransformersEmbeddingModel.java",
+  "line": 271
+ },
+ {
+  "n": 156,
+  "set": "step7d",
+  "case": "langchain4j-10cd693",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-bedrock/src/main/java/dev/langchain4j/model/bedrock/AbstractBedrockChatModel.java",
+  "line": 530
+ },
+ {
+  "n": 157,
+  "set": "step7b",
+  "case": "langchain4j-7e622bf",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-pinecone/src/main/java/dev/langchain4j/store/embedding/pinecone/PineconeHelper.java",
+  "line": 50
+ },
+ {
+  "n": 158,
+  "set": "step7d",
+  "case": "langchain4j-cfd90e5",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-sql/src/main/java/dev/langchain4j/experimental/rag/content/retriever/sql/SqlDatabaseContentRetriever.java",
+  "line": 333
+ },
+ {
+  "n": 159,
+  "set": "step7d",
+  "case": "langchain4j-c2aa578",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-hibernate/src/main/java/dev/langchain4j/rag/content/retriever/hibernate/HibernateContentRetriever.java",
+  "line": 170
+ },
+ {
+  "n": 160,
+  "set": "step7b",
+  "case": "langchain4j-23098bd",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java",
+  "line": 213
+ },
+ {
+  "n": 161,
+  "set": "step7b",
+  "case": "langchain4j-7e622bf",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-pinecone/src/main/java/dev/langchain4j/store/embedding/pinecone/PineconeHelper.java",
+  "line": 50
+ },
+ {
+  "n": 162,
+  "set": "step7d",
+  "case": "langchain4j-b2923fe",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-core/src/main/java/dev/langchain4j/web/search/WebSearchRequest.java",
+  "line": 51
+ },
+ {
+  "n": 163,
+  "set": "step7b",
+  "case": "spring-ai-b1384c8",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "models/spring-ai-openai/src/main/java/org/springframework/ai/openai/OpenAiAudioTranscriptionModel.java",
+  "line": 157
+ },
+ {
+  "n": 164,
+  "set": "step7d",
+  "case": "langchain4j-b2923fe",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-core/src/main/java/dev/langchain4j/web/search/WebSearchRequest.java",
+  "line": 167
+ },
+ {
+  "n": 165,
+  "set": "step7b",
+  "case": "langchain4j-23098bd",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java",
+  "line": 424
+ },
+ {
+  "n": 166,
+  "set": "step7d",
+  "case": "langchain4j-7fe3e3e",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-ollama/src/main/java/dev/langchain4j/model/ollama/OllamaDateDeserializer.java",
+  "line": 26
+ },
+ {
+  "n": 167,
+  "set": "step7b",
+  "case": "langchain4j-575eb46",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "web-search-engines/langchain4j-web-search-engine-google-custom/src/main/java/dev/langchain4j/web/search/google/customsearch/GoogleCustomWebSearchEngine.java",
+  "line": 171
+ },
+ {
+  "n": 168,
+  "set": "step7d",
+  "case": "langchain4j-f31fb34",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-micrometer-metrics/src/main/java/dev/langchain4j/micrometer/metrics/listeners/MicrometerMetricsChatModelListener.java",
+  "line": 70
+ },
+ {
+  "n": 169,
+  "set": "step7b",
+  "case": "spring-ai-b1384c8",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "models/spring-ai-openai/src/main/java/org/springframework/ai/openai/OpenAiAudioTranscriptionModel.java",
+  "line": 149
+ },
+ {
+  "n": 170,
+  "set": "step7b",
+  "case": "langchain4j-34b8d34",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-a2a/src/main/java/dev/langchain4j/agentic/a2a/DefaultA2AClientBuilder.java",
+  "line": 181
+ },
+ {
+  "n": 171,
+  "set": "step7d",
+  "case": "langchain4j-b2923fe",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-core/src/main/java/dev/langchain4j/web/search/WebSearchRequest.java",
+  "line": 167
+ },
+ {
+  "n": 172,
+  "set": "step7b",
+  "case": "langchain4j-145ff45",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-mcp/src/main/java/dev/langchain4j/mcp/client/ToolSpecificationHelper.java",
+  "line": 76
+ },
+ {
+  "n": 173,
+  "set": "step7b",
+  "case": "langchain4j-96a3af9",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-playwright/src/main/java/dev/langchain4j/data/document/loader/playwright/PlaywrightDocumentLoader.java",
+  "line": 66
+ },
+ {
+  "n": 174,
+  "set": "clean",
+  "case": "f16130b98",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-guardrails/src/main/java/dev/langchain4j/guardrails/PatternBasedPromptInjectionGuardrail.java",
+  "line": 123
+ },
+ {
+  "n": 175,
+  "set": "clean",
+  "case": "f6c227eb9",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "auto-configurations/vector-stores/spring-ai-autoconfigure-vector-store-mongodb-atlas/src/main/java/org/springframework/ai/vectorstore/mongodb/autoconfigure/MongoDBAtlasVectorStoreAutoConfiguration.java",
+  "line": 81
+ },
+ {
+  "n": 176,
+  "set": "step7d",
+  "case": "langchain4j-e1dc391",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/ApacheHttpClient.java",
+  "line": 136
+ },
+ {
+  "n": 177,
+  "set": "step7d",
+  "case": "langchain4j-b2923fe",
+  "lens": "tests",
+  "refuter": "stands",
+  "file": "langchain4j-core/src/main/java/dev/langchain4j/web/search/WebSearchRequest.java",
+  "line": 167
+ },
+ {
+  "n": 178,
+  "set": "step7d",
+  "case": "langchain4j-f00ea5f",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-infinispan/src/main/java/dev/langchain4j/store/embedding/infinispan/InfinispanMetadataFilterMapper.java",
+  "line": 143
+ },
+ {
+  "n": 179,
+  "set": "clean",
+  "case": "6bfa53a88",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "models/spring-ai-transformers/src/main/java/org/springframework/ai/transformers/TransformersEmbeddingModel.java",
+  "line": 271
+ },
+ {
+  "n": 180,
+  "set": "step7d",
+  "case": "langchain4j-cfd90e5",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-sql/src/main/java/dev/langchain4j/experimental/rag/content/retriever/sql/SqlDatabaseContentRetriever.java",
+  "line": 296
+ },
+ {
+  "n": 181,
+  "set": "step7d",
+  "case": "langchain4j-cfd90e5",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-sql/src/main/java/dev/langchain4j/experimental/rag/content/retriever/sql/SqlDatabaseContentRetriever.java",
+  "line": 333
+ },
+ {
+  "n": 182,
+  "set": "step7b",
+  "case": "langchain4j-96a3af9",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-playwright/src/main/java/dev/langchain4j/data/document/loader/playwright/PlaywrightDocumentLoader.java",
+  "line": 66
+ },
+ {
+  "n": 183,
+  "set": "step7b",
+  "case": "langchain4j-34b8d34",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-a2a/src/main/java/dev/langchain4j/agentic/a2a/DefaultA2AClientBuilder.java",
+  "line": 178
+ },
+ {
+  "n": 184,
+  "set": "step7d",
+  "case": "langchain4j-b2923fe",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-core/src/main/java/dev/langchain4j/web/search/WebSearchRequest.java",
+  "line": 167
+ },
+ {
+  "n": 185,
+  "set": "step7b",
+  "case": "langchain4j-196bc5d",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-agentic/src/main/java/dev/langchain4j/agentic/planner/AgentsRegistry.java",
+  "line": 57
+ },
+ {
+  "n": 186,
+  "set": "step7d",
+  "case": "langchain4j-4a36c67",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/rag/content/retriever/azure/search/DefaultAzureAiSearchFilterMapper.java",
+  "line": 115
+ },
+ {
+  "n": 187,
+  "set": "step7d",
+  "case": "langchain4j-7fe3e3e",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-ollama/src/main/java/dev/langchain4j/model/ollama/OllamaDateDeserializer.java",
+  "line": 24
+ },
+ {
+  "n": 188,
+  "set": "step7b",
+  "case": "langchain4j-23098bd",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java",
+  "line": 429
+ },
+ {
+  "n": 189,
+  "set": "step7b",
+  "case": "langchain4j-d5b13be",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/store/embedding/azure/search/AbstractAzureAiSearchEmbeddingStore.java",
+  "line": 71
+ },
+ {
+  "n": 190,
+  "set": "step7b",
+  "case": "langchain4j-196bc5d",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-agentic/src/main/java/dev/langchain4j/agentic/planner/AgentsRegistry.java",
+  "line": 57
+ },
+ {
+  "n": 191,
+  "set": "step7d",
+  "case": "langchain4j-45e3ab8",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/MultipartBodyPublisher.java",
+  "line": 19
+ },
+ {
+  "n": 192,
+  "set": "step7d",
+  "case": "langchain4j-4a36c67",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-azure-ai-search/src/main/java/dev/langchain4j/rag/content/retriever/azure/search/DefaultAzureAiSearchFilterMapper.java",
+  "line": 111
+ },
+ {
+  "n": 193,
+  "set": "step7b",
+  "case": "langchain4j-23098bd",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java",
+  "line": 213
+ },
+ {
+  "n": 194,
+  "set": "step7b",
+  "case": "langchain4j-0d16d28",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-agentic-patterns/src/main/java/dev/langchain4j/agentic/patterns/debate/ConvergenceStrategy.java",
+  "line": 25
+ },
+ {
+  "n": 195,
+  "set": "step7b",
+  "case": "langchain4j-840330c",
+  "lens": "tests",
+  "refuter": "stands",
+  "file": "langchain4j-agentic/src/main/java/dev/langchain4j/agentic/scope/DefaultAgenticScope.java",
+  "line": 143
+ },
+ {
+  "n": 196,
+  "set": "step7d",
+  "case": "langchain4j-765b564",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "document-loaders/langchain4j-document-loader-tencent-cos/src/main/java/dev/langchain4j/data/document/loader/tencent/cos/TencentCosDocumentLoader.java",
+  "line": 148
+ },
+ {
+  "n": 197,
+  "set": "step7b",
+  "case": "langchain4j-145ff45",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "langchain4j-mcp/src/main/java/dev/langchain4j/mcp/client/ToolSpecificationHelper.java",
+  "line": 237
+ },
+ {
+  "n": 198,
+  "set": "step7d",
+  "case": "langchain4j-c2aa578",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-hibernate/src/main/java/dev/langchain4j/rag/content/retriever/hibernate/HibernateContentRetriever.java",
+  "line": 170
+ },
+ {
+  "n": 199,
+  "set": "step7d",
+  "case": "langchain4j-10cd693",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-bedrock/src/main/java/dev/langchain4j/model/bedrock/AbstractBedrockChatModel.java",
+  "line": 530
+ },
+ {
+  "n": 200,
+  "set": "step7b",
+  "case": "langchain4j-23098bd",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "code-execution-engines/langchain4j-code-execution-engine-azure-acads/src/main/java/dev/langchain4j/code/azure/acads/SessionsREPLTool.java",
+  "line": 433
+ },
+ {
+  "n": 201,
+  "set": "step7d",
+  "case": "langchain4j-7fe3e3e",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "langchain4j-ollama/src/main/java/dev/langchain4j/model/ollama/OllamaDateDeserializer.java",
+  "line": 23
+ },
+ {
+  "n": 202,
+  "set": "step7b",
+  "case": "langchain4j-196bc5d",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-agentic/src/main/java/dev/langchain4j/agentic/planner/AgentsRegistry.java",
+  "line": 90
+ },
+ {
+  "n": 203,
+  "set": "step7b",
+  "case": "langchain4j-145ff45",
+  "lens": "bounds",
+  "refuter": "stands",
+  "file": "langchain4j-mcp/src/main/java/dev/langchain4j/mcp/client/ToolSpecificationHelper.java",
+  "line": 106
+ },
+ {
+  "n": 204,
+  "set": "step7d",
+  "case": "langchain4j-cfd90e5",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "experimental/langchain4j-experimental-sql/src/main/java/dev/langchain4j/experimental/rag/content/retriever/sql/SqlDatabaseContentRetriever.java",
+  "line": 279
+ },
+ {
+  "n": 205,
+  "set": "step7d",
+  "case": "langchain4j-45e3ab8",
+  "lens": "repro",
+  "refuter": "stands",
+  "file": "http-clients/langchain4j-http-client-apache/src/main/java/dev/langchain4j/http/client/apache/MultipartBodyPublisher.java",
+  "line": 19
+ },
+ {
+  "n": 206,
+  "set": "step7b",
+  "case": "langchain4j-575eb46",
+  "lens": "contract",
+  "refuter": "stands",
+  "file": "web-search-engines/langchain4j-web-search-engine-google-custom/src/main/java/dev/langchain4j/web/search/google/customsearch/GoogleCustomWebSearchEngine.java",
+  "line": 171
+ },
+ {
+  "n": 207,
+  "set": "step7b",
+  "case": "spring-ai-c256cfa",
+  "lens": "contract",
+  "refuter": "no-consequence",
+  "file": "spring-ai-model/src/main/java/org/springframework/ai/model/tool/DefaultToolCallingManager.java",
+  "line": 243
+ }
+]
