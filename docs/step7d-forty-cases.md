@@ -119,9 +119,11 @@ both labelled `no`. That stratum is still five cases and is still the weakest ev
 - **A harness number.** All 38 ran on the harness. Nineteen of them also ran on the API and the
   two agreed on eighteen (`docs/transport-calibration-19.md`), which is close — but the extension
   has no API half and nobody should assume one.
-- **Two repositories, one language, no context pack.** Question 6 is still unimplemented for Java,
-  so every lens ran on the diff and the file alone. 31/38 is a floor for what a context pack would
-  give.
+- **Two repositories, one language, no context pack.** Question 6 was unimplemented for Java,
+  so every lens ran on the diff and the file alone. ~~31/38 is a floor for what a context pack
+  would give.~~ **Measured 2026-08-25:** the pack is implemented, and the nineteen step7b cases
+  re-run with it detect the same fourteen, case for case (`docs/step7b-context-pack.md`). The
+  step7d nineteen were exported with packs and left unrun.
 - **The labeller reads the results.** The rubric and every label were committed first, which
   bounds it and does not remove it.
 - **Nothing here is an acceptance rate.** 198 findings against 31 detected defects is a bill, not

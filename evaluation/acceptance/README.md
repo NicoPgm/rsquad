@@ -44,6 +44,13 @@ rate — but the reasons are different, and one of them is our fault.
 4 findings are the lens answering out of scope, not a yield. **The tests lens has therefore never
 been evaluated at all**, and no number here says anything about it.
 
+> **Resolved 2026-08-25.** It has been evaluated now: shown one test file per case it produced
+> **28 raw findings over 36 cases**, 25 past the guards, against 5 over 53 before
+> (`docs/step7e-tests-lens.md`). Those 25 belong in this worksheet — and they must carry a
+> **model label**, because that arm ran on `claude-sonnet-5` while everything already in the
+> worksheet ran on `claude-opus-5`. Mixed in unlabelled, the per-lens rate this study exists
+> to produce would be uninterpretable for exactly the lens it just became possible to measure.
+
 **`conformance` really did stay quiet**, and that is closer to a measurement: on these Java
 repositories there is no spec, so its "requirement" is the commit message, and ADR-0007 tells it
 to quote a requirement or say nothing. Eight findings is that rule working as written on a corpus

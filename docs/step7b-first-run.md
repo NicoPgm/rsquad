@@ -125,7 +125,9 @@ the exact error message in its docstring.
   weakest evidence in it.
 - **No false-positive corpus.** Every case contains a known defect. The 35 unlabelled findings
   bound the reader's cost on defective diffs, not on clean ones.
-- **No context pack**, so this is a floor for Java rather than a comparable to the Python runs.
+- ~~**No context pack**, so this is a floor for Java rather than a comparable to the Python
+  runs.~~ **Measured 2026-08-25 and it is not a floor:** the same nineteen cases with the pack
+  detect the same fourteen (`docs/step7b-context-pack.md`).
 - **The labeller read the results.** The rubric and the labels were committed first, which bounds
   it and does not remove it.
 

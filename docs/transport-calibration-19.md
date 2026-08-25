@@ -79,7 +79,9 @@ documents are corrected in place with a dated note.
 
 - **Nineteen cases, one disagreement.** A single differing case cannot size an offset. It can only
   say the offset is small on this set.
-- **Two repositories, one language, no context pack.** Unchanged, and still the biggest limit.
+- **Two repositories, one language, no context pack.** ~~Unchanged, and still the biggest
+  limit.~~ **Measured 2026-08-25:** it was not the biggest limit, or any limit at all on these
+  nineteen cases — see `docs/step7b-context-pack.md`.
 - **The two transports share a model.** Agreement between them is not independent confirmation of
   anything; it says the transport matters less than the lens prompts do.
 - **Nothing here is a human acceptance rate.** 97 findings against 15 known defects is a reader's
