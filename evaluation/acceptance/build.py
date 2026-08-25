@@ -39,13 +39,14 @@ SETS = {
 
 HEADER = """# Acceptance worksheet — one word per finding
 
-**This is the measurement no machine can make.** Every other number in this project is a count.
-This one asks a reader whether the finding was worth their time, and it is the one that decides
-whether a lens stays.
+Below are claims a code reviewer made about specific lines of Java. Each one names a file and a
+line, quotes the code, states the inputs that trigger the problem and the consequence that
+follows.
 
 ## What to do
 
-Read each block. Write one word after `**verdict:**`, replacing the `?`. Nothing else.
+Read each block. Write one word after `**verdict:**`, replacing the `?`. Nothing else. Do not
+edit any other part of the file.
 
 | word | means |
 |---|---|
@@ -54,52 +55,15 @@ Read each block. Write one word after `**verdict:**`, replacing the `?`. Nothing
 | `wrong` | The claim is false, or the consequence does not follow from the inputs. |
 | `unsure` | I cannot tell without more work than this finding deserves. |
 
-**`unsure` is a real answer, not a skip.** Forcing a verdict manufactures data. And it counts
-*against* the lens in the headline rate, because the reader still paid the time.
+**`unsure` is a real answer, not a skip.** A forced verdict is invented data.
 
 You are not auditing correctness. The question is only: **was this worth reading?**
 
-If you want to check one, the repositories are on disk and the file and line are given.
+Judge each block on its own. Some claims resemble each other; that is expected, and each still
+costs a reader a block to read.
 
-## The same defect may appear two or three times
-
-Different lenses reach the same line independently and say nearly the same thing. Those are
-separate items on purpose, and shuffling spreads them apart. **Judge each on its own** — a lens
-that only ever restates another lens's finding still costs a reader a block to read, and the
-whole question is whether it earns that.
-
-## Where to stop
-
-The order is shuffled, so any prefix is a random sample. Three checkpoints are declared here,
-before any verdict is written:
-
-| after | per big lens | what it can answer |
-|---|---|---|
-| **90 items** | ~30 | whether the three big lenses differ from each other by a lot (+/- 17 pts) |
-| **150 items** | ~50 | whether a lens sits above or below the 30 % retirement line (+/- 13 pts) |
-| **{N} items (all)** | ~68 | the same, tighter, plus clean-commit and refuted-finding acceptance |
-
-**Stop at a checkpoint, not when the numbers look good.** Choosing where to stop after seeing
-results is the one bias shuffling cannot fix.
-
-## What is not in here
-
-**Three lenses can be measured: `contract` (73 findings), `bounds` (65), `repro` (65).**
-
-`tests` produced **4** findings in 46 reviews and `conformance` **8**. Neither has an acceptance
-rate to measure — they have a yield problem first, and that is the answer about them.
-
-`conformance` is absent from the worksheet entirely, for a second reason: its findings carry a
-different schema — a quoted `requirement` and a `mismatch`, not `inputs` and `consequence` — so
-every one of its blocks would announce its own lens. It cannot be shown blind beside the others,
-and showing it labelled would bias every judgement in the file.
-
-## Then
-
-    python evaluation/acceptance/score.py
-
-It joins these verdicts to `key.json` — which nobody should open before finishing — and prints
-acceptance per lens, with denominators.
+Answer every block in order, and do not skip one because it is hard — a skipped block is the one
+whose answer mattered.
 
 ---
 """
