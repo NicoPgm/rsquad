@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ..vcs import resolve
+from .adapters import ByLanguage, by_language
 from .adapters.base import StackAdapter
 from .adapters.python_pytest import PythonPytestAdapter
 from .core import (EXEMPT_MARKERS, NO_SIGNAL, SUSPECT, VALID, RunnerFailed, Summary, Verdict,
@@ -75,5 +76,5 @@ def check(base: str | None = None, head: str = "HEAD", repo: Path | None = None,
 
 
 __all__ = ["ADAPTERS", "DEFAULT_ADAPTER", "EXEMPT_MARKERS", "NO_SIGNAL", "SUSPECT", "VALID",
-           "Outcome", "RunnerFailed", "StackAdapter", "Summary", "Verdict", "check", "report",
-           "summarize"]
+           "ByLanguage", "Outcome", "RunnerFailed", "StackAdapter", "Summary", "Verdict",
+           "by_language", "check", "report", "summarize"]

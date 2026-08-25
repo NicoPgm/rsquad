@@ -19,7 +19,7 @@ from pathlib import Path
 
 from . import (budget, chunking, conformance, config, evaluate, job, lenses, ranking,
                refutation)
-from .gate import ADAPTERS, DEFAULT_ADAPTER, check, git, merge_base, report
+from .gate import ADAPTERS, DEFAULT_ADAPTER, by_language, check, git, merge_base, report
 from .vcs import resolve
 
 
@@ -155,8 +155,7 @@ def _review(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve() if args.repo else None
     head = resolve(args.head, repo)
     base = merge_base(args.base or "%s~1" % head, head, repo)
-    units = chunking.units(base, head, repo, args.path,
-                           adapter=ADAPTERS[DEFAULT_ADAPTER])
+    units = chunking.units(base, head, repo, args.path, adapter=by_language)
     chosen = args.lens or list(lenses.LENSES)
 
     if not units:
@@ -216,8 +215,7 @@ def _case_units(defect: dict, repo: Path):
     """The one unit a case is reviewed on: its file, at the commit that introduced the defect."""
     head = resolve(defect["introduced_in"], repo)
     base = merge_base("%s~1" % head, head, repo)
-    units = chunking.units(base, head, repo, [defect["file"]],
-                           adapter=ADAPTERS[DEFAULT_ADAPTER])
+    units = chunking.units(base, head, repo, [defect["file"]], adapter=by_language)
     return head, base, units
 
 
@@ -268,7 +266,7 @@ def _evaluate_ingest(args, scorable, excluded, repo: Path, chosen) -> int:
         units = {u.file: u for u in chunking.units(
             data["base"], data["head"], here,
             [data["path"]] if data.get("path") else None,
-            adapter=ADAPTERS[DEFAULT_ADAPTER])}
+            adapter=by_language)}
         intent = conformance.gather(data["head"], here, data["specs"])
         result = job.ingest(folder, units, intent)
         dropped += result.dropped
@@ -367,7 +365,7 @@ def _evaluate(args: argparse.Namespace) -> int:
             head = resolve(defect["introduced_in"], repo)
             base = merge_base("%s~1" % head, head, repo)
             units = chunking.units(base, head, repo, [defect["file"]],
-                                   adapter=ADAPTERS[DEFAULT_ADAPTER])
+                                   adapter=by_language)
             if not units:
                 raise SystemExit("%s did not change in %s" % (defect["file"], head[:12]))
             intent = conformance.gather(head, repo, None)
@@ -402,7 +400,7 @@ def _evaluate(args: argparse.Namespace) -> int:
 def _units_and_intent(args, repo):
     head = resolve(args.head, repo)
     base = merge_base(args.base or "%s~1" % head, head, repo)
-    units = chunking.units(base, head, repo, args.path, adapter=ADAPTERS[DEFAULT_ADAPTER])
+    units = chunking.units(base, head, repo, args.path, adapter=by_language)
     return head, base, units, conformance.gather(head, repo, args.spec)
 
 
@@ -437,7 +435,7 @@ def _ingest(args: argparse.Namespace) -> int:
     # function of (base, head, repo), so recomputing is both cheaper and a check: if the
     # revisions moved under the job, the anchors stop matching and the guards say so.
     units = {u.file: u for u in chunking.units(data["base"], data["head"], repo, args.path,
-                                               adapter=ADAPTERS[DEFAULT_ADAPTER])}
+                                               adapter=by_language)}
     intent = conformance.gather(data["head"], repo, data["specs"])
     result = job.ingest(out, units, intent)
 
