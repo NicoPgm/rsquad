@@ -10,7 +10,7 @@ because a test command is a property of the repository. The context pack is a pr
 file being read: one change can touch a `.py` and a `.java`, and the resolver that can follow an
 import in one is a `SyntaxError` in the other.
 
-That distinction was not free. Every Java review this squad has ever run — 165 tasks — was
+That distinction was not free. Every Java review this squad has ever run — 190 lens tasks — was
 handed the Python resolver, which parsed a `.java` file, raised `SyntaxError`, and returned an
 empty pack. Nothing failed and nothing said so.
 """

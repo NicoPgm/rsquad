@@ -7,8 +7,8 @@ measurement to run, not a file to write, so nothing here pretends to answer it. 
 built, it should absorb this class rather than sit beside it.
 
 **Why question 6 alone was worth building first.** Every Java case ever reviewed by this squad
-— 165 tasks across two repositories — carried an empty context pack, because the resolver was
-Python's and a `.java` file is a `SyntaxError` to it. So every published Java number is a
+— 190 lens tasks across two repositories — carried an empty context pack, because the resolver
+was Python's and a `.java` file is a `SyntaxError` to it. So every published Java number is a
 measurement of the squad *without* the pack. The pack is the sharpest limit named in those
 reports; it can now be varied while everything else stays frozen.
 
