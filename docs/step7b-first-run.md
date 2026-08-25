@@ -51,6 +51,12 @@ run. The squad was not confused; it was elsewhere.
 
 ## The memorisation gradient runs backwards
 
+> **Superseded 2026-08-25.** At 38 cases the three strata are 4/5, 18/21 and 9/12 — 80 %, 86 %,
+> 75 %. The gradient below is flat once the sample doubles, so this section reports a pattern read
+> out of strata too small to carry it. What survives is the null result: no memorisation effect,
+> and no reverse effect either (`docs/step7d-forty-cases.md`).
+
+
 The covariate the whole young-repository detour was for:
 
 | Origin of the defect | Detected |

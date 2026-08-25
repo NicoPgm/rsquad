@@ -91,3 +91,11 @@ against the API's 4/4 and returned 6 findings against 10 — the opposite direct
 earlier divergence, where it found more. So the deferred API budget should buy **calibration**,
 not more cases: cases are free on the harness, and only the bridge costs
 (`docs/transport-calibration.md`).
+
+**2026-08-25** — the division of labour has now paid for itself twice. The detection set was
+scaled from 19 scorable cases to 38 **entirely on the harness**: 31/38, roughly 390 agents and 21
+million tokens, **$0**, where the API would have billed about $35
+(`docs/step7d-forty-cases.md`). And the calibration that this ADR could not have priced turned
+out to be free in the other direction — the 19 API cases were already bought, so replaying them
+on the harness cost nothing and widened the bridge from 4 cases to 19
+(`docs/transport-calibration-19.md`). On those 19 the transports agree on 18.

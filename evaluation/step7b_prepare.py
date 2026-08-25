@@ -4,7 +4,7 @@ No synthetic commits here, unlike `step7_prepare.py`: the commit under review is
 the repository's own history — the commit that first wrote the buggy line. So this only reshapes
 `step7b.yaml` into the schema `evaluate` reads, and clones the repositories if needed.
 
-    python evaluation/step7b_prepare.py <workspace>
+    python evaluation/step7b_prepare.py <workspace> [freeze.yaml]
     python -m rsquad evaluate --defects <workspace>/langchain4j.defects.yaml \\
         --repo <workspace>/langchain4j --max-usd 8 --out evaluation/step7b-langchain4j.md --confirm
 """
@@ -30,8 +30,8 @@ def run(args, check=True):
     return done
 
 
-def main(workspace: Path) -> int:
-    frozen = yaml.safe_load((HERE / "step7b.yaml").read_text(encoding="utf-8"))
+def main(workspace: Path, freeze: Path) -> int:
+    frozen = yaml.safe_load(freeze.read_text(encoding="utf-8"))
     workspace.mkdir(parents=True, exist_ok=True)
 
     for arm in frozen["arms"]:
@@ -59,7 +59,7 @@ def main(workspace: Path) -> int:
                 "note": case["label_rationale"].strip(),
             })
 
-        out = workspace / ("%s.defects.yaml" % name)
+        out = workspace / ("%s.%s.defects.yaml" % (freeze.stem, name))
         out.write_text(yaml.safe_dump({"schema_version": 1, "defects": defects},
                                       allow_unicode=True, sort_keys=False), encoding="utf-8")
         scorable = sum(1 for d in defects if d["detectable_from_diff"] != "no")
@@ -69,6 +69,8 @@ def main(workspace: Path) -> int:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    if len(sys.argv) not in (2, 3):
         raise SystemExit(__doc__)
-    sys.exit(main(Path(sys.argv[1]).resolve()))
+    # The freeze is a parameter, so a second pre-registration reuses this without a copy.
+    chosen = Path(sys.argv[2]).resolve() if len(sys.argv) == 3 else HERE / "step7b.yaml"
+    sys.exit(main(Path(sys.argv[1]).resolve(), chosen))
