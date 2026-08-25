@@ -130,6 +130,42 @@ itself. **The blind lenses find contradictions, not omissions**, and an omission
 quote. The run also found two live defects in RSquad's own gate.
 [`docs/first-evaluation.md`](docs/first-evaluation.md).
 
+## Trying it on your own repository
+
+```bash
+git clone https://github.com/NicoPgm/rsquad && cd rsquad
+pip install -e ".[dev]"        # Python 3.11+
+python -m pytest               # 289 tests, no network, no API call
+```
+
+**Decide one thing before you run it: your code goes to Anthropic.** There are two routes and
+they raise the same question through different doors. `rsquad review` calls the API and needs a
+key. `rsquad export` / `rsquad ingest` write a job on disk for a harness you may already have
+approved — if Claude Code or an equivalent is already cleared where you work, this route adds no
+new vendor and no new procurement. Nothing else leaves the machine: no telemetry, no upload, and
+the audio-equivalent question does not arise because only the diff and the file under review are
+ever sent.
+
+**What will actually run on your stack**, stated plainly so the first attempt is not a surprise:
+
+| | works on | if not |
+|---|---|---|
+| **[1]–[4]** conformance, lenses, refutation, queue | **any language** — they read a diff and a file | — |
+| **[0]** the mechanical gate | **Python + pytest only** | the gate is skipped; you are testing four fifths of the design, and the only step that blocks is the missing fifth |
+| the context pack (question 6) | **Python, Java** | resolves nothing — a smaller pack, never a wrong one. Measured: no detection effect at n = 19 ([`docs/step7b-context-pack.md`](docs/step7b-context-pack.md)) |
+
+Writing a gate adapter is seven questions and no change to the core — see
+[`docs/porting.md`](docs/porting.md), which also carries the acceptance criterion for a port.
+
+**Where to point it first.** On Python, `rsquad gate --replay 20` costs nothing and no agent, and
+tells you what the gate would have caught on your own history before you trust it. On anything
+else, run one real commit through the harness end to end and read the queue.
+
+**And the one thing this project has never been able to measure, which your workplace can.** The
+conformance lens produced 8 findings in the whole Java campaign, because those repositories have
+no specification and ADR-0007 tells it to quote a requirement or stay quiet. Give it a real
+ticket or design doc with `--spec` and step [1] finally has something to do.
+
 ```bash
 rsquad gate                                  # HEAD against its parent
 rsquad gate --base master --strict           # against the merge base with master
