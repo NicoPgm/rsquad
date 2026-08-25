@@ -36,8 +36,18 @@ results is the one bias shuffling cannot fix.
 
 Three lenses carry enough findings: **`contract` 73, `bounds` 65, `repro` 65**.
 
-`tests` produced **4** findings in 46 reviews and `conformance` **8**. Neither has an acceptance
-rate to measure — they have a yield problem first, and that is the finding about them.
+`tests` produced **4** findings in 46 reviews and `conformance` **8**. Neither has enough for a
+rate — but the reasons are different, and one of them is our fault.
+
+**`tests` was never given a test file.** `evaluate` reviews exactly one unit per case, the changed
+*source* file, so every `tests` task went out asking about tests that were not in the payload. Its
+4 findings are the lens answering out of scope, not a yield. **The tests lens has therefore never
+been evaluated at all**, and no number here says anything about it.
+
+**`conformance` really did stay quiet**, and that is closer to a measurement: on these Java
+repositories there is no spec, so its "requirement" is the commit message, and ADR-0007 tells it
+to quote a requirement or say nothing. Eight findings is that rule working as written on a corpus
+with almost nothing to quote.
 
 `conformance` is absent from the worksheet entirely, for a second reason: its findings carry a
 different schema — a quoted `requirement` and a `mismatch`, not `inputs` and `consequence` — so
