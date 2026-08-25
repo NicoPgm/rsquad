@@ -204,6 +204,12 @@ rsquad ingest ./job                           # writes the queue
 Everything that makes a finding trustworthy stays on this side of the seam. The harness makes a
 model call; it cannot change what a lens was asked or what its answer must satisfy.
 
+There is one driver here, for Claude Code, and it is an example rather than the interface.
+[`docs/writing-a-harness-driver.md`](docs/writing-a-harness-driver.md) is the contract in full —
+the job layout, the manifest, the three reply schemas, what a driver must never do, and why a
+failed task must leave no file — written so a second driver does not have to be reconstructed
+from the source.
+
 **One caveat, in the driver's own header too.** A harness agent has file-reading tools, so a
 blind lens is blind only by instruction — unlike the API path, where a test asserts there is no
 channel for a spec at all.
