@@ -24,7 +24,15 @@ every other number in the campaign. Which rule fired is recorded per case, becau
 sorted order" is a much weaker claim than "the test for this class" and a reader must be able to
 tell them apart.
 
-    python evaluation/step7e_tests.py <workspace> <clones>
+**The model is a parameter here, and `claude-sonnet-5` is defensible for this arm alone.**
+Every other measurement in the campaign compares against a half already run on `claude-opus-5`,
+so there the model has to be held constant or two things move at once. This arm has no such
+counterpart — it is a first look at a lens nobody has ever looked at — so a cheaper model costs
+nothing but a caveat. Two conditions, both binding: the model is written into `selection.json`
+and into the report, and these findings are **labelled by model** in the acceptance worksheet.
+Unlabelled, they would quietly turn that corpus into a mixture of two engines.
+
+    python evaluation/step7e_tests.py <workspace> <clones> [model]
     # then run the harness on the jobs, and: rsquad ingest <job> --path <test file>
 """
 
@@ -70,7 +78,7 @@ def choose(source: str, candidates: list[str]) -> tuple[str, str] | None:
     return candidates[0], "first in sorted order — no name relation"
 
 
-def main(workspace: Path, clones: Path) -> int:
+def main(workspace: Path, clones: Path, model: str) -> int:
     workspace.mkdir(parents=True, exist_ok=True)
     chosen, skipped = [], []
 
@@ -92,19 +100,23 @@ def main(workspace: Path, clones: Path) -> int:
         out = workspace / entry["case"]
         run([sys.executable, "-m", "rsquad", "export", str(out),
              "--repo", entry["repo"], "--head", entry["origin"],
-             "--path", entry["test"], "--lens", "tests", "--no-conformance"])
+             "--path", entry["test"], "--lens", "tests", "--no-conformance",
+             "--model", model])
         print("  %-24s %s" % (entry["case"], entry["test"]))
 
     (workspace / "selection.json").write_text(
-        json.dumps({"chosen": chosen, "skipped": skipped}, indent=2), encoding="utf-8")
+        json.dumps({"model": model, "chosen": chosen, "skipped": skipped}, indent=2),
+        encoding="utf-8")
     print("\n%d job(s) in %s, %d case(s) whose origin touched no test: %s"
           % (len(chosen), workspace, len(skipped), ", ".join(skipped) or "none"))
+    print("  model: %s — recorded because this arm alone does not hold it constant" % model)
     for rule in sorted({e["rule"] for e in chosen}):
         print("  %2d  %s" % (sum(1 for e in chosen if e["rule"] == rule), rule))
     return 0
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         raise SystemExit(__doc__)
-    sys.exit(main(Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve()))
+    sys.exit(main(Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve(),
+                  sys.argv[3] if len(sys.argv) == 4 else "claude-opus-5"))

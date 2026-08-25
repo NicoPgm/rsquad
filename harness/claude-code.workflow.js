@@ -9,6 +9,12 @@
  * decide what a lens is asked, what a reply must satisfy, or what survives — all of that stays
  * in RSquad, on the other side of the seam (ADR-0005, ADR-0008).
  *
+ * **The model comes from the manifest, and did not always.** RSquad records the model it
+ * intends; until 2026-08-25 this runner ignored the field and every task inherited whatever
+ * the session happened to be. The two agreed across the whole Java campaign — by coincidence,
+ * not by construction — so nothing ever looked wrong. It reads the field now, which is what
+ * lets one measurement hold the model constant while another deliberately varies it.
+ *
  * ── READ THIS BEFORE TRUSTING THE OUTPUT ──────────────────────────────────────────────────
  *
  * On the API transport a blind lens is blind because its request has no channel through which a
@@ -46,9 +52,10 @@ if (!jobs || !jobs.length) {
 const MANIFEST = {
   type: 'object',
   additionalProperties: false,
-  required: ['round', 'tasks'],
+  required: ['round', 'model', 'tasks'],
   properties: {
     round: { type: 'integer' },
+    model: { type: 'string' },
     tasks: {
       type: 'array',
       items: {
@@ -74,6 +81,14 @@ const DONE = {
 
 const name = (job) => job.replace(/[\\/]+$/, '').split(/[\\/]/).pop()
 
+// The manifest records a full model id; this runner names tiers. An id nobody here recognises
+// returns undefined, which inherits the session's model — the old behaviour, and the reason this
+// gap went unnoticed for the whole Java campaign: the manifest said `claude-opus-5`, the harness
+// never read it, and the session happened to be Opus. It agreed by luck, not by construction,
+// and a measurement that holds the model constant by luck is not holding it.
+const TIERS = ['opus', 'sonnet', 'haiku', 'fable']
+const alias = (model) => TIERS.find((tier) => (model || '').includes(tier))
+
 const instruction = (job, round, task) =>
   `You are running one task of a code review job.\n\n` +
   `1. Read ${job}/round-${round}/tasks/${task.id}.md — it is a complete instruction, ` +
@@ -95,9 +110,9 @@ log(`${jobs.length} job(s)`)
 const runs = await pipeline(
   jobs,
   (job) => agent(
-    `Read the JSON file at ${job}/manifest.json and return its "round" number and, for every ` +
-    `entry in its "tasks" array, that entry's "id" and "contract". Do not read anything else ` +
-    `and do not summarise: return every task.`,
+    `Read the JSON file at ${job}/manifest.json and return its "round" number, its "model" ` +
+    `string, and for every entry in its "tasks" array, that entry's "id" and "contract". Do ` +
+    `not read anything else and do not summarise: return every task.`,
     { label: `manifest:${name(job)}`, schema: MANIFEST, effort: 'low', phase: 'Manifest' },
   ),
   async (listing, job) => {
@@ -106,9 +121,11 @@ const runs = await pipeline(
       return { job, round: null, written: [], failed: [] }
     }
     const round = listing.round
+    const model = alias(listing.model)
+    log(`${name(job)} round ${round}: ${listing.tasks.length} task(s) on ${model || 'the inherited model'}`)
     const results = await parallel(listing.tasks.map((task) => () => agent(
       instruction(job, round, task),
-      { label: `${name(job)}/${task.id}`, schema: DONE, phase: 'Tasks' },
+      { label: `${name(job)}/${task.id}`, schema: DONE, phase: 'Tasks', ...(model && { model }) },
     )))
     const written = results.filter((r) => r && r.written)
     log(`${name(job)} round ${round}: ${written.length}/${listing.tasks.length} written`)
