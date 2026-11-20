@@ -3,7 +3,8 @@
 *Surveyed on 2026-11-20, from GitHub. Everything below is a reading of READMEs and of the prompt
 and configuration files they point to. **Nothing was executed**, and no tool here was run on a
 corpus of ours. Where a number comes from a project describing itself it is marked
-**reported**. Star counts and dates are as of the survey and move daily.*
+**reported**. Star counts and dates are as of the survey and move daily. §3.8 is the exception: it
+describes a diagram supplied by the repository owner, not a GitHub project.*
 
 ## 0. What to take away
 
@@ -31,6 +32,10 @@ corpus of ours. Where a number comes from a project describing itself it is mark
    much without the other.
 6. **Stars measure attention, not review quality.** OCR has 54k stars after six months. Sashiko,
    which reviews Linux kernel patches in production, has 1.5k.
+7. **A practitioner's end-to-end workflow (a screenshot, not a project) adds ideas the
+   repositories lack**: escalating to a five-model panel by change size, rating issues by
+   frequency times impact with an explicit "overthinking" check, reproducing before building,
+   and loops that check what landed. It is one person's process with no measurement (§3.8).
 
 ## 1. How this was surveyed, and what that cannot tell you
 
@@ -198,6 +203,56 @@ merge base. Last pushed March 2026. This is the shape a CI job built on
   change can reach** with a risk score instead of re-reading the repository. It is the
   deterministic cousin of RSquad's context pack, and a much wider one.
 
+### 3.8 A practitioner's end-to-end workflow (not a project)
+
+*Source: a screenshot of a diagram, supplied by the repository owner and attributed by them to
+David Ondrej's company. I have not seen the video or any text around it, cannot verify the
+attribution or the date, and the diagram reports no measurement. It is one practitioner's
+process, anecdotal by nature. It is described here in my own words; the image is not reproduced.*
+
+The diagram has three stages and three kinds of node: decisions that are the human's call,
+independent reviewer agents, and loops. The models it names are labels I can only partly identify,
+so none is assumed here.
+
+1. **Build.** A task arrives in a thread. A bug is **reproduced end to end, as a real user would,
+   before anything is built**. A big or risky change first gets the human's decisions and live
+   measurements (two commands are named for this). One model builds. Then **tests, a type check
+   and a screenshot of the real running app** are produced before any reviewer is involved.
+2. **Review.** A size check picks the reviewer. A **normal** change goes to one reviewer from a
+   **different model family than the builder**, in a **fresh, read-only thread**, at an extra-high
+   effort setting. A **huge** change goes to a **panel of five models whose findings are
+   de-duplicated**. Every issue is **rated 1 to 10 as how often it happens times how bad it is**.
+   Then the diagram asks, in so many words, **whether this is a real must-fix or overthinking**.
+   If unsure, a **second opinion from another reviewer**. If must-fix, the human approves, the
+   builder fixes, and **the fix is re-reviewed, starting again at the size check**.
+3. **Ship.** When nothing is left to fix, a push command rebases onto main. **Loops** then watch
+   CI and check side effects and security **on what actually landed**; a bug found there opens a
+   new thread and goes back to stage 1.
+
+What it adds beyond the projects above:
+
+- **Escalation by change size, in model count and not only in effort**: one reviewer for a normal
+  change, five de-duplicated for a huge one. adamsreview offers an ensemble as an option; here it
+  is triggered.
+- **Cross-family review as the default path**, with the reviewer **read-only** and in a **fresh
+  thread**.
+- **A two-factor rating** (frequency times impact) instead of a severity word. Severity is the
+  weakest axis in the only calibration published (§4); whether two factors agree better with
+  humans is untested.
+- **"Overthinking" named as a failure of the reviewer**, with a human gate and a second opinion
+  for the unsure case. It is Sashiko's third verdict again, with a person and a different model
+  at the junction.
+- **Evidence before opinion on the author's side**: reproduce before building; mechanical checks
+  and a screenshot before review.
+- **A net after landing** for what is only visible once the change is in (CI, side effects,
+  security), with a rule for what happens when it catches something.
+
+What it does not show: any deterministic guard (anchoring, coverage reconciliation, schema). A
+diagram shows orchestration, so absence here is not absence in practice. And no result: nothing
+says whether the five-model panel finds more than one reviewer, or how often the verdict is
+"overthinking". Its reviewers are named like slash commands, so in practice this is a skills-based
+design: one data point for the skill route, with no evidence on what that route gives up.
+
 ## 4. How they measure
 
 | | **AACR-Bench** (Alibaba) | **Code Review Bench** (Martian) | **ReviewBench** (GitHub) |
@@ -250,18 +305,20 @@ from the survey).
 |---|---|---|---|
 | **P1** | **Put hard constraints on the process, not only in the prompt.** If a rule matters, a script should be able to fail the run when it is broken. | OCR's three failures and its deterministic selection, bundling, positioning; OpenQodex's quote check and coverage checks; Google's `+`/`-` rule as the counter-example | **yes**: units, closed schemas, anchoring, reproduction-or-nothing and missing-task accounting are all on the deterministic side |
 | **P2** | **Verify each finding in its own context, with tools, and require a reason either way.** | Anthropic validators, Sashiko post-verification, OpenQodex verifiers, Magpie, adamsreview | **yes**: refutation round, blind to the lens and to other findings |
-| **P3** | **Keep a third verdict.** "Refuted" and "could not decide" are different; refuting by default turns uncertainty into silence. | Sashiko `inconclusive_concerns`, code-review-gate-skill `unverified_items` | **no**: doubt means refuted, and conformance findings bypass the refuter |
+| **P3** | **Keep a third verdict.** "Refuted" and "could not decide" are different; refuting by default turns uncertainty into silence. | Sashiko `inconclusive_concerns`, code-review-gate-skill `unverified_items`; the §3.8 workflow routes "unsure" to a second opinion from another reviewer | **no**: doubt means refuted, and conformance findings bypass the refuter |
 | **P4** | **State whether you optimise precision or recall, and report both.** | OCR against PR-AF; AACR-Bench's own caution that an unmatched comment may still be valid | **partly**: reader cost and detection are measured, no target is declared |
 | **P5** | **Scope what each reviewer sees, and vary it on purpose.** Attention is the scarce resource. | Anthropic's diff-only bug agent beside a context-reading one; OCR's isolated bundles and per-file rules; Kodus scoped rules | **partly**: one file per unit and a context pack for Python and Java; no per-file rules, no diff-only variant |
-| **P6** | **Spend by difficulty.** Small model for gates, large for judgement. | Anthropic's tiering; adamsreview's cheap-then-deep gate; OCR's token claim | **no** on the harness path: one model and one effort level throughout |
+| **P6** | **Spend by difficulty.** Small model for gates, large for judgement. | Anthropic's tiering; adamsreview's cheap-then-deep gate; OCR's token claim; the §3.8 workflow escalates from one reviewer to a five-model panel by change size | **no** on the harness path: one model and one effort level throughout |
 | **P7** | **Decide what not to review, and what not to count.** | Anthropic's skip gate and pre-existing exclusion; OpenQodex shows but never counts untouched-line advisories; ReviewBench's scope axis | **no**: no skip gate, and no introduced-versus-pre-existing field in the schema |
 | **P8** | **Give the reviewer project knowledge in layers, and keep derived layers re-verifiable.** | Sashiko's three layers; Anthropic's `CLAUDE.md` lens; Kodus rules; awesome-reviewers | **partly**: only the conformance lens reads documents, by design, to keep the others blind |
-| **P9** | **Get independence from isolation and from model diversity.** | fresh no-memory processes (OpenQodex); several model families (Magpie, adamsreview `--ensemble`, cross-review) | **partly**: blind by assembly, but one model family, and the refuter shares the lenses' model |
-| **P10** | **Put the reviewer in the author's loop.** A review after the merge is an autopsy. | roborev's hook, OpenQodex's push gate, adamsreview's fix loop that reverts regressions | **no** |
+| **P9** | **Get independence from isolation and from model diversity.** | fresh no-memory processes (OpenQodex); several model families (Magpie, adamsreview `--ensemble`, cross-review); a reviewer from another family than the builder, fresh and read-only (§3.8) | **partly**: blind by assembly, but one model family, and the refuter shares the lenses' model |
+| **P10** | **Put the reviewer in the author's loop, and keep a smaller net after landing.** The main review belongs before the merge; what only shows up afterwards (CI, side effects, security) needs its own check. | roborev's hook, OpenQodex's push gate, adamsreview's fix loop that reverts regressions; the §3.8 workflow's re-review of every fix and its post-landing loops | **no** |
 | **P11** | **Treat subscription execution as first-class, and say what it gives up.** | OCR `delegate`, Magpie CLI providers, OpenQodex | **partly**: a Claude Code driver and a written contract; nothing for Cursor or Gemini yet |
 | **P12** | **Measure with a frozen set, a fresh set and a calibrated judge.** | Code Review Bench's two arms; ReviewBench's split and published calibration; Sashiko's missed-after-launch file | **partly**: frozen, pre-registered sets and a clean corpus; no fresh arm, no calibrated judge, acceptance parked |
 | **P13** | **Make silence and failure different outcomes; cap and parse output; detect settings nobody reads.** | ReviewBench's contract and its unread-label check | **yes**: missing versus empty, and the harness reads `manifest.model` since 2026-08-25 |
 | **P14** | **Say what was not validated.** | code-review-gate-skill ("regression checks, not a recall claim", concurrency unvalidated); adamsreview's "anecdotal"; Sashiko's "manual sampling" | **yes** |
+| **P15** | **Rate each finding on two factors, and let a human triage.** Frequency times impact, then "real must-fix or overthinking?", with approval before anything is fixed. A reviewer that over-flags is a failure to be named, not only a precision figure. | the §3.8 workflow; the weak severity agreement in §4 is the reason to try it, not evidence that it works | **partly**: closed severity enum and a ranked queue for a human; no frequency axis, no must-fix triage |
+| **P16** | **Put evidence before opinion on the author's side too.** Reproduce a reported bug before building it; run the mechanical checks and capture the real app before a reviewer sees anything. | the §3.8 workflow; RSquad's own step [0] is the same idea for tests | **partly**: the gate exists for Python and pytest only; the build side is out of scope |
 
 ## 6. What this suggests for RSquad
 
@@ -290,7 +347,11 @@ from the survey).
    job) was an observation, not a property. A subagent design inside a working copy has the same
    exposure, probably larger. Decide whether blindness is still a requirement **before** choosing
    the architecture.
-6. **For measurement, the cheapest upgrade is a calibrated judge for acceptance, not a new
+6. **Your own setting may already give you cross-family review.** Code written in Cursor on one
+   model family and reviewed in CI by Gemini is the default path of §3.8 and the independence
+   of P9, by construction. The survey has no evidence on whether that finds more than
+   same-family review; it is cheap to measure on a handful of your own pull requests.
+7. **For measurement, the cheapest upgrade is a calibrated judge for acceptance, not a new
    corpus.** ReviewBench publishes its definition (true, relevant, in scope; subjective parts as
    separate axes), its prompts and its agreement figures. That is a better rubric than a single
    verdict word, and RSquad's parked acceptance study could borrow it and run the
@@ -307,6 +368,8 @@ from the survey).
   comparable.
 - **Whether subscription-hosted subagents are cheaper in practice.** The evidence is OCR's token
   claim and one author's remark about billing pools, not a measurement.
+- **Whether size-triggered escalation or a two-factor rating helps.** The §3.8 diagram reports
+  no data, and it is one practitioner's process.
 - **Anything about closed products** beyond their names.
 
 ## Appendix A: the projects
