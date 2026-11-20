@@ -135,7 +135,7 @@ quote. The run also found two live defects in RSquad's own gate.
 ```bash
 git clone https://github.com/NicoPgm/rsquad && cd rsquad
 pip install -e ".[dev]"        # Python 3.11+; ".[api]" alone if you only want `review`
-python -m pytest               # 325 tests, no network, no API call
+python -m pytest               # 326 tests, no network, no API call
 ```
 
 **Decide one thing before you run it: your code goes to Anthropic.** There are two routes and
@@ -146,8 +146,8 @@ new vendor and no new procurement. Nothing else leaves the machine: no telemetry
 the audio-equivalent question does not arise because only the diff and the file under review are
 ever sent.
 
-**The primary route is a skill** (ADR-0009): copy `.claude/skills/rsquad-review/` into the
-`.claude/skills/` of the repository you want reviewed, and ask the agent for an RSquad review of a
+**The primary route is a skill** (ADR-0009): copy `.claude/skills/rsquad-review/` and
+`.claude/agents/rsquad-task.md` into the same places in the repository you want reviewed, and ask the agent for an RSquad review of a
 commit or a branch. Claude Code loads it from there, and Cursor's documentation says it does too
 (not yet tried). The skill runs `rsquad export`, one read-only subagent per task, and
 `rsquad ingest`; it states the task count and waits for your go-ahead before any model runs.

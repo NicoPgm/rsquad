@@ -75,7 +75,9 @@ round 1 is read. **Wait for their go-ahead.** The command line has a dry run for
 
 For every entry in `manifest.json` → `tasks`, start one subagent:
 
-- **fresh context**, **read-only tools** (reading files is all it needs);
+- **fresh context**, **read-only tools** (reading files is all it needs). Under Claude Code, use
+  the `rsquad-task` subagent (`.claude/agents/rsquad-task.md`): it has the file-reading tool and
+  nothing else, which also keeps each task's fixed cost low. Elsewhere, any read-only subagent;
 - on the model named by the entry's `model` field (fall back to the manifest's top-level
   `model`). Map the id to the host's choice of tier — an id containing `opus` to the Opus tier,
   `sonnet` to Sonnet, `haiku` to Haiku. If the host cannot choose a model per subagent, run it on

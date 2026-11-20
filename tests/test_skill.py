@@ -26,6 +26,15 @@ def test_every_option_the_skill_names_exists(capsys):
     assert sorted(o for o in named if o not in accepted) == []
 
 
+def test_the_task_agent_can_read_and_do_nothing_else():
+    """Read-only is what keeps a blind lens blind on this path, as far as it goes (ADR-0010)."""
+    agent = ROOT / ".claude" / "agents" / "rsquad-task.md"
+    head = agent.read_text(encoding="utf-8").split("---")[1]
+    assert re.search(r"^name: rsquad-task$", head, re.M)
+    assert re.search(r"^tools: Read$", head, re.M)
+    assert "rsquad-task" in SKILL.read_text(encoding="utf-8")
+
+
 def test_the_skill_declares_a_name_and_a_description():
     """Both hosts (Claude Code, Cursor) select a skill by its front matter."""
     head = SKILL.read_text(encoding="utf-8").split("---")[1]
