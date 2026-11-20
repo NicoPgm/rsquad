@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "verdict.v1.json",
   "title": "Verdict",
-  "description": "What a refuter concluded about one finding. Binary on purpose: there is no confidence scale, because a scale is where a refuter hedges. Doubt means refuted. The refuter must quote code for its verdict, checked by the same anchoring guard the finding passed - a refutation nobody can check is worth no more than a finding nobody can check.",
+  "description": "What a refuter concluded about one finding. Binary on purpose: there is no confidence scale, because a scale is where a refuter hedges. Doubt means refuted, and says so: `undecided` removes the claim like any other refutation, and records that nothing settled it. The refuter must quote code for its verdict, checked by the same anchoring guard the finding passed - a refutation nobody can check is worth no more than a finding nobody can check.",
 
   "type": "object",
   "additionalProperties": false,
@@ -22,14 +22,14 @@
     "evidence_snippet": {
       "type": "string",
       "minLength": 1,
-      "description": "The code that settles it, copied verbatim. When the verdict is `stands`, quote the code you tried and failed to refute."
+      "description": "The code that settles it, copied verbatim. When the verdict is `stands`, quote the code you tried and failed to refute; when it is `undecided`, the code that left it open."
     }
   },
 
   "$defs": {
     "verdict": {
       "enum": ["stands", "not-reachable", "already-handled", "misread", "wrong-location",
-               "no-consequence", "intended"],
+               "no-consequence", "intended", "undecided"],
       "glossary": {
         "stands": "I tried to kill it and could not - the claimed inputs do reach that code and do produce that consequence",
         "not-reachable": "no input reaches that code path, so the claim is about dead ground",
@@ -37,7 +37,8 @@
         "misread": "the code does not do what the finding says it does",
         "wrong-location": "something real, but not at this line - the quoted code is not where it happens",
         "no-consequence": "the described situation occurs and nothing observable follows from it",
-        "intended": "the behaviour is deliberate and consistent with the code around it"
+        "intended": "the behaviour is deliberate and consistent with the code around it",
+        "undecided": "what you were given does not settle it either way - not enough to show the claim holds, nothing that shows it fails"
       }
     }
   }

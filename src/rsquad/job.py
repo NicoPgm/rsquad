@@ -62,6 +62,7 @@ class Task:
     lens: str                     # a blind lens name, "conformance", or "refutation"
     file: str
     prompt: str
+    model: str = ""               # which model the driver should run it on (ADR-0009)
     finding: dict | None = None   # the claim under test, for refutation tasks only
 
 
@@ -80,21 +81,23 @@ def _task_text(system: str, user: str) -> str:
 
 
 def lens_tasks(units: list[Unit], lens_names: list[str],
-               intent: conformance.Intent | None = None) -> list[Task]:
+               intent: conformance.Intent | None = None, model: str = "") -> list[Task]:
     tasks = []
     for unit in units:
         stem = unit.file.replace("/", "__").replace("\\", "__")
         for lens in lens_names:
+            if not lenses.applies(lens, unit.file):
+                continue
             body = prompts.user_prompt(file=unit.file, diff=unit.diff, numbered=unit.numbered,
                                        elision=unit.elision, context=unit.context_block)
             tasks.append(Task(id="%s--%s" % (lens, stem), contract="finding", lens=lens,
-                              file=unit.file,
+                              file=unit.file, model=model,
                               prompt=_task_text(prompts.system_prompt()
                                                 + "\n\n" + prompts.lens_prompt(lens), body)))
         if intent is not None and intent.parts:
             tasks.append(Task(
                 id="conformance--%s" % stem, contract="conformance",
-                lens=conformance.LENS, file=unit.file,
+                lens=conformance.LENS, file=unit.file, model=model,
                 prompt=_task_text(prompts.conformance_system_prompt(),
                                   prompts.conformance_user_prompt(
                                       intent.text, file=unit.file, diff=unit.diff,
@@ -119,7 +122,8 @@ def carried(findings: list[dict], units: dict[str, Unit]) -> list[dict]:
             if units.get(f["file"]) is not None and not refutation.refutable(f)]
 
 
-def refutation_tasks(findings: list[dict], units: dict[str, Unit]) -> list[Task]:
+def refutation_tasks(findings: list[dict], units: dict[str, Unit],
+                     model: str = "") -> list[Task]:
     """One task per refutable finding. The rest ride in the manifest — see `carried`."""
     tasks = []
     for position, finding in enumerate(findings, 1):
@@ -128,7 +132,7 @@ def refutation_tasks(findings: list[dict], units: dict[str, Unit]) -> list[Task]
             continue
         tasks.append(Task(
             id="refute--%04d" % position, contract="verdict", lens="refutation",
-            file=finding["file"], finding=finding,
+            file=finding["file"], finding=finding, model=model,
             prompt=_task_text(prompts.refutation_system_prompt(),
                               prompts.refutation_user_prompt(
                                   finding, file=unit.file, diff=unit.diff,
@@ -228,10 +232,11 @@ def ingest(job: Path, units: dict[str, Unit],
     return out
 
 
-def queue(ingested: Ingested, footer: str = "") -> str:
+def queue(ingested: Ingested, footer: str = "",
+          excluded: list[tuple[str, str]] | None = None) -> str:
     surviving, killed = refutation.survivors(ingested.verdicts)
     findings = surviving if ingested.verdicts else ingested.findings
     errors = (["%s: no reply from the harness" % t for t in ingested.missing]
               + ["%s: %s" % pair for pair in ingested.malformed])
     return ranking.render(ranking.group(findings), ingested.dropped, errors, footer,
-                          refuted=killed if ingested.verdicts else None)
+                          refuted=killed if ingested.verdicts else None, excluded=excluded)

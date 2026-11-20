@@ -44,8 +44,9 @@ see *Failure is a first-class outcome* below.
 |---|---|
 | `version` | `1`. A driver may refuse anything else. |
 | `round` | `1` = the lenses, `2` = refutation. It names the directory: `round-<round>/`. |
-| `model` | the model RSquad intends. **Honour it if you can, and record what you actually used if you cannot** — see *The model is not decoration*. |
-| `tasks[]` | `id`, `contract`, `lens`, `file`; refutation tasks also carry `finding`, the claim under test. |
+| `model` | the model RSquad intends for the lenses. Superseded by `task.model` where a task carries one. |
+| `tasks[]` | `id`, `contract`, `lens`, `file`, `model`; refutation tasks also carry `finding`, the claim under test. **`task.model` is the one to honour** (lenses and refuter may differ, ADR-0009), and record what you actually used if you cannot — see *The model is not decoration*. |
+| `refute_model`, `context` | RSquad's own bookkeeping for the next round. Ignore. |
 | `base`, `head`, `repo`, `specs`, `path`, `case` | RSquad's own bookkeeping for `ingest`. **A driver has no use for these and should not read the repository.** |
 | `carried` | present in round 2; findings that get no refuter and ride to the queue. Not tasks. Ignore. |
 
@@ -148,7 +149,8 @@ meaningfully weaker. Say which one you ran.
 
 ## The model is not decoration
 
-`manifest.model` records the model RSquad intends. Until 2026-08-25 the Claude Code driver
+`task.model` records the model RSquad intends for that task; jobs written before 2026-11-20
+carry only `manifest.model`, so fall back to it. Until 2026-08-25 the Claude Code driver
 ignored it and inherited whatever the session was set to; the two agreed for an entire campaign
 by coincidence, and a measurement that holds the model constant by coincidence is not holding it.
 

@@ -12,7 +12,8 @@ import anthropic
 import pytest
 
 from rsquad.chunking import Unit
-from rsquad.lenses import EFFORT, LENSES, LensRun, Usage, interpret, look, request
+from rsquad.lenses import (EFFORT, LENSES, LensRun, Usage, applies, interpret, look,
+                           request)
 
 UNIT = Unit(
     file="src/avd/indexation.py",
@@ -157,3 +158,26 @@ def test_an_unexpected_exception_is_also_contained():
 
 def test_usage_adds_up():
     assert (Usage(1, 2, 3, 4) + Usage(10, 20, 30, 40)) == Usage(11, 22, 33, 44)
+
+
+# ------------------------------------------------------------------ routing (ADR-0009)
+
+def test_the_tests_lens_reads_test_files_and_nothing_else():
+    """Never shown a test in the Java campaign, it answered anyway (docs/step7e-tests-lens.md)."""
+    assert applies("tests", "tests/test_a.py")
+    assert not applies("tests", "src/a.py")
+
+
+def test_the_other_blind_lenses_read_everything_but_tests():
+    for lens in ("repro", "bounds", "contract"):
+        assert applies(lens, "src/a.py")
+        assert not applies(lens, "tests/test_a.py")
+
+
+def test_the_harness_path_needs_no_anthropic():
+    """The API transport is optional (ADR-0009): the CLI must import without its SDK."""
+    import subprocess
+    import sys
+
+    code = "import sys; sys.modules['anthropic'] = None; import rsquad.__main__"
+    assert subprocess.run([sys.executable, "-c", code]).returncode == 0

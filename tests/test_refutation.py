@@ -153,3 +153,19 @@ def test_a_broken_verdict_leaves_its_finding_in_the_queue():
     broken = Verdict(finding=FINDING, verdict="misread", anchored=False, error=UNANCHORED)
     kept, removed = survivors([broken])
     assert len(kept) == 1 and removed == []
+
+
+# ------------------------------------------------------------------ a named doubt (ADR-0009)
+
+def test_undecided_is_a_refutation_and_says_so():
+    """Doubt still refutes (ADR-0006). What changes is that the record says it was doubt."""
+    verdict = interpret(UNIT, FINDING, _reply("undecided"))
+    assert verdict.refutes
+    kept, killed = survivors([verdict])
+    assert kept == [] and killed[0].verdict == "undecided"
+
+
+def test_an_undecided_verdict_must_still_quote_real_code():
+    """Naming doubt is not a way around the anchoring guard."""
+    verdict = interpret(UNIT, FINDING, _reply("undecided", snippet="nowhere in the file"))
+    assert not verdict.refutes

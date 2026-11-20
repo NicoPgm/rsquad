@@ -134,8 +134,8 @@ quote. The run also found two live defects in RSquad's own gate.
 
 ```bash
 git clone https://github.com/NicoPgm/rsquad && cd rsquad
-pip install -e ".[dev]"        # Python 3.11+
-python -m pytest               # 289 tests, no network, no API call
+pip install -e ".[dev]"        # Python 3.11+; ".[api]" alone if you only want `review`
+python -m pytest               # 323 tests, no network, no API call
 ```
 
 **Decide one thing before you run it: your code goes to Anthropic.** There are two routes and
@@ -152,7 +152,7 @@ ever sent.
 |---|---|---|
 | **[1]–[4]** conformance, lenses, refutation, queue | **any language** — they read a diff and a file | — |
 | **[0]** the mechanical gate | **Python + pytest only** | the gate is skipped; you are testing four fifths of the design, and the only step that blocks is the missing fifth |
-| the context pack (question 6) | **Python, Java** | resolves nothing — a smaller pack, never a wrong one. Measured: no detection effect at n = 19 ([`docs/step7b-context-pack.md`](docs/step7b-context-pack.md)) |
+| the context pack (question 6) | **Python, Java**, and **off unless you pass `--context`** | resolves nothing — a smaller pack, never a wrong one. Measured: no detection effect at n = 19 ([`docs/step7b-context-pack.md`](docs/step7b-context-pack.md)), hence off by default (ADR-0009) |
 
 Writing a gate adapter is seven questions and no change to the core — see
 [`docs/porting.md`](docs/porting.md), which also carries the acceptance criterion for a port.

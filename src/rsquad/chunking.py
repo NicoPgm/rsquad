@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from .context import Definition, cap, render as render_context
 from .vcs import file_at, git, tracked_files
@@ -32,6 +32,21 @@ MAX_LINES = 1200
 CONTEXT = 40
 
 _HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", re.M)
+
+#: Changed files no lens reads, each named in the queue with its reason (ADR-0009). Coverage is
+#: counted here, by the CLI, and never reported by whatever ran the model.
+DOCUMENTATION = (".md", ".rst", ".adoc", ".txt")
+LOCKFILES = {"package-lock.json", "yarn.lock", "pnpm-lock.yaml", "poetry.lock", "uv.lock",
+             "Pipfile.lock", "Cargo.lock", "Gemfile.lock", "composer.lock", "go.sum"}
+
+#: The two markers generators actually write near the top of what they produce.
+_GENERATED = re.compile(r"@generated|DO NOT EDIT")
+
+#: A test file, in the conventions of the languages this squad has met: a directory named for
+#: tests, or a file named like one — `test_x.py`, `x_test.go`, `XTest.java`, `XIT.java`,
+#: `x.spec.ts`.
+_TEST_DIRS = {"test", "tests", "__tests__", "spec", "specs"}
+_TEST_NAME = re.compile(r"^test_|_test$|Tests?$|(?<=[a-z0-9])IT$|\.(test|spec)$")
 
 ELISION_NOTICE = (
     "**This file is long, so only the regions around the change are shown.** Gaps are marked "
@@ -58,6 +73,27 @@ class Unit:
     @property
     def context_block(self) -> str:
         return render_context(self.context)
+
+
+def is_test(path: str) -> bool:
+    pure = PurePosixPath(path.replace("\\", "/"))
+    return bool(_TEST_DIRS & set(pure.parts[:-1])) or bool(_TEST_NAME.search(pure.stem))
+
+
+def exclusion(path: str, source: str | None) -> str | None:
+    """Why no lens reads this changed file, or None when one should."""
+    if source is None:
+        return "deleted"
+    if "\x00" in source:
+        return "binary"
+    name = PurePosixPath(path.replace("\\", "/")).name
+    if name in LOCKFILES:
+        return "lockfile"
+    if name.lower().endswith(DOCUMENTATION):
+        return "documentation"
+    if _GENERATED.search("\n".join(source.splitlines()[:5])):
+        return "generated"
+    return None
 
 
 def changed_paths(base: str, head: str, repo: Path | None = None,
@@ -108,18 +144,20 @@ def number(source: str, ranges: list[tuple[int, int]] | None = None,
 
 
 def unit(path: str, base: str, head: str, repo: Path | None = None,
-         adapter=None, tracked: list[str] | None = None) -> Unit | None:
-    """One review unit, or None when there is nothing a lens could read.
+         adapter=None, tracked: list[str] | None = None) -> Unit | str:
+    """One review unit, or the reason there is none.
 
-    Deleted files and binaries are skipped rather than reported: there is no "file as it now
-    stands" to quote from, so no finding about them could ever anchor.
+    Deleted files and binaries used to be dropped without a word. They cannot be reviewed —
+    there is no "file as it now stands" to quote from — but a changed file that vanishes from
+    the account is coverage nobody can check, so the reason is returned instead.
     """
     source = file_at(head, path, repo)
-    if source is None or "\x00" in source:
-        return None
+    reason = exclusion(path, source)
+    if reason:
+        return reason
     diff = git(["diff", "%s...%s" % (base, head), "--", path], repo).stdout
     if not diff.strip():
-        return None
+        return "no textual change"
     ranges = hunk_ranges(diff)
     numbered, elided = number(source, ranges)
     context: list[Definition] = []
@@ -132,13 +170,18 @@ def unit(path: str, base: str, head: str, repo: Path | None = None,
 
 
 def units(base: str, head: str, repo: Path | None = None, paths: list[str] | None = None,
-          adapter=None) -> list[Unit]:
-    """Every reviewable file in the change.
+          adapter=None) -> tuple[list[Unit], list[tuple[str, str]]]:
+    """(every reviewable file in the change, every other changed file with its reason).
 
     `tracked` is read once and shared: it is the same list for every unit, and asking git per
     file would be both slower and — if the revision moved underneath — inconsistent.
     """
     listing = tracked_files(head, repo) if adapter is not None else None
-    found = [unit(path, base, head, repo, adapter, listing)
-             for path in changed_paths(base, head, repo, paths)]
-    return [u for u in found if u is not None]
+    found, excluded = [], []
+    for path in changed_paths(base, head, repo, paths):
+        built = unit(path, base, head, repo, adapter, listing)
+        if isinstance(built, str):
+            excluded.append((path, built))
+        else:
+            found.append(built)
+    return found, excluded

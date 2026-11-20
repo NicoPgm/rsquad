@@ -10,7 +10,8 @@
  * in RSquad, on the other side of the seam (ADR-0005, ADR-0008).
  *
  * **The model comes from the manifest, and did not always.** RSquad records the model it
- * intends; until 2026-08-25 this runner ignored the field and every task inherited whatever
+ * intends, per task since 2026-11-20 so the lenses and the refuter can run on different tiers
+ * (ADR-0009); until 2026-08-25 this runner ignored the field and every task inherited whatever
  * the session happened to be. The two agreed across the whole Java campaign — by coincidence,
  * not by construction — so nothing ever looked wrong. It reads the field now, which is what
  * lets one measurement hold the model constant while another deliberately varies it.
@@ -62,7 +63,11 @@ const MANIFEST = {
         type: 'object',
         additionalProperties: false,
         required: ['id', 'contract'],
-        properties: { id: { type: 'string' }, contract: { type: 'string' } },
+        properties: {
+          id: { type: 'string' },
+          contract: { type: 'string' },
+          model: { type: 'string' },
+        },
       },
     },
   },
@@ -111,7 +116,8 @@ const runs = await pipeline(
   jobs,
   (job) => agent(
     `Read the JSON file at ${job}/manifest.json and return its "round" number, its "model" ` +
-    `string, and for every entry in its "tasks" array, that entry's "id" and "contract". Do ` +
+    `string, and for every entry in its "tasks" array, that entry's "id", "contract" and ` +
+    `"model" (omit "model" where the entry has none). Do ` +
     `not read anything else and do not summarise: return every task.`,
     { label: `manifest:${name(job)}`, schema: MANIFEST, effort: 'low', phase: 'Manifest' },
   ),
@@ -121,11 +127,14 @@ const runs = await pipeline(
       return { job, round: null, written: [], failed: [] }
     }
     const round = listing.round
-    const model = alias(listing.model)
-    log(`${name(job)} round ${round}: ${listing.tasks.length} task(s) on ${model || 'the inherited model'}`)
+    // Per task first; a job written before 2026-11-20 has only the manifest-level field.
+    const tier = (task) => alias(task.model || listing.model)
+    const tiers = [...new Set(listing.tasks.map((task) => tier(task) || 'the inherited model'))]
+    log(`${name(job)} round ${round}: ${listing.tasks.length} task(s) on ${tiers.join(', ')}`)
     const results = await parallel(listing.tasks.map((task) => () => agent(
       instruction(job, round, task),
-      { label: `${name(job)}/${task.id}`, schema: DONE, phase: 'Tasks', ...(model && { model }) },
+      { label: `${name(job)}/${task.id}`, schema: DONE, phase: 'Tasks',
+        ...(tier(task) && { model: tier(task) }) },
     )))
     const written = results.filter((r) => r && r.written)
     log(`${name(job)} round ${round}: ${written.length}/${listing.tasks.length} written`)

@@ -95,6 +95,37 @@ def _replay(args: argparse.Namespace, repo: Path | None, adapter) -> int:
     return 1 if (args.strict and total["suspect"]) else 0
 
 
+def _require_api() -> None:
+    try:
+        import anthropic  # noqa: F401
+    except ImportError:
+        raise SystemExit("the API transport is optional and frozen (ADR-0009): "
+                         "pip install 'rsquad[api]'") from None
+
+
+def _adapter(context: bool):
+    """The context pack is off unless asked for (ADR-0009): 14/19 with it and without it, the
+    same fourteen cases, for 30 % more payload (`docs/step7b-context-pack.md`)."""
+    return by_language if context else None
+
+
+def _round_two(data: dict) -> dict:
+    """What the refutation round must remember of the first.
+
+    Jobs written before 2026-11-20 carry neither key: they all had the pack, and one model.
+    """
+    meta = {k: data[k] for k in ("base", "head", "repo", "specs", "model")}
+    meta["path"] = data.get("path")
+    meta["context"] = data.get("context", True)
+    meta["refute_model"] = data.get("refute_model", data["model"])
+    return meta
+
+
+def _show_excluded(excluded) -> None:
+    for path, reason in excluded:
+        print("  %-52s not reviewed: %s" % (path, reason))
+
+
 @dataclass
 class Outcome:
     """What steps [1] to [3] produced on one set of units."""
@@ -155,19 +186,23 @@ def _review(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve() if args.repo else None
     head = resolve(args.head, repo)
     base = merge_base(args.base or "%s~1" % head, head, repo)
-    units = chunking.units(base, head, repo, args.path, adapter=by_language)
+    units, excluded = chunking.units(base, head, repo, args.path,
+                                     adapter=_adapter(args.context))
     chosen = args.lens or list(lenses.LENSES)
+    _show_excluded(excluded)
 
     if not units:
         print("nothing readable changed between %s and %s." % (base[:12], head[:12]))
         return 0
 
-    print("%s <- %s | %d file(s), %d lens(es) = %d call(s)"
-          % (head[:12], base[:12], len(units), len(chosen), len(units) * len(chosen)))
+    calls = sum(lenses.applies(lens, u.file) for u in units for lens in chosen)
+    print("%s <- %s | %d file(s), %d lens call(s)" % (head[:12], base[:12], len(units), calls))
     for unit in units:
         print("  %-52s %6d chars%s" % (unit.file, len(unit.numbered),
                                        "  (elided)" if unit.elided else ""))
 
+    if args.confirm:
+        _require_api()
     if args.confirm and not config.credential_available():
         raise SystemExit(
             "no %s in the environment or in %s.\n"
@@ -202,7 +237,8 @@ def _review(args: argparse.Namespace) -> int:
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(ranking.render(ranking.group(findings), dropped, errors, footer,
-                                  refuted=killed if not args.no_refute else None),
+                                  refuted=killed if not args.no_refute else None,
+                                  excluded=excluded),
                    encoding="utf-8")
     print("\n%s" % footer)
     print("%d survived refutation, %d refuted, %d dropped by the guards, %d lens failure(s)"
@@ -211,11 +247,18 @@ def _review(args: argparse.Namespace) -> int:
     return 0
 
 
-def _case_units(defect: dict, repo: Path):
+def _case_units(defect: dict, repo: Path, context: bool):
     """The one unit a case is reviewed on: its file, at the commit that introduced the defect."""
     head = resolve(defect["introduced_in"], repo)
     base = merge_base("%s~1" % head, head, repo)
-    units = chunking.units(base, head, repo, [defect["file"]], adapter=by_language)
+    units, excluded = chunking.units(base, head, repo, [defect["file"]],
+                                     adapter=_adapter(context))
+    if not units:
+        # ValueError and not SystemExit: the callers catch Exception so that one case never
+        # ends the replay of the others, and SystemExit is not an Exception.
+        raise ValueError("%s not reviewed in %s: %s"
+                         % (defect["file"], head[:12],
+                            excluded[0][1] if excluded else "it did not change"))
     return head, base, units
 
 
@@ -231,11 +274,9 @@ def _evaluate_export(args, scorable, excluded, repo: Path, chosen) -> int:
     written = 0
     for defect in scorable:
         try:
-            head, base, units = _case_units(defect, repo)
-            if not units:
-                raise SystemExit("%s did not change in %s" % (defect["file"], head[:12]))
+            head, base, units = _case_units(defect, repo, args.context)
             intent = conformance.gather(head, repo, None)
-            tasks = job.lens_tasks(units, chosen, intent if intent.parts else None)
+            tasks = job.lens_tasks(units, chosen, intent if intent.parts else None, args.model)
         except Exception as error:                                   # noqa: BLE001
             print("  %-44s not exported: %s" % (defect["id"], error))
             continue
@@ -243,7 +284,8 @@ def _evaluate_export(args, scorable, excluded, repo: Path, chosen) -> int:
         # would be one file and the ingest a whole commit, and the two would stop lining up.
         job.export(workspace / defect["id"], tasks,
                    {"base": base, "head": head, "repo": str(repo), "specs": [],
-                    "model": args.model, "path": defect["file"], "case": defect["id"]})
+                    "model": args.model, "refute_model": args.refute_model or args.model,
+                    "context": args.context, "path": defect["file"], "case": defect["id"]})
         written += 1
         print("  %-44s %d task(s)" % (defect["id"], len(tasks)))
 
@@ -266,17 +308,17 @@ def _evaluate_ingest(args, scorable, excluded, repo: Path, chosen) -> int:
         units = {u.file: u for u in chunking.units(
             data["base"], data["head"], here,
             [data["path"]] if data.get("path") else None,
-            adapter=by_language)}
+            adapter=_adapter(data.get("context", True)))[0]}
         intent = conformance.gather(data["head"], here, data["specs"])
         result = job.ingest(folder, units, intent)
         dropped += result.dropped
 
         if data["round"] == job.LENS_ROUND and not args.no_refute and result.findings:
-            meta = {k: data[k] for k in ("base", "head", "repo", "specs", "model")}
-            meta["path"] = data.get("path")
+            meta = _round_two(data)
             meta["carried"] = job.carried(result.findings, units)
-            job.export(folder, job.refutation_tasks(result.findings, units), meta,
-                       round_number=job.REFUTE_ROUND)
+            job.export(folder, job.refutation_tasks(result.findings, units,
+                                                    meta["refute_model"]),
+                       meta, round_number=job.REFUTE_ROUND)
             advanced += 1
             continue
 
@@ -346,6 +388,7 @@ def _evaluate(args: argparse.Namespace) -> int:
     if not args.confirm:
         print("\ndry run. --confirm to spend. Plus one further call per finding, to refute it.")
         return 0
+    _require_api()
     if not config.credential_available():
         raise SystemExit("no %s in the environment or in %s." % (config.KEY, config.ENV))
 
@@ -362,12 +405,7 @@ def _evaluate(args: argparse.Namespace) -> int:
             continue
         print("\n--- %s" % defect["id"], flush=True)
         try:
-            head = resolve(defect["introduced_in"], repo)
-            base = merge_base("%s~1" % head, head, repo)
-            units = chunking.units(base, head, repo, [defect["file"]],
-                                   adapter=by_language)
-            if not units:
-                raise SystemExit("%s did not change in %s" % (defect["file"], head[:12]))
+            head, base, units = _case_units(defect, repo, args.context)
             intent = conformance.gather(head, repo, None)
             outcome = _run_squad(units, chosen, args.model,
                                  intent if intent.parts else None, refute=not args.no_refute)
@@ -400,22 +438,25 @@ def _evaluate(args: argparse.Namespace) -> int:
 def _units_and_intent(args, repo):
     head = resolve(args.head, repo)
     base = merge_base(args.base or "%s~1" % head, head, repo)
-    units = chunking.units(base, head, repo, args.path, adapter=by_language)
-    return head, base, units, conformance.gather(head, repo, args.spec)
+    units, excluded = chunking.units(base, head, repo, args.path,
+                                     adapter=_adapter(args.context))
+    return head, base, units, excluded, conformance.gather(head, repo, args.spec)
 
 
 def _export(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve() if args.repo else None
-    head, base, units, intent = _units_and_intent(args, repo)
+    head, base, units, excluded, intent = _units_and_intent(args, repo)
+    _show_excluded(excluded)
     if not units:
         print("nothing readable changed between %s and %s." % (base[:12], head[:12]))
         return 0
 
     tasks = job.lens_tasks(units, args.lens or list(lenses.LENSES),
-                           None if args.no_conformance else intent)
+                           None if args.no_conformance else intent, args.model)
     out = Path(args.job)
     meta = {"base": base, "head": head, "repo": str(repo or Path.cwd()),
-            "specs": args.spec or [], "model": args.model}
+            "specs": args.spec or [], "model": args.model,
+            "refute_model": args.refute_model or args.model, "context": args.context}
     round_dir = job.export(out, tasks, meta)
 
     print("%s <- %s | %d task(s) written to %s"
@@ -434,8 +475,9 @@ def _ingest(args: argparse.Namespace) -> int:
     # Units are recomputed from the manifest rather than carried in it. They are a pure
     # function of (base, head, repo), so recomputing is both cheaper and a check: if the
     # revisions moved under the job, the anchors stop matching and the guards say so.
-    units = {u.file: u for u in chunking.units(data["base"], data["head"], repo, args.path,
-                                               adapter=by_language)}
+    selected, excluded = chunking.units(data["base"], data["head"], repo, args.path,
+                                        adapter=_adapter(data.get("context", True)))
+    units = {u.file: u for u in selected}
     intent = conformance.gather(data["head"], repo, data["specs"])
     result = job.ingest(out, units, intent)
 
@@ -444,10 +486,10 @@ def _ingest(args: argparse.Namespace) -> int:
              len(result.missing), len(result.malformed)))
 
     if data["round"] == job.LENS_ROUND and not args.no_refute and result.findings:
-        tasks = job.refutation_tasks(result.findings, units)
+        meta = _round_two(data)
+        tasks = job.refutation_tasks(result.findings, units, meta["refute_model"])
         # Findings with no refuter ride in the manifest rather than falling off the edge of the
         # round. The queue must show every finding that survived the guards, contested or not.
-        meta = {k: data[k] for k in ("base", "head", "repo", "specs", "model")}
         meta["carried"] = job.carried(result.findings, units)
         round_dir = job.export(out, tasks, meta, round_number=job.REFUTE_ROUND)
         print("\n%d refutation task(s) written to %s (%d finding(s) carried, no refuter)"
@@ -457,7 +499,8 @@ def _ingest(args: argparse.Namespace) -> int:
 
     queue = Path(args.out)
     queue.parent.mkdir(parents=True, exist_ok=True)
-    queue.write_text(job.queue(result, "Harness transport, job %s." % out), encoding="utf-8")
+    queue.write_text(job.queue(result, "Harness transport, job %s." % out, excluded),
+                     encoding="utf-8")
     surviving, killed = refutation.survivors(result.verdicts)
     print("%d survived, %d refuted -> %s"
           % (len(surviving) if result.verdicts else len(result.findings), len(killed), queue))
@@ -505,6 +548,9 @@ def main(argv: list[str] | None = None) -> int:
                              "steps read none of it")
     review.add_argument("--no-conformance", action="store_true",
                         help="skip step [1]")
+    review.add_argument("--context", action="store_true",
+                        help="add the context pack: definitions the changed lines use, from "
+                             "other files. Off by default (ADR-0009)")
     review.add_argument("--no-refute", action="store_true",
                         help="skip step [3]. Cheaper, and the queue becomes a list of "
                              "suspicions nobody contested")
@@ -522,6 +568,10 @@ def main(argv: list[str] | None = None) -> int:
     ev.add_argument("--model", default=lenses.MODEL, help="default: %s" % lenses.MODEL)
     ev.add_argument("--out", default="evaluation/report.md", help="where the report is written")
     ev.add_argument("--no-refute", action="store_true", help="skip step [3]")
+    ev.add_argument("--context", action="store_true",
+                    help="add the context pack (off by default, ADR-0009)")
+    ev.add_argument("--refute-model", default=None,
+                    help="harness only: the model for the refutation round (default: --model)")
     ev.add_argument("--max-usd", type=float, default=None, metavar="USD",
                     help="do not start a case that could cross this. Checked between cases and "
                          "never mid-case: what a case costs is known only once it is over, "
@@ -558,7 +608,11 @@ def main(argv: list[str] | None = None) -> int:
                                     choices=list(lenses.LENSES))
             sub_parser.add_argument("--no-conformance", action="store_true")
             sub_parser.add_argument("--model", default=lenses.MODEL,
-                                    help="recorded in the manifest for the harness to honour")
+                                    help="recorded per task for the harness to honour")
+            sub_parser.add_argument("--refute-model", default=None,
+                                    help="the model for the refutation round (default: --model)")
+            sub_parser.add_argument("--context", action="store_true",
+                                    help="add the context pack (off by default, ADR-0009)")
         sub_parser.set_defaults(handler=_export if name == "export" else _ingest)
 
     args = parser.parse_args(argv)

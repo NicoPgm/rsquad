@@ -222,3 +222,36 @@ def test_extra_meta_rides_in_the_manifest(tmp_path):
     job.export(tmp_path, tasks, dict(META, path="src/a.py", case="some-case"))
     data = job.manifest(tmp_path)
     assert data["path"] == "src/a.py" and data["case"] == "some-case"
+
+
+# ------------------------------------------------------------------ routing and models (ADR-0009)
+
+TEST_UNIT = Unit(file="tests/test_a.py", diff="@@ -1 +1 @@\n+    assert resume([]) is None\n",
+                 source="def test_empty():\n    assert resume([]) is None\n",
+                 numbered="1\tdef test_empty():\n2\t    assert resume([]) is None")
+
+
+def test_lens_tasks_are_routed_by_file_kind():
+    tasks = job.lens_tasks([UNIT, TEST_UNIT], ["repro", "tests"])
+    assert sorted((t.lens, t.file) for t in tasks) == [("repro", "src/a.py"),
+                                                       ("tests", "tests/test_a.py")]
+
+
+def test_every_task_names_its_model_in_the_manifest(tmp_path):
+    """The driver reads the model per task: lenses on one tier, the refuter on another."""
+    job.export(tmp_path, job.lens_tasks([UNIT], ["repro"], model="claude-sonnet-5"), META)
+    first = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
+    assert [t["model"] for t in first["tasks"]] == ["claude-sonnet-5"]
+
+    job.export(tmp_path, job.refutation_tasks([FINDING], UNITS, "claude-opus-5"), META,
+               round_number=job.REFUTE_ROUND)
+    second = json.loads((tmp_path / "manifest.json").read_text(encoding="utf-8"))
+    assert [t["model"] for t in second["tasks"]] == ["claude-opus-5"]
+
+
+def test_the_queue_names_what_no_lens_read(tmp_path):
+    _export(tmp_path)
+    _answer(tmp_path, "repro--src__a.py", {"findings": []})
+    text = job.queue(job.ingest(tmp_path, UNITS), excluded=[("docs/a.md", "documentation")])
+    assert "## Not reviewed (1)" in text
+    assert "`docs/a.md` — documentation" in text

@@ -12,6 +12,9 @@ of the three leaks into the payload.
 
 **Doubt means refuted.** There is no confidence field, because a scale is where a refuter
 hedges. The burden is on the claim; the reader's time gets the benefit of the doubt.
+Doubt is also *named*: `undecided` kills a finding like any other cause, so the `Refuted`
+section can tell "shown wrong" from "not shown right" (ADR-0009). With six causes only, a
+refuter that could not decide had to borrow one that might not hold.
 
 **A refutation is held to the standard it enforces.** `evidence_snippet` must anchor in the file
 exactly as a finding's snippet must — quote real code near a real line, or be discarded.
@@ -29,8 +32,6 @@ import json
 import time
 from dataclasses import dataclass, field
 from typing import Any
-
-import anthropic
 
 from . import anchoring, prompts
 from .chunking import Unit
@@ -116,12 +117,14 @@ def interpret(unit: Unit, finding: dict, text: str) -> Verdict:
 
 
 def refute(unit: Unit, finding: dict, model: str = MODEL,
-           client: anthropic.Anthropic | None = None) -> Verdict:
+           client: "anthropic.Anthropic | None" = None) -> Verdict:
     """Try to kill one finding. Failure is recorded, never raised.
 
     A refuter that dies leaves the finding standing. That is the safe direction: the cost is a
     reader's minute, where the other direction costs a real defect.
     """
+    import anthropic
+
     result = Verdict(finding=finding)
     client = client or anthropic.Anthropic()
     started = time.monotonic()
@@ -152,8 +155,10 @@ def refute(unit: Unit, finding: dict, model: str = MODEL,
 
 
 def refute_all(findings: list[dict], units: dict[str, Unit], model: str = MODEL,
-               client: anthropic.Anthropic | None = None, on_verdict=None) -> list[Verdict]:
+               client: "anthropic.Anthropic | None" = None, on_verdict=None) -> list[Verdict]:
     """One call per finding. Order follows the findings, so a run is replayable."""
+    import anthropic
+
     client = client or anthropic.Anthropic()
     verdicts = []
     for finding in findings:

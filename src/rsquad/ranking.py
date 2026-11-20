@@ -126,7 +126,8 @@ def rank(entries: list[Entry]) -> list[Entry]:
 
 
 def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
-           errors: list[str] | None = None, footer: str = "", refuted=None) -> str:
+           errors: list[str] | None = None, footer: str = "", refuted=None,
+           excluded: list[tuple[str, str]] | None = None) -> str:
     """The queue, as Markdown. Read top-down; stop when it stops being worth your time."""
     ranked = rank(entries)
     out = ["# Review queue", ""]
@@ -178,6 +179,11 @@ def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
                     % (finding.get("file"), finding.get("line"), finding.get("lens", "?"),
                        verdict.verdict, verdict.reason)]
         out += [""]
+
+    if excluded:
+        out += ["---", "", "## Not reviewed (%d)" % len(excluded), ""]
+        out += ["Changed, and read by no lens. Nothing above speaks for these files.", ""]
+        out += ["- `%s` — %s" % pair for pair in excluded] + [""]
 
     if errors:
         out += ["---", "", "## Lenses that failed (%d)" % len(errors), ""]

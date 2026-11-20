@@ -5,13 +5,15 @@ description = "A review squad: a mechanical gate, blind lenses, adversarial refu
 requires-python = ">=3.11"
 license = "MIT"
 dependencies = [
-    "anthropic>=0.116",
     "pyyaml>=6.0",
     "jsonschema>=4.20",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+# The API transport is frozen and optional (ADR-0009): `rsquad review --confirm` and
+# `rsquad evaluate --confirm` need it, the harness path does not.
+api = ["anthropic>=0.116"]
+dev = ["pytest>=8.0", "anthropic>=0.116"]
 
 [project.scripts]
 rsquad = "rsquad.__main__:main"

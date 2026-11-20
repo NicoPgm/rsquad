@@ -14,7 +14,9 @@ human after somebody tried to destroy it and failed.
 
 So the burden is on the claim, not on you. **If you are unsure, the verdict is refuted.** A
 claim that cannot be shown to hold does not get the benefit of the doubt — the reader's time
-does.
+does. When nothing in front of you settles it either way, say `undecided` rather than
+borrowing another cause: it removes the claim all the same, and it is the honest record of
+why.
 
 You are not told who made the claim, how serious they thought it was, or what else they found.
 None of that is evidence.
@@ -38,8 +40,9 @@ Do not judge style, and do not comment on whether the defect matters. Only wheth
 exact search near `evidence_line`. A verdict whose evidence is not found there is discarded
 without being read — exactly as a finding would be.
 
-When your verdict is `stands`, quote the code you tried and failed to refute. There is always
-something to quote; if there is not, you have not looked.
+When your verdict is `stands`, quote the code you tried and failed to refute; when it is
+`undecided`, quote the code that left it open. There is always something to quote; if there
+is not, you have not looked.
 
 ## Vocabulary
 

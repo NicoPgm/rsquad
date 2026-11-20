@@ -31,8 +31,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-import anthropic
-
 from . import anchoring, prompts
 from .chunking import Unit
 from .findings import api_schema, validate
@@ -132,8 +130,10 @@ def interpret(unit: Unit, intent: Intent,
 
 
 def check(unit: Unit, intent: Intent, model: str = MODEL,
-          client: anthropic.Anthropic | None = None) -> ConformanceRun:
+          client: "anthropic.Anthropic | None" = None) -> ConformanceRun:
     """One file against the stated intent. Failure is recorded, never raised."""
+    import anthropic
+
     run = ConformanceRun(file=unit.file)
     client = client or anthropic.Anthropic()
     started = time.monotonic()
@@ -160,7 +160,9 @@ def check(unit: Unit, intent: Intent, model: str = MODEL,
 
 
 def review(units: list[Unit], intent: Intent, model: str = MODEL,
-           client: anthropic.Anthropic | None = None, on_run=None) -> list[ConformanceRun]:
+           client: "anthropic.Anthropic | None" = None, on_run=None) -> list[ConformanceRun]:
+    import anthropic
+
     client = client or anthropic.Anthropic()
     runs = []
     for unit in units:

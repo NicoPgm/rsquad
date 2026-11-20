@@ -20,10 +20,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-import anthropic
-
 from . import anchoring, prompts
-from .chunking import Unit
+from .chunking import Unit, is_test
 from .findings import api_schema, validate
 
 #: A starting point, not a bench result. The source project's `claude-sonnet-5` was fixed by a
@@ -39,6 +37,17 @@ MAX_TOKENS = 16000
 EFFORT = {"repro": "high", "bounds": "high", "contract": "high", "tests": "medium"}
 
 LENSES = prompts.LENSES
+
+
+def applies(lens: str, path: str) -> bool:
+    """`tests` reads test files only; the other blind lenses read everything else (ADR-0009).
+
+    Measured both ways: across the whole Java campaign the `tests` lens was never shown a test
+    and still answered four times in 190 tasks; shown one, it spoke
+    (`docs/step7e-tests-lens.md`). A lens asked about something absent from its payload is
+    paid to invent it.
+    """
+    return (lens == "tests") == is_test(path)
 
 
 @dataclass
@@ -108,12 +117,17 @@ def interpret(unit: Unit, lens: str, text: str) -> tuple[list[dict], list[tuple[
 
 
 def look(unit: Unit, lens: str, model: str = MODEL,
-         client: anthropic.Anthropic | None = None) -> LensRun:
+         client: "anthropic.Anthropic | None" = None) -> LensRun:
     """Run one lens over one unit. Failure is recorded, never raised.
 
     A lens that dies is a lens that said nothing, not a review that collapsed. The same rule
     the source project applies to a failed video: mark it and carry on.
+
+    `anthropic` is imported here and not at the top: the API transport is frozen and optional
+    (ADR-0009), and the harness path must import this module without it.
     """
+    import anthropic
+
     run = LensRun(lens=lens, file=unit.file)
     client = client or anthropic.Anthropic()
     started = time.monotonic()
@@ -143,13 +157,17 @@ def look(unit: Unit, lens: str, model: str = MODEL,
 
 
 def review(units: list[Unit], lens_names: list[str] | None = None, model: str = MODEL,
-           client: anthropic.Anthropic | None = None,
+           client: "anthropic.Anthropic | None" = None,
            on_run=None) -> list[LensRun]:
-    """Every lens over every unit. One call per (unit, lens) pair."""
+    """Every lens that applies to each unit. One call per (unit, lens) pair."""
+    import anthropic
+
     client = client or anthropic.Anthropic()
     runs = []
     for unit in units:
         for lens in (lens_names or LENSES):
+            if not applies(lens, unit.file):
+                continue
             run = look(unit, lens, model, client)
             runs.append(run)
             if on_run:
