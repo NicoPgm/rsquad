@@ -356,6 +356,7 @@ reports. A report says what happened, an ADR says what we do about it.
 | [`docs/step7d-forty-cases.md`](docs/step7d-forty-cases.md) | thirty-eight cases on the harness: 31 detected, and the widening cost nothing |
 | [`docs/step7b-context-pack.md`](docs/step7b-context-pack.md) | the context pack changed nothing: 14/19 either way, case for case, and what that rules out |
 | [`docs/step7e-tests-lens.md`](docs/step7e-tests-lens.md) | the tests lens, evaluated at last: it was never underperforming, it was never shown a test |
+| [`docs/state-of-the-art-review-agents.md`](docs/state-of-the-art-review-agents.md) | what 38 open-source review agents converge on, how three benchmarks measure them, and what that suggests for a rework |
 
 ## License and provenance
 
