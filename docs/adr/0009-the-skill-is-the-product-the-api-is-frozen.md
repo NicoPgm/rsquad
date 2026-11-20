@@ -100,3 +100,8 @@ run. Blindness is the fourth loss, and it has its own decision: ADR-0010.
 model. Step 2 is `.claude/skills/rsquad-review/SKILL.md`: subagents are read-only, so the driver,
 not the subagent, writes each reply to disk, verbatim. The skill has not yet run in either host;
 its first run is also the check on step 0.
+
+**2026-11-20** — step 3, first half: Sonnet lenses with an Opus refuter detect 30/38 against 31/38,
+above the 29 frozen beforehand, so they become the default of `rsquad export`
+(`docs/step8-tiered-models.md`). One case was lost by the lenses, one by the refuter, one gained.
+The calibrated acceptance judge, step 3's second half, has not been built.

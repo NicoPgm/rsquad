@@ -57,8 +57,10 @@ Optional flags, only when the user asks for them:
 
 - `--spec <document>`, repeatable: what the change was supposed to do, for the conformance lens.
   The commit message is always included.
-- `--model <id>` for the lenses and `--refute-model <id>` for the refuter. Both default to the
-  model every published measurement used. Do not pick a cheaper one on your own.
+- `--model <id>` for the lenses and `--refute-model <id>` for the refuter. They default to
+  Sonnet and Opus, the split measured at 30/38 against 31/38 for Opus throughout
+  (`docs/step8-tiered-models.md`). Do not move the refuter to a cheaper model on your own: it is
+  the step whose mistakes leave the least trace.
 - `--lens <name>` repeatable, `--no-conformance`, `--context` (the context pack, off by default).
 
 If the command prints `nothing readable changed`, report the files it listed as not reviewed and

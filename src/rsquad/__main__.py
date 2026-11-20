@@ -607,10 +607,11 @@ def main(argv: list[str] | None = None) -> int:
             sub_parser.add_argument("--lens", action="append", default=None,
                                     choices=list(lenses.LENSES))
             sub_parser.add_argument("--no-conformance", action="store_true")
-            sub_parser.add_argument("--model", default=lenses.MODEL,
-                                    help="recorded per task for the harness to honour")
-            sub_parser.add_argument("--refute-model", default=None,
-                                    help="the model for the refutation round (default: --model)")
+            sub_parser.add_argument("--model", default=job.LENS_MODEL,
+                                    help="the lenses' model, recorded per task for the harness "
+                                         "to honour (default: %(default)s, step 8)")
+            sub_parser.add_argument("--refute-model", default=job.REFUTE_MODEL,
+                                    help="the refuter's model (default: %(default)s)")
             sub_parser.add_argument("--context", action="store_true",
                                     help="add the context pack (off by default, ADR-0009)")
         sub_parser.set_defaults(handler=_export if name == "export" else _ingest)

@@ -52,6 +52,12 @@ VERSION = 1
 
 LENS_ROUND, REFUTE_ROUND = 1, 2
 
+#: The default tiers on this transport, decided by the rule frozen in
+#: `evaluation/step8-tiered.yaml`: Sonnet lenses with an Opus refuter detected 30/38 against the
+#: all-Opus 31/38, above the 29 the rule set (`docs/step8-tiered-models.md`).
+LENS_MODEL = "claude-sonnet-5"
+REFUTE_MODEL = "claude-opus-5"
+
 
 @dataclass
 class Task:

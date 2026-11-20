@@ -160,7 +160,7 @@ If your runtime lets you choose, honour the field. If it does not — a Cursor a
 Cursor is configured with — then **record what actually ran**, next to the results, in whatever
 form you like. Without that, a comparison between two runs is a comparison of two unknowns.
 
-Every number published in `docs/` is `claude-opus-5` at effort `high`. A run on another model
+Every number published in `docs/` before step 8 is `claude-opus-5` at effort `high`; step 8 (`docs/step8-tiered-models.md`) is Sonnet lenses with an Opus refuter, now the default. A run on another model
 answers *"does this find real things in our code"*. It does not reproduce those figures and
 should not be reported as if it did.
 
