@@ -63,3 +63,8 @@ effort. Refutation is about as expensive as finding.
 produced 8 findings on one run and 6 on the next, with severities moving between them. That is a
 data point for ADR-0005's comparison — the standalone transport is not perfectly reproducible
 either, and the question is which transport varies *less*, not which one is exact.
+
+**2026-11-20** — ADR-0009 adds a seventh death, `undecided`: the payload does not settle the
+claim. It is not a confidence scale and it lets nothing through; doubt still refutes. What it
+changes is the record. With six causes, a refuter that could not decide had to name one that
+might not hold, and the `Refuted` section then misreported why a finding died.

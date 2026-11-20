@@ -38,3 +38,7 @@ back part of that without giving up the property.
 A test that lists forbidden words does **not** enforce this, and one was written and removed:
 the shared prompt legitimately contains "commit message", in the sentence explaining that the
 lens is never shown one.
+
+**2026-11-20** — on the harness, now the primary transport (ADR-0009), this decision is
+scoped by ADR-0010: the payload stays blind and that stays tested; the agent's reach does
+not, and is called blindness by instruction. On the frozen API path this ADR holds unchanged.

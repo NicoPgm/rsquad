@@ -1,6 +1,7 @@
 # ADR-0005 — Two transports, one core
 
-**Status:** proposed — the choice of a primary transport is deferred to a measurement
+**Status:** accepted — decided by ADR-0009 (2026-11-20): the job on disk is the primary
+transport, run by a skill; the API transport is frozen
 **Date:** 2026-08-22
 
 ## Context
@@ -99,3 +100,8 @@ million tokens, **$0**, where the API would have billed about $35
 out to be free in the other direction — the 19 API cases were already bought, so replaying them
 on the harness cost nothing and widened the bridge from 4 cases to 19
 (`docs/transport-calibration-19.md`). On those 19 the transports agree on 18.
+
+**2026-11-20** — decided by ADR-0009. The measurement this ADR waited for exists, and it
+says what the entries above already did: the transports agree (18 of 19), and the harness is
+the one that can be afforded. The API transport is frozen rather than deleted, because it is
+still the only path that enforces the schema at generation and itemises cost.

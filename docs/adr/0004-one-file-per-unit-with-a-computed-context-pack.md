@@ -45,3 +45,8 @@ anchors, is a measurement that has not been run — see ADR-0005.
 
 Findings must still be reported in the file under review; context files are for understanding,
 and a finding quoting one is dropped by the anchoring guard.
+
+**2026-11-20** — the context pack becomes off by default (ADR-0009). Measured on 19 cases
+with and without it: the same fourteen detected, for 30 % more payload
+(`docs/step7b-context-pack.md`). One file per unit is unchanged, and the pack stays
+available behind an option.

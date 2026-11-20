@@ -330,10 +330,12 @@ reports. A report says what happened, an ADR says what we do about it.
 | [0002](docs/adr/0002-blindness-is-a-property-not-a-promise.md) | blindness is a property of the payload, not a prompt instruction |
 | [0003](docs/adr/0003-the-finding-contract.md) | closed vocabulary and two mechanical guards |
 | [0004](docs/adr/0004-one-file-per-unit-with-a-computed-context-pack.md) | one file per unit, plus a computed context pack |
-| [0005](docs/adr/0005-two-transports-one-core.md) | two transports, one core — *proposed* |
+| [0005](docs/adr/0005-two-transports-one-core.md) | two transports, one core — decided by 0009 |
 | [0006](docs/adr/0006-refutation-inherits-no-framing.md) | the refuter inherits no framing, and a broken refutation refutes nothing |
 | [0007](docs/adr/0007-the-conformance-lens-quotes-or-stays-quiet.md) | the conformance lens quotes its requirement, or stays quiet |
 | [0008](docs/adr/0008-the-seam-is-a-job-on-disk.md) | the second transport is a job on disk, not a workflow |
+| [0009](docs/adr/0009-the-skill-is-the-product-the-api-is-frozen.md) | the skill is the product; the API transport is frozen |
+| [0010](docs/adr/0010-under-a-harness-blindness-is-by-instruction.md) | under a harness, blindness is by instruction, and is called that |
 
 ### The written-down parts
 

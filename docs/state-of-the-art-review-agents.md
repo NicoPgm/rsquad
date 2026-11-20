@@ -21,8 +21,8 @@ describes a diagram supplied by the repository owner, not a GitHub project.*
    comment only on added or removed lines: an instruction, not a guard.
 3. **Running on the host agent's subscription, with no API key, is mainstream** (OCR's
    `delegate` mode, Magpie's CLI providers, OpenQodex, adamsreview). The honest projects say what
-   it costs: OCR calls delegation a lesser pipeline, and OpenQodex's own matrix says Cursor can
-   start a review but cannot be the reviewer.
+   it costs: OCR calls delegation a lesser pipeline. OpenQodex's matrix says Cursor can start a
+   review but cannot be the reviewer; that is a limit of OpenQodex, not of Cursor (§7).
 4. **Measurement is the youngest part, and it moved fastest.** Three public benchmarks appeared
    in 2026 (January, February, September). All use human-annotated golden findings and an LLM
    judge. GitHub's reports 96.6 % judge-versus-human agreement on true versus false positive, and
@@ -165,7 +165,8 @@ account or key.
 
 Constraints worth knowing: Node 22, macOS and Linux, **no test runs on Windows**; and in its
 support matrix **Cursor, Cline and Goose can start a review but cannot be the reviewer**, and have
-no push gate, only a rule that asks the agent to review (README as of 0.22.0).
+no push gate, only a rule that asks the agent to review (README as of 0.22.0). For Cursor this is a limit of OpenQodex's implementation, not of
+Cursor: its own documentation describes isolated subagents (§7).
 
 ### 3.5 Magpie, adamsreview, PR-AF
 
@@ -305,11 +306,11 @@ from the survey).
 |---|---|---|---|
 | **P1** | **Put hard constraints on the process, not only in the prompt.** If a rule matters, a script should be able to fail the run when it is broken. | OCR's three failures and its deterministic selection, bundling, positioning; OpenQodex's quote check and coverage checks; Google's `+`/`-` rule as the counter-example | **yes**: units, closed schemas, anchoring, reproduction-or-nothing and missing-task accounting are all on the deterministic side |
 | **P2** | **Verify each finding in its own context, with tools, and require a reason either way.** | Anthropic validators, Sashiko post-verification, OpenQodex verifiers, Magpie, adamsreview | **yes**: refutation round, blind to the lens and to other findings |
-| **P3** | **Keep a third verdict.** "Refuted" and "could not decide" are different; refuting by default turns uncertainty into silence. | Sashiko `inconclusive_concerns`, code-review-gate-skill `unverified_items`; the §3.8 workflow routes "unsure" to a second opinion from another reviewer | **no**: doubt means refuted, and conformance findings bypass the refuter |
+| **P3** | **Keep a third verdict.** "Refuted" and "could not decide" are different; refuting by default turns uncertainty into silence. | Sashiko `inconclusive_concerns`, code-review-gate-skill `unverified_items`; the §3.8 workflow routes "unsure" to a second opinion from another reviewer | **partly**: every refuted finding is listed with a named cause, but none of the six causes means "could not decide"; conformance findings have no refuter by design (ADR-0007) |
 | **P4** | **State whether you optimise precision or recall, and report both.** | OCR against PR-AF; AACR-Bench's own caution that an unmatched comment may still be valid | **partly**: reader cost and detection are measured, no target is declared |
 | **P5** | **Scope what each reviewer sees, and vary it on purpose.** Attention is the scarce resource. | Anthropic's diff-only bug agent beside a context-reading one; OCR's isolated bundles and per-file rules; Kodus scoped rules | **partly**: one file per unit and a context pack for Python and Java; no per-file rules, no diff-only variant |
 | **P6** | **Spend by difficulty.** Small model for gates, large for judgement. | Anthropic's tiering; adamsreview's cheap-then-deep gate; OCR's token claim; the §3.8 workflow escalates from one reviewer to a five-model panel by change size | **no** on the harness path: one model and one effort level throughout |
-| **P7** | **Decide what not to review, and what not to count.** | Anthropic's skip gate and pre-existing exclusion; OpenQodex shows but never counts untouched-line advisories; ReviewBench's scope axis | **no**: no skip gate, and no introduced-versus-pre-existing field in the schema |
+| **P7** | **Decide what not to review, and what not to count.** | Anthropic's skip gate and pre-existing exclusion; OpenQodex shows but never counts untouched-line advisories; ReviewBench's scope axis | **partly**: a run with nothing readable stops before any model call, but trivial files (documentation, lockfiles) are not excluded, and the schema has no introduced-versus-pre-existing field |
 | **P8** | **Give the reviewer project knowledge in layers, and keep derived layers re-verifiable.** | Sashiko's three layers; Anthropic's `CLAUDE.md` lens; Kodus rules; awesome-reviewers | **partly**: only the conformance lens reads documents, by design, to keep the others blind |
 | **P9** | **Get independence from isolation and from model diversity.** | fresh no-memory processes (OpenQodex); several model families (Magpie, adamsreview `--ensemble`, cross-review); a reviewer from another family than the builder, fresh and read-only (§3.8) | **partly**: blind by assembly, but one model family, and the refuter shares the lenses' model |
 | **P10** | **Put the reviewer in the author's loop, and keep a smaller net after landing.** The main review belongs before the merge; what only shows up afterwards (CI, side effects, security) needs its own check. | roborev's hook, OpenQodex's push gate, adamsreview's fix loop that reverts regressions; the §3.8 workflow's re-review of every fix and its post-landing loops | **no** |
@@ -338,9 +339,9 @@ from the survey).
    stay as code that can fail a run: anchoring, schema, missing-task accounting and, new, a
    **coverage reconciliation computed by the CLI rather than reported by the agent**. OCR's
    delegation mode is the cautionary version: the agent counts its own coverage.
-4. **Three ideas RSquad lacks fit its budget concern directly:** tier models by stage (P6), a skip
-   gate (P7), and a third verdict (P3, which would also close the hole where conformance findings
-   bypass the refuter).
+4. **Three ideas fit its budget concern directly:** tier models by stage (P6), exclude trivial
+   files before any model runs (P7), and a verdict that names doubt (P3). RSquad already lists
+   every refuted finding with its cause; what it lacks is a cause meaning "could not decide".
 5. **Blindness does not survive sub-agents by default.** None of the projects read treats
    *the lens does not see the specification* as a goal; Anthropic's diff-only agent gets a version
    of it by instruction. RSquad's own measurement (46 agents, 119 file operations, none outside the
@@ -359,9 +360,13 @@ from the survey).
 
 ## 7. What this survey could not answer
 
-- **What Cursor Enterprise exposes as skills or subagents**, and whether it can run an isolated,
-  no-memory reviewer. The only evidence read is OpenQodex's matrix (can start a review, cannot be
-  the reviewer). That needs a test inside Cursor, not a README.
+- **What Cursor exposes as skills or subagents was answered the same day, from Cursor's own
+  documentation** (skills, subagents and CLI pages, referring to Cursor 2.4 and 2.5): it loads
+  Agent Skills, including from `.claude/skills/`; subagents start with a clean context, run in
+  parallel and can be `readonly`; a custom subagent names its own `model`; a headless `agent -p`
+  takes `--model` and `--output-format json`. Two caveats from the same pages: subagents share the
+  parent's checkout unless a worktree is requested, and an admin can disable headless mode. Read
+  in the documentation, not yet run.
 - **Whether any reported figure holds outside its own benchmark.** Nothing was run, and the Code
   Review Bench leaderboard was not read.
 - **Precision at equal recall across tools.** The benchmarks' headline metrics are not directly
