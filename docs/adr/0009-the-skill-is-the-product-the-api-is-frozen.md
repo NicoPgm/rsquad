@@ -95,3 +95,8 @@ run. Blindness is the fourth loss, and it has its own decision: ADR-0010.
 
 **`anthropic` stops being a required dependency.** The three modules that import it (`lenses`,
 `refutation`, `conformance`) import it only when the API path actually runs.
+
+**2026-11-20** — steps 1 and 2 written. Step 1 is five changes to the core, each tested without a
+model. Step 2 is `.claude/skills/rsquad-review/SKILL.md`: subagents are read-only, so the driver,
+not the subagent, writes each reply to disk, verbatim. The skill has not yet run in either host;
+its first run is also the check on step 0.

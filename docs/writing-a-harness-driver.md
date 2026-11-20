@@ -1,8 +1,10 @@
 # Writing a harness driver
 
 A driver runs the tasks RSquad exported and writes the replies back. That is the whole job.
-There is one driver in this repository — `harness/claude-code.workflow.js`, for Claude Code — and
-it is an example, not the interface. **A Claude Code workflow does not run in Cursor**, which is
+There are two drivers in this repository — `harness/claude-code.workflow.js`, the batch driver
+used for evaluation, and the skill in `.claude/skills/rsquad-review/`, which has the host agent
+run each task in a read-only subagent and save its reply (ADR-0009) — and both are examples, not
+the interface. **A Claude Code workflow does not run in Cursor**, which is
 why the seam is a directory on disk and not an SDK (ADR-0005, ADR-0008).
 
 This document is written to be read by whoever is building the second driver, human or agent, so
