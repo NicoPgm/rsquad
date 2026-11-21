@@ -28,9 +28,10 @@ versioned.
 
 ## 2. The first run is a check, not a review
 
-ADR-0009 step 0 was answered from Cursor's documentation, not from running it. Pick a small
-change that is already merged (one or two code files), ask the agent for *"an RSquad review of
-commit `<sha>`"*, and watch for five things:
+ADR-0009 step 0 was first answered from Cursor's documentation. It has since been **run**: the
+five answers are in [`step4-step0-cursor.md`](step4-step0-cursor.md) (2026-11-21). To repeat the
+check elsewhere, pick a small change that is already merged (one or two code files), ask the
+agent for *"an RSquad review of commit `<sha>`"*, and watch for five things:
 
 | # | check | if it fails |
 |---|---|---|
@@ -102,3 +103,6 @@ first.
 back here is counts only: findings per word, fixed or not, per lens if you recorded it, the five
 step-0 answers, and the models that ran. Never a snippet, a file name from work, or a finding's
 text.
+
+The first campaign's counts are in [`step4-acceptance-counts.md`](step4-acceptance-counts.md)
+(2026-11-21): 41 `act` / 58 attributable survived findings (71 %), above the ~30 % line.

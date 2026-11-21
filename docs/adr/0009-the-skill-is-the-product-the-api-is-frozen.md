@@ -105,3 +105,8 @@ its first run is also the check on step 0.
 above the 29 frozen beforehand, so they become the default of `rsquad export`
 (`docs/step8-tiered-models.md`). One case was lost by the lenses, one by the refuter, one gained.
 The calibrated acceptance judge, step 3's second half, has not been built.
+
+**2026-11-21** — step 0 run in Cursor (`docs/step4-step0-cursor.md`). Step 4 at work: after the
+pre-registered 50-finding stop, squad-wide acceptance on one author's already-merged work is
+41 `act` / 58 attributable survived findings (71 %), counts only in
+`docs/step4-acceptance-counts.md`. Per-lens retirement and the calibrated judge remain open.
