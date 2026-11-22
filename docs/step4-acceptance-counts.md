@@ -30,6 +30,10 @@ column that way.
 
 One review's queue header claimed one more multi-count than its `seen by` tags (6 vs 5). That
 orphan is **excluded** here, so the attributable total is **58**, not the log's running **59**.
+The gap is not a defect in the queue: its header counts findings, `seen by` counts distinct
+lenses (`src/rsquad/ranking.py`, `Entry.lenses`), so one lens reporting the same place twice adds
+one to the first and nothing to the second. Excluding it is what "one per lens that saw the
+place" asks for.
 
 ## Squad-wide acceptance
 
