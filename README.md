@@ -368,6 +368,7 @@ reports. A report says what happened, an ADR says what we do about it.
 | [`docs/step4-at-work.md`](docs/step4-at-work.md) | ADR-0009 step 4: installing the skill at work, the first run as a check of Cursor, and the per-finding log |
 | [`docs/step4-step0-cursor.md`](docs/step4-step0-cursor.md) | Step 4 step 0, run in Cursor: five checks pass; models and the `{{…}}` export hitch |
 | [`docs/step4-acceptance-counts.md`](docs/step4-acceptance-counts.md) | Step 4 acceptance counts from work: 41 `act` / 58 (71 %), above ~30 %; no finding text |
+| [`docs/reviewbench-pilot.md`](docs/reviewbench-pilot.md) | ReviewBench, five smallest test PRs: 15/15 true but 11/44 golden (25 %) recall; repository access and relaxed proof each move it by at most two |
 | [`docs/state-of-the-art-review-agents.md`](docs/state-of-the-art-review-agents.md) | what 38 open-source review agents converge on, how three benchmarks measure them, and what that suggests for a rework |
 
 ## License and provenance
