@@ -13,8 +13,10 @@ was frozen, and none is drawn.
 On the five smallest test-set pull requests, RSquad as shipped made **15 findings, all judged
 true**, and covered **11 of the 44 true golden findings (25 %)**. The public leaderboard ranks
 reviewers by grounded F1 on high-severity issues; its rows sit at 91–99 % precision and **20–76 %
-recall** (read 2026-11-22). Precision is not where reviewers differ, recall is, and RSquad's is at
-the bottom. Two changes were then measured on the same five pull requests, one at a time: letting
+recall on those issues** (read 2026-11-22). Precision is not where reviewers differ, recall is.
+On high-severity golden findings RSquad covered 2 of 6 here, and 5 of 12 on the ten pull requests
+of arm C (28–42 %): near the bottom of the leaderboard (see the correction at the end; a first
+version of this paragraph compared recall over all severities with the leaderboard's). Two changes were then measured on the same five pull requests, one at a time: letting
 every reader see the repository (A), and relaxing the lenses' proof-or-silence rule (B). **Neither
 moved grounded recall by more than two golden findings out of 44**, which five pull requests
 cannot tell from noise.
@@ -172,7 +174,31 @@ subagent tokens 6.2 M for the new baseline, 9.3 M for arm C; two judge runs on t
 it: repository access, a relaxed proof rule, whole-pull-request units. As the pre-registration
 says, the bench work stops here unless a new explanation is named. The one finding that holds
 across all of it is that RSquad, as built, is a high-precision, low-recall reviewer: 100 % then
-94.7 % grounded precision, about 20 % recall, where the leaderboard's recall runs 20–76 %.
+94.7 % grounded precision, about 20 % recall over all severities, and 28–42 % on high-severity
+issues, where the leaderboard's high-severity recall runs 20–76 %.
+
+## Correction — comparing like with like
+
+The leaderboard ranks on high-severity issues only. The first version of this report set RSquad's
+recall over all severities (20–25 %) against the leaderboard's high-severity recall (20–76 %). The
+like-for-like figures, from the same judge runs:
+
+| run | pull requests | high-severity golden covered | micro recall | macro recall | high candidates | high precision |
+|---|---:|---:|---:|---:|---:|---:|
+| pilot baseline | 5 | 2 / 6 | 33 % | 17 % | 2 | 100 % |
+| A, after refutation | 5 | 3 / 6 | 50 % | 58 % | 3 | 100 % |
+| B, after refutation | 5 | 2 / 6 | 33 % | 17 % | 4 | 100 % |
+| baseline | 10 | 5 / 12 | 42 % | 28 % | 6 | 100 % |
+| arm C | 10 | 4 / 12 | 33 % | 22 % | 5 | 100 % |
+
+Macro recall averages over the pull requests that have a high-severity golden finding, so it can
+sit above micro (arm A). The leaderboard does not say which of the two it shows. Either way the
+ten-PR baseline, at 28–42 %, would sit 23rd of 25 rows: above Cubic (22.1 %) and Greptile
+(20.2 %), below diffox (43.7 %) and Cursor (44.5 %). Twelve golden findings cannot place it more
+finely, and the leaderboard scores 219 pull requests three times; the placement is indicative.
+The conclusion stands, and the figures name its shape: on ten pull requests RSquad put forward
+**6 high-severity candidates for 12 high-severity golden findings**, every one of them true. It
+is not saying wrong things; it is saying too few.
 
 ## Annex — the two arms, as diffs against `58f8b06`
 
