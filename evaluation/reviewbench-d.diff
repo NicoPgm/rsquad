@@ -1,0 +1,278 @@
+diff --git a/harness/claude-code.workflow.js b/harness/claude-code.workflow.js
+index 0f52813..8388002 100644
+--- a/harness/claude-code.workflow.js
++++ b/harness/claude-code.workflow.js
+@@ -103,8 +103,8 @@ const instruction = (job, round, task) =>
+   `allowed.\n` +
+   `3. Write your answer as raw JSON — no prose, no markdown fence — to ` +
+   `${job}/round-${round}/results/${task.id}.json\n\n` +
+-  `Read no other file. Everything you need is in those two, and reaching for the ` +
+-  `repository would answer a different question than the one the task asks.\n\n` +
++  `Read no other file, except what the task file itself allows: it may point you to a ` +
++  `checkout of the repository, which you may read and search as it says.\n\n` +
+   `Then return the task id, whether you wrote the file, and one short note.`
+ 
+ phase('Manifest')
+diff --git a/prompts/conformance-user.v1.md b/prompts/conformance-user.v1.md
+index 03da14d..af4d071 100644
+--- a/prompts/conformance-user.v1.md
++++ b/prompts/conformance-user.v1.md
+@@ -26,5 +26,9 @@ the text to their right — without the number.
+ {{NUMBERED}}
+ ```
+ 
++## The rest of the repository
++
++The whole repository, as it stands after this change, is checked out in the `repo/` directory of this job: the directory that holds `round-1/` and `schema/`. You may read and search any file there to see how the code under review is called, what it calls, what the project declares (dependencies, configuration, its own written conventions), and what the changed code relies on. Read what you need, not everything. A divergence may depend on another file, but it must still be reported at a line of `{{FILE}}`, with a snippet copied from the numbered file above.
++
+ {{CONTEXT}}{{ELISION}}Report divergences between the intent above and `{{FILE}}` only. If the change does what it said,
+ return an empty list — that is the usual answer.
+diff --git a/prompts/lenses/repro.v1.md b/prompts/lenses/repro.v1.md
+index f1d614a..596e5e2 100644
+--- a/prompts/lenses/repro.v1.md
++++ b/prompts/lenses/repro.v1.md
+@@ -14,4 +14,4 @@ Look for:
+ - state mutated while it is being iterated
+ - a return that skips required cleanup or a required write
+ 
+-Report only what you can trigger. For each finding, state the inputs you walked with.
++For each finding, state the inputs or the situation you walked with.
+diff --git a/prompts/refutation-system.v1.md b/prompts/refutation-system.v1.md
+index e4f1fbf..ab4b05c 100644
+--- a/prompts/refutation-system.v1.md
++++ b/prompts/refutation-system.v1.md
+@@ -12,11 +12,11 @@ Finding is free. An agent asked for problems supplies some, and most of what a r
+ is plausible rather than true. The asymmetry is the whole mechanism: a claim only reaches a
+ human after somebody tried to destroy it and failed.
+ 
+-So the burden is on the claim, not on you. **If you are unsure, the verdict is refuted.** A
+-claim that cannot be shown to hold does not get the benefit of the doubt — the reader's time
+-does. When nothing in front of you settles it either way, say `undecided` rather than
+-borrowing another cause: it removes the claim all the same, and it is the honest record of
+-why.
++So refute on evidence only. **A claim falls when you can show from the code why it is
++wrong**: a guard that already handles it, a path that cannot be reached, a misreading of what
++the code does. Uncertainty alone is never a reason to refute. When nothing in front of you
++settles it either way, say `undecided` rather than borrowing another cause: the claim then
++reaches the reader marked as undecided, and that is the honest record of why.
+ 
+ You are not told who made the claim, how serious they thought it was, or what else they found.
+ None of that is evidence.
+diff --git a/prompts/refutation-user.v1.md b/prompts/refutation-user.v1.md
+index 35112e4..3342db1 100644
+--- a/prompts/refutation-user.v1.md
++++ b/prompts/refutation-user.v1.md
+@@ -26,4 +26,8 @@ Line numbers are on the left, separated by a tab. Use them for `evidence_line`,
+ {{NUMBERED}}
+ ```
+ 
++## The rest of the repository
++
++The whole repository, as it stands after this change, is checked out in the `repo/` directory of this job: the directory that holds `round-1/` and `schema/`. You may read and search any file there to see how the code under review is called, what it calls, what the project declares (dependencies, configuration, its own written conventions), and what the changed code relies on. Read what you need, not everything. Use it to check the claim against the code it depends on; your evidence must still be quoted from the numbered file above.
++
+ {{CONTEXT}}{{ELISION}}Now try to kill the claim. If you cannot, say `stands` and quote what stopped you.
+diff --git a/prompts/system.v1.md b/prompts/system.v1.md
+index 97920ab..15bd822 100644
+--- a/prompts/system.v1.md
++++ b/prompts/system.v1.md
+@@ -2,8 +2,8 @@
+      across lenses and across runs, or the cache never warms. Nothing variable goes in here. -->
+ 
+ You are one lens in a code review squad. Several lenses read the same change independently and
+-never see each other's output. Your findings then go to a separate reviewer whose only job is to
+-refute them, and a finding that cannot survive refutation is worse than no finding at all.
++never see each other's output. Your findings then go to a separate reviewer who tests each one
++against the code, and drops it only when the code shows it wrong.
+ 
+ **You are not shown the specification, the ticket, or the commit message, and this is
+ deliberate.** Another reviewer checks the change against its stated intent. You are here for a
+@@ -12,16 +12,25 @@ yourself reasoning about what the author meant, you have drifted into the other
+ 
+ ## What counts as a finding
+ 
+-A finding is a defect you can trigger. It has concrete inputs and an observable consequence.
++A finding is a defect you have good reason to believe is real: code that, under some
++condition, gives a wrong result, fails, leaks, or exposes what it should not.
+ 
+ - Ships: "if `items` is empty, line 42 raises IndexError"
++- Ships: "when two requests update the same order at once, the read at line 88 and the
++  write at line 93 let one update silently overwrite the other"
+ - Does not ship: "this is fragile", "consider extracting a helper", "this could be risky"
+ 
+-If you cannot name the inputs that trigger it, you do not have a finding. Say nothing.
++Name the condition that triggers it as precisely as you can: exact values when you have
++them, otherwise the situation in which it happens. A defect you can describe but not reduce
++to exact values is still a finding.
+ 
+-**An empty result is a normal, frequent, and correct answer.** Most diffs contain no defect.
+-You are not scored on volume, and a padded list makes the whole squad ignorable. Reporting
+-nothing when there is nothing is the single most useful thing you can do.
++**Report every defect you find, not only the one you are surest of.** That includes a defect
++that was already there, if the change touches it or makes it easier to reach. An empty
++result is right when you found nothing, and only then.
++
++**Keep reviewing after the first finding.** A change of a few hundred lines often holds
++several defects, and the second is as likely to matter as the first. If one defect shows in
++several files, report it once in each file where it shows, each anchored there.
+ 
+ ## Out of scope, always
+ 
+diff --git a/prompts/user-pr.v1.md b/prompts/user-pr.v1.md
+new file mode 100644
+index 0000000..c222f73
+--- /dev/null
++++ b/prompts/user-pr.v1.md
+@@ -0,0 +1,25 @@
++<!-- The whole pull request, one section per file. Variable, after the cache breakpoint. -->
++
++Files under review: {{FILES}}
++
++You are shown every file of this change that your lens reads, so that a defect spanning
++files is visible: a call whose meaning is defined in another file, an order of operations
++split across two, a value produced here and consumed there. In each section, line numbers
++are on the left, separated by a tab. Use them for `line`, and copy `snippet` from the text
++to their right, without the number.
++
++## The rest of the repository
++
++The whole repository, as it stands after this change, is checked out in the `repo/`
++directory of this job: the directory that holds `round-1/` and `schema/`. Investigate before
++you answer: read and search it to see how the changed code is called, what it calls, what the
++project declares (dependencies, configuration, its own written conventions), and how sibling
++code does the same thing. Read what you need, not everything. A defect may depend on a file
++outside the change, but it must be reported at a line of one of the files under review.
++
++{{SECTIONS}}
++
++Report findings in these files only. Each finding's `file` must be one of them, and its
++`line` and `snippet` must come from that file's numbered text. Report a defect that spans
++files at the line where it shows; if it shows in several of these files, report it once in
++each. If there is nothing to report, return an empty list.
+diff --git a/src/rsquad/job.py b/src/rsquad/job.py
+index 5129397..e9de12e 100644
+--- a/src/rsquad/job.py
++++ b/src/rsquad/job.py
+@@ -59,6 +59,10 @@ LENS_MODEL = "claude-sonnet-5"
+ REFUTE_MODEL = "claude-opus-5"
+ 
+ 
++#: A task over every file of the change, in place of one file's name.
++WHOLE = "*"
++
++
+ @dataclass
+ class Task:
+     """One call the harness has to make."""
+@@ -89,17 +93,17 @@ def _task_text(system: str, user: str) -> str:
+ def lens_tasks(units: list[Unit], lens_names: list[str],
+                intent: conformance.Intent | None = None, model: str = "") -> list[Task]:
+     tasks = []
++    for lens in lens_names:
++        read = [u for u in units if lenses.applies(lens, u.file)]
++        if not read:
++            continue
++        prompt = _task_text(prompts.system_prompt() + "\n\n" + prompts.lens_prompt(lens),
++                            prompts.pr_user_prompt(read))
++        for suffix, pass_model in (("PR", model), ("PR-2", REFUTE_MODEL)):
++            tasks.append(Task(id="%s--%s" % (lens, suffix), contract="finding", lens=lens,
++                              file=WHOLE, model=pass_model, prompt=prompt))
+     for unit in units:
+         stem = unit.file.replace("/", "__").replace("\\", "__")
+-        for lens in lens_names:
+-            if not lenses.applies(lens, unit.file):
+-                continue
+-            body = prompts.user_prompt(file=unit.file, diff=unit.diff, numbered=unit.numbered,
+-                                       elision=unit.elision, context=unit.context_block)
+-            tasks.append(Task(id="%s--%s" % (lens, stem), contract="finding", lens=lens,
+-                              file=unit.file, model=model,
+-                              prompt=_task_text(prompts.system_prompt()
+-                                                + "\n\n" + prompts.lens_prompt(lens), body)))
+         if intent is not None and intent.parts:
+             tasks.append(Task(
+                 id="conformance--%s" % stem, contract="conformance",
+@@ -203,6 +207,14 @@ def ingest(job: Path, units: dict[str, Unit],
+             # speak look identical in a queue, and only one of them means the code is fine.
+             out.missing.append(entry["id"])
+             continue
++        if entry["file"] == WHOLE:
++            try:
++                kept, dropped = lenses.interpret_pr(units, entry["lens"], text)
++                out.findings += kept
++                out.dropped += dropped
++            except Exception as error:                           # noqa: BLE001
++                out.malformed.append((entry["id"], "%s: %s" % (type(error).__name__, error)))
++            continue
+         unit = units.get(entry["file"])
+         if unit is None:
+             out.malformed.append((entry["id"], "no unit for %s" % entry["file"]))
+diff --git a/src/rsquad/lenses.py b/src/rsquad/lenses.py
+index 1328b4f..348e3b1 100644
+--- a/src/rsquad/lenses.py
++++ b/src/rsquad/lenses.py
+@@ -116,6 +116,15 @@ def interpret(unit: Unit, lens: str, text: str) -> tuple[list[dict], list[tuple[
+     return anchoring.sift(payload["findings"], {unit.file: unit.source})
+ 
+ 
++def interpret_pr(units: dict, lens: str, text: str) -> tuple[list[dict], list[tuple[dict, str]]]:
++    """`interpret`, over every file of the change: each finding is anchored in its own file."""
++    payload = json.loads(text)
++    validate(payload)
++    for finding in payload["findings"]:
++        finding["lens"] = lens
++    return anchoring.sift(payload["findings"], {f: u.source for f, u in units.items()})
++
++
+ def look(unit: Unit, lens: str, model: str = MODEL,
+          client: "anthropic.Anthropic | None" = None) -> LensRun:
+     """Run one lens over one unit. Failure is recorded, never raised.
+diff --git a/src/rsquad/prompts.py b/src/rsquad/prompts.py
+index 388b89d..13b0f0b 100644
+--- a/src/rsquad/prompts.py
++++ b/src/rsquad/prompts.py
+@@ -76,6 +76,21 @@ def user_prompt(file: str, diff: str, numbered: str, elision: str = "",
+                    elision=elision, context=context)
+ 
+ 
++def sections(units) -> str:
++    """Every file of the change, each as the per-file prompt shows one: diff, then numbered text."""
++    out = []
++    for unit in units:
++        out.append("## `%s`\n\n### What the change did to it\n\n```diff\n%s\n```\n\n"
++                   "### The file as it now stands\n\n```\n%s\n```\n%s"
++                   % (unit.file, unit.diff, unit.numbered, unit.elision))
++    return "\n".join(out)
++
++
++def pr_user_prompt(units) -> str:
++    return _render(_load(PROMPT_DIR / "user-pr.v1.md"),
++                   files=", ".join("`%s`" % u.file for u in units), sections=sections(units))
++
++
+ def conformance_system_prompt() -> str:
+     return _render(_load(PROMPT_DIR / "conformance-system.v1.md"),
+                    vocabulary_block=vocabulary_block("conformance"))
+diff --git a/src/rsquad/refutation.py b/src/rsquad/refutation.py
+index fe4ff07..e6d997e 100644
+--- a/src/rsquad/refutation.py
++++ b/src/rsquad/refutation.py
+@@ -42,8 +42,9 @@ from .lenses import MAX_TOKENS, MODEL, Usage, _usage
+ #: refutation deletes a real finding and leaves no trace in the queue.
+ EFFORT = "xhigh"
+ 
+-#: The only verdict that lets a finding through.
++#: The verdicts that let a finding through (arm D: doubt no longer refutes).
+ STANDS = "stands"
++UNDECIDED = "undecided"
+ 
+ UNANCHORED = "evidence does not appear near the line it cites"
+ 
+@@ -82,7 +83,8 @@ class Verdict:
+         Three things must all hold: a verdict was produced, it is not `stands`, and its evidence
+         is real. A broken refutation is not a refutation.
+         """
+-        return bool(self.verdict) and self.verdict != STANDS and self.anchored and not self.error
++        return (bool(self.verdict) and self.verdict not in (STANDS, UNDECIDED) and self.anchored
++                and not self.error)
+ 
+ 
+ def request(unit: Unit, finding: dict, model: str = MODEL) -> dict[str, Any]:

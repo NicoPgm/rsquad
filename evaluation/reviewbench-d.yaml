@@ -1,0 +1,96 @@
+# Pre-registration — arm D, the leaders' recipe, on ReviewBench
+#
+# Committed before any arm-D task runs. What follows is frozen; the report says where it was not
+# followed.
+#
+# Context: docs/reviewbench-pilot.md. On ten pull requests the baseline covered 20 of 96 golden
+# true findings and 5 of 12 high-severity ones, at 100 % grounded and augmented precision. Arms
+# A (repository access), B (relaxed proof) and C (whole-PR units) each changed one thing and
+# none moved recall. Three open-source reviewers ranked above it on the leaderboard document
+# their method (block/review, Laude RevEngine, Klaussy), and they share a recipe that is the
+# opposite of RSquad's on five points at once. If the gain comes from the combination, no
+# one-variable arm could show it.
+
+date: 2026-11-22
+bench: review-bench/ReviewBench @ 082f65f, test set (corpus/test/test.json)
+
+question: >
+  Does the leaders' recipe, transplanted into RSquad's job shape, cover clearly more golden
+  findings than the baseline, without letting noise into the queue?
+
+arm_d:
+  diff: evaluation/reviewbench-d.diff        # against master @ a6d466e
+  what_changes:
+    - unit: one task per blind lens over every file it reads (arm C's lens half)
+    - tools: every reader (lenses, conformance, refuter) may read and search a checkout of the
+      repository at head, in `repo/` inside its job (arm A, with "search")
+    - exhaustive reporting: arm B's lens rules, with a new example from outside the bench in
+      place of the one that paraphrased a golden finding; "keep reviewing after the first
+      finding"; a defect that shows in several files is reported once in each
+    - lenient refuter: it refutes on evidence only; `undecided` no longer removes a finding
+    - two passes: every blind-lens task runs once on the lens model (Sonnet) and once on the
+      refute model (Opus); findings from both go to refutation
+  unchanged: conformance (per file), the refuter's unit (one claim, its file, plus the
+    repository), scope rules (style and refactoring stay out), vocabulary, schemas, anchoring
+    and vacuity guards, ranking, the adapter, context pack off
+  known_exposure: the readers can reach the repository's git history, which may carry intent;
+    blindness is by instruction here, as in arm A
+  sources: block/review (review/panelists.go, prompts/judge.md), laude-institute/rev-engine
+    (src/prompts.ts, docs/REVIEWBENCH.md), steph-dove/klaussy-agents (review skill templates),
+    read 2026-11-22
+
+sets:
+  # The ten of arm C. All their golden findings have been read: S1's before arms A-C were
+  # written, S2's while analysing arm C. There is no unseen set; what guards against fitting is
+  # that the recipe comes from public sources, not from these golden findings. Two exceptions,
+  # disclosed: the repository paragraph names dependencies and written conventions because two
+  # S1 misses needed them (arm A), and "one finding per affected file" was reinforced by a count
+  # over the whole golden corpus showing defects repeated across sibling files.
+  - AA-Factory_aafactory-prototype_17
+  - PierreJanineh_TechDebtMCP_135
+  - k1LoW_gh-copilot-review_9
+  - konturio_disaster-ninja-fe_1230
+  - renedierking_LANdalf_88
+  - superyyrrzz_ForgeMap_106
+  - NCATSTranslator_translator-ingests_336
+  - Marvell-Consulting_statswales-frontend_626
+  - ardevd_jadx-collaboration_3
+  - allan-mobley-jr_gimmes_468
+
+runs:
+  baseline: reused from arm C's pre-registered run (scoring/c-base-all), not re-run
+  arm_d: one run over the ten; replies never repaired; a malformed reply is a failed task
+  intent: the pull request's title and body as --spec
+  driver: harness/claude-code.workflow.js with arm D's one-line change (read and search)
+  judge: npm run judge, provider anthropic, model claude-sonnet-5, with
+    "compat": {"forceAdaptiveThinking": true}; after refutation; micro figures
+  staging: if the 5-hour window reaches 80 %, the run pauses between rounds or between jobs
+    and resumes in the next window; nothing is judged before every reply is in
+
+metric:
+  primary: golden true findings covered (grounded), summed over the ten pull requests
+  high: high-severity golden true findings covered, of 12
+  guards: grounded precision, micro; augmented precision, micro (the judge's verdict on the
+    findings the golden set lacks: the share of the queue a reader would spend on noise)
+  reported_regardless: per set (S1, S2), round-1 versus after refutation, coverage by pass
+    (Sonnet, Opus, both), findings kept by the lenient rule (undecided), entries per pull
+    request, malformed replies, cost (5-hour window points, weekly points, subagent tokens)
+
+rule:
+  adopt_d_as_direction_if_all:
+    - covered(D) >= 30                       # baseline 20, +10
+    - high_covered(D) >= 7                   # baseline 5 of 12, +2
+    - grounded_precision(D) >= 0.90
+    - augmented_precision(D) >= 0.80
+  why_10: >
+    A, B and C moved the count by at most 2 on five pull requests and 1 on ten. +10 is half
+    the baseline again and well above that spread; it is a margin, not a significance test.
+  why_augmented_guard: >
+    The leaderboard ignores findings the golden set lacks, so volume is nearly free there. At
+    work it is not: every one is read. A queue that is one fifth noise or more fails the
+    purpose RSquad was built for, whatever the bench says.
+  if_adopted: D is not built into master as it stands. It changes five things; the next step is
+    a pre-registered ablation that finds which of them carry the gain, then building those.
+  if_not: the leaders' recipe, in RSquad's task-per-lens shape, does not close the gap; the
+    report says so, and what remains different (a single investigating agent with a turn
+    budget, ensembles across providers) is named as untested. The bench work stops.
