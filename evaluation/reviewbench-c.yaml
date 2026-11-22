@@ -1,0 +1,71 @@
+# Pre-registration — arm C, whole-pull-request units, on ReviewBench
+#
+# Committed before any arm-C task or any new baseline task runs, and before the golden findings
+# of set S2 are downloaded. What follows is frozen; the report says where it was not followed.
+#
+# Context: docs/reviewbench-pilot.md. On five pull requests the baseline covered 11 of 44 golden
+# findings (25 %) at 100 % precision, where the leaderboard's recall runs 20-76 %. Repository
+# access (A) and a relaxed proof rule (B) each moved that by at most two. The explanation left
+# untested is the unit: each lens reads one file and must anchor its findings there.
+
+date: 2026-11-22
+bench: review-bench/ReviewBench @ 082f65f, test set (corpus/test/test.json)
+
+question: >
+  Does showing each blind lens, and the refuter, every file of the pull request in one task
+  cover more golden findings than one task per file, without giving up precision?
+
+arm_c:
+  diff: evaluation/reviewbench-c.diff        # against master @ 32f080a
+  what_changes:
+    - one task per blind lens over every file it applies to (`tests` the test files, the other
+      three the rest), instead of one task per (lens, file)
+    - the refuter sees the claim and every file of the same kind (test or not), instead of the
+      claim's file alone; its evidence must still be quoted from the claim's file
+    - each finding is anchored in its own file by the unchanged guards
+  unchanged: conformance (per file), prompts' rules and vocabulary, schemas, guards, ranking,
+    models (Sonnet lenses, Opus refuter), context pack off
+  known_gap: the whole-PR prompt does not render the context pack; it is off in every arm here
+
+sets:
+  S1:   # the pilot's five; their golden findings have been read, by the person writing arm C
+    - AA-Factory_aafactory-prototype_17
+    - PierreJanineh_TechDebtMCP_135
+    - k1LoW_gh-copilot-review_9
+    - konturio_disaster-ninja-fe_1230
+    - renedierking_LANdalf_88
+  S2:   # the next five by (files_changed, lines changed); golden findings not yet downloaded
+    - superyyrrzz_ForgeMap_106
+    - NCATSTranslator_translator-ingests_336
+    - Marvell-Consulting_statswales-frontend_626
+    - ardevd_jadx-collaboration_3
+    - allan-mobley-jr_gimmes_468
+
+runs:
+  baseline_S1: reused from the pilot (2026-11-22, master @ 58f8b06), not re-run
+  baseline_S2: master @ this commit
+  arm_c: S1 and S2
+  per_arm: one run; replies never repaired; a malformed reply is a failed task, the others stand
+  intent: the pull request's title and body as --spec
+  driver: harness/claude-code.workflow.js, unchanged
+  judge: npm run judge, provider anthropic, model claude-sonnet-5, with
+    "compat": {"forceAdaptiveThinking": true}; after refutation; micro figures
+
+metric:
+  primary: golden true findings covered (grounded), summed over the ten pull requests
+  guard: grounded precision, micro, over the ten pull requests
+  reported_regardless: high-severity golden covered, augmented recall, novel true and false
+    positives, per set, cost (5-hour window points, subagent tokens), malformed replies
+
+rule:
+  adopt_c_if_all:
+    - covered(C, S1+S2) >= covered(baseline, S1+S2) + 6
+    - covered(C, S2) >= covered(baseline, S2)
+    - grounded_precision(C, S1+S2) >= 0.90
+  why_6: >
+    Arms A and B moved the pilot's count by at most 2 on five pull requests; 6 on ten is
+    above that spread. It is a margin, not a significance test.
+  why_S2_condition: S1's golden findings were read before arm C was written; S2's were not.
+  if_adopted: whole-PR units are built into master as the export default, with tests
+  if_not: per-file units stay; the pilot report gains this result, and the bench work stops
+    unless a new explanation is named

@@ -1,0 +1,173 @@
+diff --git a/prompts/refutation-user-pr.v1.md b/prompts/refutation-user-pr.v1.md
+new file mode 100644
+index 0000000..92eb7c4
+--- /dev/null
++++ b/prompts/refutation-user-pr.v1.md
+@@ -0,0 +1,22 @@
++<!-- One claim under test, with the whole pull request. Variable, after the breakpoint. -->
++
++## The claim
++
++In `{{FILE}}`, at line {{LINE}}:
++
++```
++{{SNIPPET}}
++```
++
++- **Given these inputs** — {{INPUTS}}
++- **the claim is that** — {{CONSEQUENCE}}
++
++## The change, every file of it
++
++The claim may depend on another file of this change, so all of them are below. Line numbers
++are on the left, separated by a tab. `evidence_line` and `evidence_snippet` must come from
++`{{FILE}}`, the file the claim is about.
++
++{{SECTIONS}}
++
++Now try to kill the claim. If you cannot, say `stands` and quote what stopped you.
+diff --git a/prompts/user-pr.v1.md b/prompts/user-pr.v1.md
+new file mode 100644
+index 0000000..87d5fe0
+--- /dev/null
++++ b/prompts/user-pr.v1.md
+@@ -0,0 +1,15 @@
++<!-- The whole pull request, one section per file. Variable, after the cache breakpoint. -->
++
++Files under review: {{FILES}}
++
++You are shown every file of this change that your lens reads, so that a defect spanning
++files is visible: a call whose meaning is defined in another file, an order of operations
++split across two, a value produced here and consumed there. In each section, line numbers
++are on the left, separated by a tab. Use them for `line`, and copy `snippet` from the text
++to their right, without the number.
++
++{{SECTIONS}}
++
++Report findings in these files only. Each finding's `file` must be one of them, and its
++`line` and `snippet` must come from that file's numbered text. Report a defect that spans
++files at the line where it shows. If there is nothing to report, return an empty list.
+diff --git a/src/rsquad/job.py b/src/rsquad/job.py
+index 5129397..4cc5e6e 100644
+--- a/src/rsquad/job.py
++++ b/src/rsquad/job.py
+@@ -59,6 +59,10 @@ LENS_MODEL = "claude-sonnet-5"
+ REFUTE_MODEL = "claude-opus-5"
+ 
+ 
++#: A task over every file of the change (arm C), in place of one file's name.
++WHOLE = "*"
++
++
+ @dataclass
+ class Task:
+     """One call the harness has to make."""
+@@ -89,17 +93,16 @@ def _task_text(system: str, user: str) -> str:
+ def lens_tasks(units: list[Unit], lens_names: list[str],
+                intent: conformance.Intent | None = None, model: str = "") -> list[Task]:
+     tasks = []
++    for lens in lens_names:
++        read = [u for u in units if lenses.applies(lens, u.file)]
++        if read:
++            tasks.append(Task(id="%s--PR" % lens, contract="finding", lens=lens, file=WHOLE,
++                              model=model,
++                              prompt=_task_text(prompts.system_prompt() + "\n\n"
++                                                + prompts.lens_prompt(lens),
++                                                prompts.pr_user_prompt(read))))
+     for unit in units:
+         stem = unit.file.replace("/", "__").replace("\\", "__")
+-        for lens in lens_names:
+-            if not lenses.applies(lens, unit.file):
+-                continue
+-            body = prompts.user_prompt(file=unit.file, diff=unit.diff, numbered=unit.numbered,
+-                                       elision=unit.elision, context=unit.context_block)
+-            tasks.append(Task(id="%s--%s" % (lens, stem), contract="finding", lens=lens,
+-                              file=unit.file, model=model,
+-                              prompt=_task_text(prompts.system_prompt()
+-                                                + "\n\n" + prompts.lens_prompt(lens), body)))
+         if intent is not None and intent.parts:
+             tasks.append(Task(
+                 id="conformance--%s" % stem, contract="conformance",
+@@ -140,10 +143,10 @@ def refutation_tasks(findings: list[dict], units: dict[str, Unit],
+             id="refute--%04d" % position, contract="verdict", lens="refutation",
+             file=finding["file"], finding=finding, model=model,
+             prompt=_task_text(prompts.refutation_system_prompt(),
+-                              prompts.refutation_user_prompt(
+-                                  finding, file=unit.file, diff=unit.diff,
+-                                  numbered=unit.numbered, elision=unit.elision,
+-                                  context=unit.context_block))))
++                              prompts.pr_refutation_user_prompt(
++                                  finding, [u for u in units.values()
++                                            if lenses.applies("tests", u.file)
++                                            == lenses.applies("tests", unit.file)]))))
+     return tasks
+ 
+ 
+@@ -203,6 +206,14 @@ def ingest(job: Path, units: dict[str, Unit],
+             # speak look identical in a queue, and only one of them means the code is fine.
+             out.missing.append(entry["id"])
+             continue
++        if entry["file"] == WHOLE:
++            try:
++                kept, dropped = lenses.interpret_pr(units, entry["lens"], text)
++                out.findings += kept
++                out.dropped += dropped
++            except Exception as error:                           # noqa: BLE001
++                out.malformed.append((entry["id"], "%s: %s" % (type(error).__name__, error)))
++            continue
+         unit = units.get(entry["file"])
+         if unit is None:
+             out.malformed.append((entry["id"], "no unit for %s" % entry["file"]))
+diff --git a/src/rsquad/lenses.py b/src/rsquad/lenses.py
+index 1328b4f..348e3b1 100644
+--- a/src/rsquad/lenses.py
++++ b/src/rsquad/lenses.py
+@@ -116,6 +116,15 @@ def interpret(unit: Unit, lens: str, text: str) -> tuple[list[dict], list[tuple[
+     return anchoring.sift(payload["findings"], {unit.file: unit.source})
+ 
+ 
++def interpret_pr(units: dict, lens: str, text: str) -> tuple[list[dict], list[tuple[dict, str]]]:
++    """`interpret`, over every file of the change: each finding is anchored in its own file."""
++    payload = json.loads(text)
++    validate(payload)
++    for finding in payload["findings"]:
++        finding["lens"] = lens
++    return anchoring.sift(payload["findings"], {f: u.source for f, u in units.items()})
++
++
+ def look(unit: Unit, lens: str, model: str = MODEL,
+          client: "anthropic.Anthropic | None" = None) -> LensRun:
+     """Run one lens over one unit. Failure is recorded, never raised.
+diff --git a/src/rsquad/prompts.py b/src/rsquad/prompts.py
+index 388b89d..2485b59 100644
+--- a/src/rsquad/prompts.py
++++ b/src/rsquad/prompts.py
+@@ -76,6 +76,28 @@ def user_prompt(file: str, diff: str, numbered: str, elision: str = "",
+                    elision=elision, context=context)
+ 
+ 
++def sections(units) -> str:
++    """Every file of the change, each as the per-file prompt shows one: diff, then numbered text."""
++    out = []
++    for unit in units:
++        out.append("## `%s`\n\n### What the change did to it\n\n```diff\n%s\n```\n\n"
++                   "### The file as it now stands\n\n```\n%s\n```\n%s"
++                   % (unit.file, unit.diff, unit.numbered, unit.elision))
++    return "\n".join(out)
++
++
++def pr_user_prompt(units) -> str:
++    return _render(_load(PROMPT_DIR / "user-pr.v1.md"),
++                   files=", ".join("`%s`" % u.file for u in units), sections=sections(units))
++
++
++def pr_refutation_user_prompt(finding: dict, units) -> str:
++    return _render(_load(PROMPT_DIR / "refutation-user-pr.v1.md"),
++                   file=finding["file"], line=str(finding["line"]), snippet=finding["snippet"],
++                   inputs=finding["inputs"], consequence=finding["consequence"],
++                   sections=sections(units))
++
++
+ def conformance_system_prompt() -> str:
+     return _render(_load(PROMPT_DIR / "conformance-system.v1.md"),
+                    vocabulary_block=vocabulary_block("conformance"))
