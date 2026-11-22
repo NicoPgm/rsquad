@@ -130,6 +130,50 @@ fails on 20.17). And the `models.json` given in the bench's `docs/OFFLINE_EVAL.m
 `claude-sonnet-5` without `"compat": {"forceAdaptiveThinking": true}`, so the judge sends
 budget-based thinking, the model refuses it, and the matcher reports "invalid JSON response".
 
+## Arm C, pre-registered — whole-pull-request units: not adopted
+
+**Pre-registration:** `evaluation/reviewbench-c.yaml` (`b4360b1`), with the arm as
+`evaluation/reviewbench-c.diff`, committed before any arm-C or new baseline task ran and before
+the golden findings of the five new pull requests were downloaded.
+
+Each blind lens got one task over every file it reads, and the refuter got the claim with every
+file of the same kind; conformance stayed per file. The set grew to ten: the pilot's five (S1,
+whose golden findings had been read) and the next five by size (S2, unseen: superyyrrzz/ForgeMap
+#106, NCATSTranslator/translator-ingests #336, Marvell-Consulting/statswales-frontend #626,
+ardevd/jadx-collaboration #3, allan-mobley-jr/gimmes #468). The baseline on S1 is the pilot's run;
+on S2 it was run from `b4360b1`. Everything was judged again together, after refutation.
+
+| | entries | golden true covered (of 96) | S1 (of 44) | S2 (of 52) | high (of 12) | grounded P | grounded R |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| baseline | 29 | **20** | 11 | 9 | 5 | 100 % | 20.8 % |
+| arm C | 24 | **19** | 11 | 8 | 4 | 94.7 % | 19.8 % |
+
+The rule, as frozen:
+
+| condition | required | measured | |
+|---|---|---|---|
+| covered(C) ≥ covered(baseline) + 6 | ≥ 26 | 19 | **fails** |
+| covered(C, S2) ≥ covered(baseline, S2) | ≥ 9 | 8 | **fails** |
+| grounded precision(C) ≥ 90 % | ≥ 90 % | 94.7 % | holds |
+
+**Per-file units stay.** Seeing the whole pull request did not make the lenses find more: they
+made fewer findings (48 kept in round 1, against 50 for the baseline on the same ten), and the
+same golden findings, give or take one. On S2, the unseen half, the baseline's recall is 17 %
+(9 of 52), lower than on S1; the pilot's 25 % was not flattering it by chance.
+
+Two lens replies of the baseline and one of arm C were malformed, all on jadx-collaboration #3;
+none was repaired. One S2 pull request (statswales-frontend #626) drew no finding from either arm
+against six golden ones.
+
+Cost of the pre-registered run: 32 points of the 5-hour window (39 % → 71 %) and 4 weekly points;
+subagent tokens 6.2 M for the new baseline, 9.3 M for arm C; two judge runs on the API key.
+
+**What this leaves.** Three explanations of the recall gap have now been measured, and none moved
+it: repository access, a relaxed proof rule, whole-pull-request units. As the pre-registration
+says, the bench work stops here unless a new explanation is named. The one finding that holds
+across all of it is that RSquad, as built, is a high-precision, low-recall reviewer: 100 % then
+94.7 % grounded precision, about 20 % recall, where the leaderboard's recall runs 20–76 %.
+
 ## Annex — the two arms, as diffs against `58f8b06`
 
 **A**, `prompts/user.v1.md` (the same paragraph, with the evidence sentence adapted, was added to
