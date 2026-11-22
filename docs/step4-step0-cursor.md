@@ -51,6 +51,10 @@ third file was therefore not reviewed. This is a seam bug in RSquad (content col
 template alphabet), not a Cursor or skill failure. No change was made to the core in this
 session; the observation is recorded so a later fix has a measured case.
 
+**Fixed 2026-11-22** (`src/rsquad/prompts.py`, `_render`): the template is now checked and
+substituted in one pass, so a value is never rescanned. Content holding `{{HEAD}}` exports as is,
+and is no longer at risk of being rewritten by a later substitution.
+
 ## What this does and does not settle
 
 **Settled:** Cursor can drive the skill end to end - isolated read-only subagents, schema-valid

@@ -39,6 +39,13 @@ def test_a_missing_value_is_an_error_not_a_silent_gap():
         _render(_load(PROMPT_DIR / "user.v1.md"), file="a.py")
 
 
+def test_code_under_review_may_contain_placeholders_of_its_own():
+    """Found at work: a file holding `{{HEAD}}` failed the export, so it was never reviewed."""
+    code = 'url = "{{HEAD}}/{{DIFF}}"'
+    text = user_prompt("a.py", diff=code, numbered="1\t" + code)
+    assert text.count(code) == 2
+
+
 def test_html_comments_are_stripped():
     """They are notes to whoever edits the file, not tokens anyone should pay for."""
     assert "<!--" not in system_prompt()

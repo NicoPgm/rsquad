@@ -135,7 +135,7 @@ quote. The run also found two live defects in RSquad's own gate.
 ```bash
 git clone https://github.com/NicoPgm/rsquad && cd rsquad
 pip install -e ".[dev]"        # Python 3.11+; ".[api]" alone if you only want `review`
-python -m pytest               # 327 tests, no network, no API call
+python -m pytest               # 328 tests, no network, no API call
 ```
 
 **Decide one thing before you run it: your code goes to Anthropic.** There are two routes and

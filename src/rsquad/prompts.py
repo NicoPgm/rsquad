@@ -44,14 +44,20 @@ def _load(path: Path) -> str:
     return _COMMENT.sub("", path.read_text(encoding="utf-8")).strip()
 
 
+_PLACEHOLDER = re.compile(r"\{\{([A-Z_]+)\}\}")
+
+
 def _render(template: str, **values: str) -> str:
-    text = template
-    for key, value in values.items():
-        text = text.replace("{{%s}}" % key.upper(), value)
-    left = re.search(r"\{\{[A-Z_]+\}\}", text)
-    if left:
-        raise SystemExit("unrendered placeholder in prompt: %s" % left.group(0))
-    return text
+    """One pass over the template only: a value is never scanned or substituted again.
+
+    The values carry the code under review, and code may contain `{{HEAD}}` of its own. Checked
+    after substitution, it failed the export; substituted in sequence, it was silently rewritten.
+    """
+    values = {key.upper(): value for key, value in values.items()}
+    for name in _PLACEHOLDER.findall(template):
+        if name not in values:
+            raise SystemExit("unrendered placeholder in prompt: {{%s}}" % name)
+    return _PLACEHOLDER.sub(lambda m: values[m.group(1)], template)
 
 
 def system_prompt() -> str:
