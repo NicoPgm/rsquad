@@ -106,3 +106,36 @@ text.
 
 The first campaign's counts are in [`step4-acceptance-counts.md`](step4-acceptance-counts.md)
 (2026-11-21): 41 `act` / 58 attributable survived findings (71 %), above the ~30 % line.
+
+## 7. Second campaign: before merge
+
+Fixed on 2026-11-22, before any of it ran, so the stopping points are not chosen after seeing the
+numbers.
+
+The first campaign reviewed pull requests **after** they merged. It measured the author's word,
+not what the review changed: every finding was logged `fixed before merge: yes (merged)`. This
+campaign runs RSquad on each pull request **before** a colleague reviews it, with the same log
+and the same four words, decided when the queue is read and before anything is fixed.
+
+**It answers two questions, each with its own stop.**
+
+1. **What the review changes.** Among survived findings marked `act`, the share fixed before the
+   pull request merges. **Stop at 50 survived findings in this campaign**, counted squad-wide the
+   way `step4-acceptance-counts.md` counts them (one per lens that saw the place). The first
+   campaign reached 58 in 23 reviews, so expect about twenty pull requests.
+2. **Whether the `tests` lens stays.** It sat at 45 % on 11 findings, the nearest any lens with
+   numbers came to the 30 % line. Its words are pooled across **both** campaigns: they are decided
+   the same way, when the queue is read. **Stop at 40 `tests` findings in total**, so 29 more.
+   At 40, a share near 45 % is known to about ±15 points, enough to say whether the lens sits
+   above the line or cannot be told from it. At the first campaign's pace of about one `tests`
+   finding every two reviews, that is roughly sixty pull requests. The two stops do not wait for
+   each other: stop 1 is reported when it is reached, and the log carries on for stop 2.
+
+**`conformance` gets no verdict from this campaign.** It produced 5 findings in 23 reviews; forty
+would take about two hundred. Its counts are still recorded and reported.
+
+**What changes in the log:** `fixed before merge` is filled in when the pull request merges, and
+now means something. A finding marked `act` and not fixed stays `act`. Also record, per review,
+anything a colleague caught in a file RSquad reviewed: it is the only miss this setting can see.
+
+Reported here as counts only, under the rules of §6.

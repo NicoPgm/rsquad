@@ -110,3 +110,13 @@ The calibrated acceptance judge, step 3's second half, has not been built.
 pre-registered 50-finding stop, squad-wide acceptance on one author's already-merged work is
 41 `act` / 58 attributable survived findings (71 %), counts only in
 `docs/step4-acceptance-counts.md`. Per-lens retirement and the calibrated judge remain open.
+
+**2026-11-22** — step 3's second half, the calibrated acceptance judge, is **set aside rather than
+built**. It was to measure acceptance where no person decides, and step 4 now has a person
+deciding: 71 % squad-wide, on that author's own code. Calibrating it would also need a person's
+labels on public cases, since the labels from work cannot leave work, and it would measure a
+proxy of what step 4 already measures directly. It would be justified by a setting with no one to
+judge: a second author or repository whose findings nobody reads, or a model change to price
+without a new campaign at work. Step 4 continues before merge, with two stops fixed beforehand in
+`docs/step4-at-work.md` §7: 50 findings for the fix rate, 40 `tests` findings in total for that
+lens's verdict.
