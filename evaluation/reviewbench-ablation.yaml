@@ -1,0 +1,87 @@
+# Pre-registration — taking arm D apart, on five unseen ReviewBench pull requests
+#
+# Committed before any task of this measurement runs. What follows is frozen; the report says
+# where it was not followed.
+#
+# Context: docs/reviewbench-pilot.md, arm D. On ten pull requests, all of whose golden findings
+# had been read, the leaders' recipe covered 34 of 96 golden findings against 20 and failed the
+# 90 % grounded-precision guard at 86.5 %. Two questions are left: does the gain hold on pull
+# requests nobody here has read, and what carries it? Within D, the Opus pass alone covered 30
+# and the Sonnet pass 25, so the model is the first suspect; the four structural changes
+# (whole-PR units, repository, exhaustive reporting, lenient refuter) are the second.
+
+date: 2026-11-23
+bench: review-bench/ReviewBench @ 082f65f, test set (corpus/test/test.json)
+
+questions:
+  Q1: Does arm D's gain over master hold on five unseen pull requests?
+  Q2: Which is the cheapest change that keeps most of it — the lens model, a second pass, or
+      the recipe?
+
+set:
+  # The five next by (files_changed, lines changed) after the ten already used, skipping three
+  # whose golden findings were cited by yesterday's research (tallclub/matimo #77,
+  # hoangsonww/Claude-Code-Agent-Monitor #58, cmik/apilix #12); none of the three is in this
+  # range anyway. Their golden files are on disk inside the bench's clone, and none has been
+  # opened; they are read only by the judge, after every reply is in.
+  S3:
+    - brianc_node-postgres_3650        # JavaScript, 6 files
+    - scottlz0310_Mcp-Docker_29        # Go, 8 files
+    - brexhq_CrabTrap_15               # Go, 6 files in the three-dot diff
+    - sdsykes_fastimage_165            # Ruby, 12 files
+    - mheuss_chronicle_14              # Rust, 14 files
+
+cells:
+  # Two runs. Each runs every blind-lens task twice, once on the lens model (Sonnet) and once on
+  # the refute model (Opus), so each run yields three variants: Sonnet pass, Opus pass, both.
+  master_two_pass:
+    diff: evaluation/reviewbench-ablation.diff     # against master @ 832feaf; one change
+    tasks: 222 (111 per pass)
+  d:
+    diff: evaluation/reviewbench-d.diff            # arm D, unchanged
+    tasks: 38 (19 per pass)
+  both_cells: blind lenses only (--no-conformance), round 1 only (--no-refute), context pack off,
+    no --spec. Refutation is left out on purpose: in arm D it cost 70 % of the run and moved
+    coverage from 37 to 34; its effect is already measured there.
+
+variants:
+  V0: master, Sonnet pass          # master as shipped, round 1 — the reference
+  V1: master, Opus pass            # one setting: the lens model
+  V2: master, both passes
+  V3: D, Sonnet pass
+  V4: D, Opus pass
+  V5: D, both passes               # arm D, round 1, blind lenses
+  cost_order: V1 < V2 < V3 < V4 < V5   # how much each changes RSquad, least first
+
+runs:
+  per_cell: one run; replies never repaired; a malformed reply is a failed task
+  driver: arm D's harness/claude-code.workflow.js for both cells (it lets a task point to a
+    repository; master's tasks do not)
+  judge: npm run judge, provider anthropic, model claude-sonnet-5, with
+    "compat": {"forceAdaptiveThinking": true}; micro figures; one judge run per variant
+  staging: if the 5-hour window reaches 80 %, the run pauses between cells or between jobs and
+    resumes in the next window; nothing is judged before every reply of both cells is in
+
+metric:
+  primary: grounded recall, micro, over S3 (golden true findings covered / golden true findings)
+  high: high-severity golden true findings covered
+  guards: grounded precision, micro; augmented precision, micro
+  reported_regardless: every variant's row, per pull request, entries, malformed replies, cost
+
+rule:
+  Q1_holds_if_all:
+    - recall(V5) >= recall(V0) + 0.10
+    - augmented_precision(V5) >= 0.80
+  if_Q1_fails: arm D's gain does not survive unseen pull requests; the bench work stops.
+  Q2_candidate: >
+    The first variant in cost_order whose recall is at least recall(V0) + 2/3 of
+    (recall(V5) - recall(V0)), with grounded precision >= 0.90 and augmented precision >= 0.80.
+    The 0.90 is arm D's guard, kept rather than lowered after D failed it.
+  if_candidate: it is proposed for master as its own change, with tests; building it is the
+    user's decision, and its cost in the queue is then measured at work (the second campaign).
+  if_no_candidate: no variant is both close to D's gain and precise enough; nothing changes in
+    master, the report says which guard each variant failed, and the bench work stops.
+  why_0_10: >
+    Arm D's round-1 gain over the baseline on the ten was 17.7 recall points (blind lenses and
+    conformance). 10 points on five pull requests keeps most of that and is above the spread
+    of arms A-C.

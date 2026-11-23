@@ -1,0 +1,19 @@
+diff --git a/src/rsquad/job.py b/src/rsquad/job.py
+index 5129397..13e5bc9 100644
+--- a/src/rsquad/job.py
++++ b/src/rsquad/job.py
+@@ -96,10 +96,10 @@ def lens_tasks(units: list[Unit], lens_names: list[str],
+                 continue
+             body = prompts.user_prompt(file=unit.file, diff=unit.diff, numbered=unit.numbered,
+                                        elision=unit.elision, context=unit.context_block)
+-            tasks.append(Task(id="%s--%s" % (lens, stem), contract="finding", lens=lens,
+-                              file=unit.file, model=model,
+-                              prompt=_task_text(prompts.system_prompt()
+-                                                + "\n\n" + prompts.lens_prompt(lens), body)))
++            prompt = _task_text(prompts.system_prompt() + "\n\n" + prompts.lens_prompt(lens), body)
++            for suffix, pass_model in (("", model), ("--2", REFUTE_MODEL)):
++                tasks.append(Task(id="%s--%s%s" % (lens, stem, suffix), contract="finding",
++                                  lens=lens, file=unit.file, model=pass_model, prompt=prompt))
+         if intent is not None and intent.parts:
+             tasks.append(Task(
+                 id="conformance--%s" % stem, contract="conformance",
