@@ -19,6 +19,7 @@ GOOD = {
         "snippet": "return fiches[0]",
         "kind": "boundary",
         "severity": "significant",
+        "scope": "introduced",
         "inputs": "an empty corpus, so `fiches` is []",
         "consequence": "raises IndexError instead of returning None",
     }]
@@ -141,7 +142,7 @@ def test_a_defs_entry_is_a_vocabulary_only_if_it_has_a_gloss():
     """`$defs` also holds object shapes. Iterating all of them asked `finding` for a glossary
     and crashed every prompt in the project at once — one line, sixteen failing tests."""
     from rsquad.findings import vocabularies
-    assert vocabularies("finding") == ["kind", "severity"]
+    assert vocabularies("finding") == ["kind", "scope", "severity"]
     assert vocabularies("verdict") == ["verdict"]
 
 

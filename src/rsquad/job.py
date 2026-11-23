@@ -44,7 +44,7 @@ import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from . import anchoring, conformance, lenses, prompts, ranking, refutation
+from . import anchoring, chunking, conformance, lenses, prompts, ranking, refutation
 from .chunking import Unit
 from .findings import CONTRACTS, api_schema, validate
 
@@ -183,6 +183,24 @@ def manifest(job: Path) -> dict:
     return data
 
 
+def outside_unit(repository: Path, path: str) -> Unit | None:
+    """A file of the job's `repo/` the change does not touch, as a unit with no diff.
+
+    None when the path leaves the copy, is not a file, or is not text: a finding there has
+    nothing to anchor against and the guard drops it.
+    """
+    root = repository.resolve()
+    target = (root / path).resolve()
+    if not target.is_relative_to(root) or not target.is_file():
+        return None
+    try:
+        source = target.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+    numbered, _ = chunking.number(source)
+    return Unit(file=path, diff="", source=source, numbered=numbered)
+
+
 @dataclass
 class Ingested:
     findings: list[dict] = field(default_factory=list)
@@ -190,6 +208,9 @@ class Ingested:
     verdicts: list = field(default_factory=list)
     missing: list[str] = field(default_factory=list)
     malformed: list[tuple[str, str]] = field(default_factory=list)
+    #: The units passed in, plus one per file outside the change that a finding landed in.
+    #: Round 2 needs them to write and read the refutations of those findings.
+    units: dict[str, Unit] = field(default_factory=dict)
 
 
 def _reply(round_dir: Path, task_id: str) -> str | None:
@@ -202,7 +223,15 @@ def ingest(job: Path, units: dict[str, Unit],
     """Read one round's replies. Validate everything; trust nothing the harness did."""
     data = manifest(job)
     round_dir = job / ("round-%d" % data["round"])
-    out = Ingested()
+    out = Ingested(units=dict(units))
+
+    def outside(path: str) -> Unit | None:
+        if path not in out.units:
+            unit = outside_unit(job / REPOSITORY, path)
+            if unit is None:
+                return None
+            out.units[path] = unit
+        return out.units[path]
 
     for entry in data["tasks"]:
         text = _reply(round_dir, entry["id"])
@@ -213,13 +242,14 @@ def ingest(job: Path, units: dict[str, Unit],
             continue
         if entry["contract"] == "finding" and entry["file"] == WHOLE:
             try:
-                kept, dropped = lenses.interpret_pr(units, entry["lens"], text)
+                kept, dropped = lenses.interpret_pr(units, entry["lens"], text, outside)
                 out.findings += kept
                 out.dropped += dropped
             except Exception as error:                           # noqa: BLE001
                 out.malformed.append((entry["id"], "%s: %s" % (type(error).__name__, error)))
             continue
-        unit = units.get(entry["file"])
+        unit = units.get(entry["file"]) or (outside(entry["file"])
+                                            if entry["contract"] == "verdict" else None)
         if unit is None:
             out.malformed.append((entry["id"], "no unit for %s" % entry["file"]))
             continue

@@ -110,6 +110,23 @@ def test_the_queue_says_where_the_refuter_places_a_defect():
     assert "places it elsewhere** — The defect lives in delete.py:12" in text
 
 
+def test_what_was_already_there_is_set_apart_from_the_change():
+    """The reader fixes the change before merging and files the rest as technical debt."""
+    old = dict(finding(file="old.py"), scope="pre-existing")
+    new = dict(finding(file="new.py"), scope="exposed")
+    text = render(group([old, new]))
+    change, debt = text.split("## Already there (1)")
+    assert "`new.py:10`" in change and "exposed by this change" in change
+    assert "`old.py:10`" in debt and "already there" in debt
+
+
+def test_one_lens_placing_a_defect_in_the_change_keeps_it_there():
+    doubted = dict(finding(lens="repro"), scope="pre-existing")
+    placed = dict(finding(lens="bounds"), scope="introduced")
+    text = render(group([doubted, placed]))
+    assert "Already there" not in text and "introduced by this change" in text
+
+
 def test_every_severity_has_a_rank():
     """A severity the schema allows but the ranker does not know would crash the queue."""
     from rsquad.findings import vocabulary

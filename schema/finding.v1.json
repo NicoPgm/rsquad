@@ -19,12 +19,12 @@
     "finding": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["file", "line", "snippet", "kind", "severity", "inputs", "consequence"],
+      "required": ["file", "line", "snippet", "kind", "severity", "scope", "inputs", "consequence"],
       "properties": {
         "file": {
           "type": "string",
           "minLength": 1,
-          "description": "Repository-relative path, exactly as it appears in the diff."
+          "description": "Repository-relative path, exactly as the repository spells it."
         },
         "line": {
           "type": "integer",
@@ -38,6 +38,7 @@
         },
         "kind": { "$ref": "#/$defs/kind" },
         "severity": { "$ref": "#/$defs/severity" },
+        "scope": { "$ref": "#/$defs/scope" },
         "inputs": {
           "type": "string",
           "minLength": 1,
@@ -59,6 +60,15 @@
         "contract": "an interface used against its documented or implied terms: wrong type, wrong order, ignored error, broken invariant",
         "resource": "something acquired and not released, or growing without bound: handles, memory, connections, unbounded retries or cost",
         "test-quality": "a test that cannot fail, asserts the wrong property, or freezes current behaviour as if it were intended"
+      }
+    },
+
+    "scope": {
+      "enum": ["introduced", "exposed", "pre-existing"],
+      "glossary": {
+        "introduced": "the change creates the defect: before it, the code did not have it",
+        "exposed": "the defect was already in the code, and the change makes it reachable, visible or more likely",
+        "pre-existing": "the defect was already in the code, and the change has no bearing on it"
       }
     },
 

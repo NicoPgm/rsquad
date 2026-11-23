@@ -34,6 +34,8 @@ def message(entry: ranking.Entry) -> str:
     # judge does too.
     for reason in dict.fromkeys(f["elsewhere"] for f in entry.findings if "elsewhere" in f):
         parts.append("Where it lives: %s" % reason)
+    if entry.scope != "introduced":
+        parts.append("Scope: %s." % ranking.SCOPE_LABEL[entry.scope])
     return " ".join(parts)
 
 

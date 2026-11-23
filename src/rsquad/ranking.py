@@ -25,6 +25,11 @@ from .refutation import UNDECIDED
 
 SEVERITY_ORDER = {"blocking": 0, "significant": 1, "minor": 2}
 
+#: Closest to the change first. A conformance claim carries no scope: it is about the change.
+SCOPE_ORDER = {"introduced": 0, "exposed": 1, "pre-existing": 2}
+SCOPE_LABEL = {"introduced": "introduced by this change", "exposed": "exposed by this change",
+               "pre-existing": "already there"}
+
 #: The queue renders two finding shapes. A blind lens states the inputs that trigger a defect and
 #: the consequence that follows; the conformance lens quotes a requirement and says what the code
 #: does instead. Same location, same severity, different claim — and labelling a quoted
@@ -64,6 +69,13 @@ class Entry:
     @property
     def severity(self) -> str:
         return min((f["severity"] for f in self.findings), key=lambda s: SEVERITY_ORDER[s])
+
+    @property
+    def scope(self) -> str:
+        """The closest to the change any account claims: one lens calling it `introduced` is
+        enough to keep it out of the technical-debt part, where a reader might not look."""
+        return min((f.get("scope", "introduced") for f in self.findings),
+                   key=lambda s: SCOPE_ORDER[s])
 
     @property
     def kinds(self) -> list[str]:
@@ -127,6 +139,28 @@ def rank(entries: list[Entry]) -> list[Entry]:
                                           e.file, e.line))
 
 
+def _entry(position: int, entry: Entry) -> list[str]:
+    mark = " · **%d lenses agree**" % len(entry.lenses) if entry.corroborated else ""
+    # Only when no account of the defect survived outright: one `stands` settles it.
+    if all(f.get("verdict") == UNDECIDED for f in entry.findings):
+        mark += " · **the refuter could not decide**"
+    out = ["## %d. `%s:%d` — %s%s" % (position, entry.file, entry.line, entry.severity, mark), ""]
+    out += ["_%s · seen by %s · %s_" % (", ".join(entry.kinds), ", ".join(entry.lenses),
+                                         SCOPE_LABEL[entry.scope]), ""]
+    shown = entry.representatives
+    out += ["```", shown[0]["snippet"].rstrip(), "```", ""]
+    for finding in shown:
+        left, left_text, right, right_text = detail(finding)
+        out += ["- **%s** — %s" % (left, left_text)]
+        out += ["- **%s** — %s" % (right, right_text), ""]
+    for reason in dict.fromkeys(f["elsewhere"] for f in entry.findings if "elsewhere" in f):
+        out += ["- **The refuter places it elsewhere** — %s" % reason, ""]
+    remaining = len(entry.findings) - len(shown)
+    if remaining:
+        out += ["_%d further account(s) of the same defect, not repeated here._" % remaining, ""]
+    return out
+
+
 def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
            errors: list[str] | None = None, footer: str = "", refuted=None,
            excluded: list[tuple[str, str]] | None = None) -> str:
@@ -149,26 +183,17 @@ def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
     if not ranked:
         out += ["Nothing to report. On most diffs this is the correct answer.", ""]
 
-    for position, entry in enumerate(ranked, 1):
-        mark = " · **%d lenses agree**" % len(entry.lenses) if entry.corroborated else ""
-        # Only when no account of the defect survived outright: one `stands` settles it.
-        if all(f.get("verdict") == UNDECIDED for f in entry.findings):
-            mark += " · **the refuter could not decide**"
-        out += ["## %d. `%s:%d` — %s%s" % (position, entry.file, entry.line, entry.severity,
-                                           mark), ""]
-        out += ["_%s · seen by %s_" % (", ".join(entry.kinds), ", ".join(entry.lenses)), ""]
-        shown = entry.representatives
-        out += ["```", shown[0]["snippet"].rstrip(), "```", ""]
-        for finding in shown:
-            left, left_text, right, right_text = detail(finding)
-            out += ["- **%s** — %s" % (left, left_text)]
-            out += ["- **%s** — %s" % (right, right_text), ""]
-        for reason in dict.fromkeys(f["elsewhere"] for f in entry.findings if "elsewhere" in f):
-            out += ["- **The refuter places it elsewhere** — %s" % reason, ""]
-        remaining = len(entry.findings) - len(shown)
-        if remaining:
-            out += ["_%d further account(s) of the same defect, not repeated here._"
-                    % remaining, ""]
+    debt = [e for e in ranked if e.scope == "pre-existing"]
+    change = [e for e in ranked if e.scope != "pre-existing"]
+    for position, entry in enumerate(change, 1):
+        out += _entry(position, entry)
+    if debt:
+        out += ["---", "", "## Already there (%d)" % len(debt), ""]
+        out += ["Defects the lenses found in code this change has no bearing on, by their own "
+                "account. Not a reason to hold the change; candidates for a technical-debt "
+                "ticket.", ""]
+        for position, entry in enumerate(debt, len(change) + 1):
+            out += _entry(position, entry)
 
     if dropped:
         out += ["---", "", "## Dropped by the guards (%d)" % len(dropped), ""]

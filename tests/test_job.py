@@ -23,7 +23,7 @@ UNITS = {UNIT.file: UNIT}
 INTENT = Intent(parts=[("commit message", "Return None when the corpus is empty.")])
 
 FINDING = {"file": "src/a.py", "line": 2, "snippet": "return fiches[0]", "kind": "boundary",
-           "severity": "blocking", "inputs": "fiches = []", "consequence": "raises IndexError"}
+           "severity": "blocking", "scope": "introduced", "inputs": "fiches = []", "consequence": "raises IndexError"}
 
 META = {"base": "b", "head": "h", "repo": ".", "specs": [], "model": "claude-opus-5"}
 
@@ -330,3 +330,69 @@ def test_the_queue_marks_a_finding_the_refuter_could_not_decide(tmp_path):
              "evidence_line": 2, "evidence_snippet": "return fiches[0]"}, round_number=2)
     text = job.queue(job.ingest(tmp_path, UNITS))
     assert "`src/a.py:2`" in text and "the refuter could not decide" in text
+
+
+# ------------------------------------------------------------------ outside the change
+
+DELETE = "class DeleteNote:\n    def execute(self, model):\n        return 'Deleted'\n"
+STUB = dict(FINDING, file="src/delete.py", line=3, snippet="return 'Deleted'", scope="exposed",
+            inputs="note d-/2026-03-24 after a note on that date",
+            consequence="the note survives the reported deletion")
+
+
+def _repository(tmp_path):
+    (tmp_path / job.REPOSITORY / "src").mkdir(parents=True)
+    (tmp_path / job.REPOSITORY / "src" / "delete.py").write_text(DELETE, encoding="utf-8")
+
+
+def test_a_defect_outside_the_change_reaches_the_queue_through_its_refuter(tmp_path):
+    """The pull request made an untouched command reachable; the defect lives in that command.
+    It anchors against the copy in `repo/`, gets a refuter, and stands in the queue."""
+    _repository(tmp_path)
+    tasks = _export(tmp_path)
+    _answer(tmp_path, tasks[0].id, {"findings": [FINDING, STUB]})
+    first = job.ingest(tmp_path, UNITS)
+    assert sorted(f["file"] for f in first.findings) == ["src/a.py", "src/delete.py"]
+
+    second = job.refutation_tasks(first.findings, first.units)
+    job.export(tmp_path, second, META, round_number=job.REFUTE_ROUND)
+    assert len(second) == 2
+    stub_task = next(t for t in second if t.file == "src/delete.py")
+    prompt = (tmp_path / "round-2" / "tasks" / ("%s.md" % stub_task.id)).read_text(
+        encoding="utf-8")
+    assert "the change does not touch this file" in prompt
+    _answer(tmp_path, stub_task.id,
+            {"verdict": "stands", "reason": "execute never touches the model",
+             "evidence_line": 3, "evidence_snippet": "return 'Deleted'"}, round_number=2)
+    result = job.ingest(tmp_path, UNITS)
+    assert result.malformed == []
+    assert "`src/delete.py:3`" in job.queue(result)
+
+
+def test_a_defect_outside_the_change_cannot_be_introduced_by_it(tmp_path):
+    _repository(tmp_path)
+    tasks = _export(tmp_path)
+    _answer(tmp_path, tasks[0].id, {"findings": [dict(STUB, scope="introduced")]})
+    result = job.ingest(tmp_path, UNITS)
+    assert result.findings == []
+    assert [reason for _, reason in result.dropped] == [
+        "says introduced, in a file the change does not touch"]
+
+
+@pytest.mark.guard
+def test_outside_the_change_the_routing_still_holds(tmp_path):
+    """A blind lens may not report in an untouched test file any more than in a changed one."""
+    (tmp_path / job.REPOSITORY / "tests").mkdir(parents=True)
+    (tmp_path / job.REPOSITORY / "tests" / "test_a.py").write_text("assert True\n",
+                                                                  encoding="utf-8")
+    tasks = _export(tmp_path)
+    in_a_test = dict(STUB, file="tests/test_a.py", line=1, snippet="assert True")
+    _answer(tmp_path, tasks[0].id, {"findings": [in_a_test]})
+    assert job.ingest(tmp_path, UNITS).findings == []
+
+
+def test_a_path_that_leaves_the_copy_anchors_nothing(tmp_path):
+    _repository(tmp_path)
+    (tmp_path / "secret.py").write_text("return 'Deleted'\n", encoding="utf-8")
+    assert job.outside_unit(tmp_path / job.REPOSITORY, "../secret.py") is None
+    assert job.outside_unit(tmp_path / job.REPOSITORY, "src/delete.py").diff == ""

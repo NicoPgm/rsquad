@@ -25,8 +25,10 @@ them, otherwise the situation in which it happens. A defect you can describe but
 to exact values is still a finding.
 
 **Report every defect you find, not only the one you are surest of.** That includes a defect
-that was already there, if the change touches it or makes it easier to reach. An empty
-result is right when you found nothing, and only then.
+that was already there, whether or not the change has anything to do with it, and `scope`
+says which: the reader fixes what the change introduced or exposed before merging, and files
+the rest as technical debt. A pre-existing defect is worth reporting, and worth labelling
+honestly. An empty result is right when you found nothing, and only then.
 
 **Keep reviewing after the first finding.** A change of a few hundred lines often holds
 several defects, and the second is as likely to matter as the first. If one defect shows in

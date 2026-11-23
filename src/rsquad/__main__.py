@@ -319,8 +319,8 @@ def _evaluate_ingest(args, scorable, excluded, repo: Path, chosen) -> int:
 
         if data["round"] == job.LENS_ROUND and not args.no_refute and result.findings:
             meta = _round_two(data)
-            meta["carried"] = job.carried(result.findings, units)
-            job.export(folder, job.refutation_tasks(result.findings, units,
+            meta["carried"] = job.carried(result.findings, result.units)
+            job.export(folder, job.refutation_tasks(result.findings, result.units,
                                                     meta["refute_model"]),
                        meta, round_number=job.REFUTE_ROUND)
             advanced += 1
@@ -493,10 +493,12 @@ def _ingest(args: argparse.Namespace) -> int:
 
     if data["round"] == job.LENS_ROUND and not args.no_refute and result.findings:
         meta = _round_two(data)
-        tasks = job.refutation_tasks(result.findings, units, meta["refute_model"])
+        # `result.units`: a finding may sit in a file outside the change, and its refuter needs
+        # that file too.
+        tasks = job.refutation_tasks(result.findings, result.units, meta["refute_model"])
         # Findings with no refuter ride in the manifest rather than falling off the edge of the
         # round. The queue must show every finding that survived the guards, contested or not.
-        meta["carried"] = job.carried(result.findings, units)
+        meta["carried"] = job.carried(result.findings, result.units)
         round_dir = job.export(out, tasks, meta, round_number=job.REFUTE_ROUND)
         print("\n%d refutation task(s) written to %s (%d finding(s) carried, no refuter)"
               % (len(tasks), round_dir / "tasks", len(meta["carried"])))

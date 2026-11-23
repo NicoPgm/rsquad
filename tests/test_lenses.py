@@ -28,6 +28,7 @@ FINDING = {
     "snippet": "premiere = fiches[0]",
     "kind": "boundary",
     "severity": "significant",
+    "scope": "introduced",
     "inputs": "fiches = []",
     "consequence": "raises IndexError",
 }

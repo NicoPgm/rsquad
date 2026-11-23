@@ -117,6 +117,10 @@ def refutation_system_prompt() -> str:
                    vocabulary_block=vocabulary_block("verdict"))
 
 
+#: In place of a diff, for a claim about a file the change does not touch.
+NO_CHANGE = "(nothing: the change does not touch this file)"
+
+
 def refutation_user_prompt(finding: dict, file: str, diff: str, numbered: str,
                            elision: str = "", context: str = "") -> str:
     """The claim under test, and nothing about who made it.
@@ -128,7 +132,8 @@ def refutation_user_prompt(finding: dict, file: str, diff: str, numbered: str,
     return _render(_load(PROMPT_DIR / "refutation-user.v1.md"),
                    file=file, line=str(finding["line"]), snippet=finding["snippet"],
                    inputs=finding["inputs"], consequence=finding["consequence"],
-                   diff=diff, numbered=numbered, elision=elision, context=context)
+                   diff=diff or NO_CHANGE, numbered=numbered, elision=elision,
+                   context=context)
 
 
 def refutation_blocks() -> list[dict]:

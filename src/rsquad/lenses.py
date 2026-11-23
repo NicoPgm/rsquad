@@ -116,19 +116,42 @@ def interpret(unit: Unit, lens: str, text: str) -> tuple[list[dict], list[tuple[
     return anchoring.sift(payload["findings"], {unit.file: unit.source})
 
 
-def interpret_pr(units: dict, lens: str, text: str) -> tuple[list[dict], list[tuple[dict, str]]]:
+#: Why a finding outside the change is dropped although it anchors.
+INTRODUCED_OUTSIDE = "says introduced, in a file the change does not touch"
+
+
+def interpret_pr(units: dict, lens: str, text: str,
+                 outside=None) -> tuple[list[dict], list[tuple[dict, str]]]:
     """`interpret`, over every file of the change: each finding is anchored in its own file.
 
-    Only the files this lens was shown count as under review. The lens can read the others in
-    `repo/`, and a finding there would otherwise anchor: a blind lens in a test file, or the
-    `tests` lens in production code, is what the routing exists to keep out.
+    **A defect may live outside the change.** `outside(path)` returns a unit for a file of
+    `repo/` the change does not touch, and a finding there anchors against it: on ReviewBench
+    the most severe defect of a pull request was a command, untouched by it, that the pull
+    request made reachable. Such a finding cannot be `introduced`; that much of its `scope` is
+    checked, the rest is the lens's word.
+
+    The routing still holds, in or out of the change: a blind lens in a test file, or the
+    `tests` lens in production code, is what it exists to keep out. A changed file this lens
+    was not shown stays closed to it.
     """
     payload = json.loads(text)
     validate(payload)
+    sources = {f: u.source for f, u in units.items() if applies(lens, f)}
     for finding in payload["findings"]:
         finding["lens"] = lens
-    return anchoring.sift(payload["findings"],
-                          {f: u.source for f, u in units.items() if applies(lens, f)})
+        path = finding["file"]
+        if outside is not None and path not in units and applies(lens, path):
+            unit = outside(path)
+            if unit is not None:
+                sources[path] = unit.source
+    anchored, dropped = anchoring.sift(payload["findings"], sources)
+    kept = []
+    for finding in anchored:
+        if finding["file"] in units or finding["scope"] != "introduced":
+            kept.append(finding)
+        else:
+            dropped.append((finding, INTRODUCED_OUTSIDE))
+    return kept, dropped
 
 
 def look(unit: Unit, lens: str, model: str = MODEL,

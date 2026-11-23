@@ -42,6 +42,11 @@ def test_the_message_carries_where_the_refuter_places_the_defect():
                                              "Where it lives: It lives in delete.py:12.")
 
 
+def test_the_message_says_when_a_defect_predates_the_change():
+    out = reviewbench.findings_file([dict(_finding("repro", 10), scope="pre-existing")], PR)
+    assert out["findings"][0]["message"].endswith("Scope: already there.")
+
+
 def test_the_pr_block_matches_the_manifest_and_nothing_more():
     out = reviewbench.findings_file([], PR)
     assert out == {"pr": {"repo": PR["repo"], "pr_number": 7, "base": PR["base"],
