@@ -9,6 +9,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 import tarfile
+import tempfile
 from pathlib import Path
 
 
@@ -79,14 +80,23 @@ def snapshot(revision: str, dest: Path, repo: Path | None = None) -> None:
     does for any export.
     """
     shutil.rmtree(dest, ignore_errors=True)
-    with subprocess.Popen(["git", "archive", "--format=tar", revision], cwd=repo,
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE) as archive:
+    # Both of git's outputs must keep flowing. stderr goes to a file: a partial clone fetching
+    # blobs writes there, and a pipe nobody reads fills and stalls git. stdout is drained after
+    # tarfile stops at the end-of-archive marker, for the same reason. Either stall hung the
+    # export of a 69-file pull request on ReviewBench, once every file was already written.
+    with tempfile.TemporaryFile() as errors, subprocess.Popen(
+            ["git", "archive", "--format=tar", revision], cwd=repo,
+            stdout=subprocess.PIPE, stderr=errors) as archive:
+        unreadable = None
         try:
             with tarfile.open(fileobj=archive.stdout, mode="r|") as tar:
                 tar.extractall(dest, filter=_keep)
-        except tarfile.ReadError:
-            if archive.wait() == 0:
-                raise
+        except tarfile.ReadError as error:
+            unreadable = error                  # no archive at all: git's status says why
+        archive.stdout.read()
         if archive.wait() != 0:
+            errors.seek(0)
             raise SystemExit("cannot snapshot %s: %s"
-                             % (revision, archive.stderr.read().decode("utf-8", "replace").strip()))
+                             % (revision, errors.read().decode("utf-8", "replace").strip()))
+        if unreadable is not None:
+            raise unreadable
