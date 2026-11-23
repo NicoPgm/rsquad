@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from . import anchoring, prompts
-from .chunking import Unit, is_test
+from .chunking import Unit, is_doc, is_test
 from .findings import api_schema, validate
 
 #: A starting point, not a bench result. The source project's `claude-sonnet-5` was fixed by a
@@ -34,20 +34,31 @@ MODEL = "claude-opus-5"
 MAX_TOKENS = 16000
 
 #: Effort per lens. `tests` reads assertions and needs less depth than walking execution paths.
-EFFORT = {"repro": "high", "bounds": "high", "contract": "high", "tests": "medium"}
+EFFORT = {"repro": "high", "bounds": "high", "contract": "high", "tests": "medium",
+          "docs": "high"}
 
 LENSES = prompts.LENSES
 
 
+#: The lenses that own a kind of file. The others read whatever neither of them owns.
+OWNED = {"docs": is_doc, "tests": is_test}
+
+
+def owner(path: str) -> str | None:
+    """`docs` or `tests`, or None for code. Documentation wins: `tests/README.md` is prose."""
+    return next((lens for lens, owns in OWNED.items() if owns(path)), None)
+
+
 def applies(lens: str, path: str) -> bool:
-    """`tests` reads test files only; the other blind lenses read everything else (ADR-0009).
+    """Where a lens may report: `docs` in documentation, `tests` in test files, the other blind
+    lenses in everything else (ADR-0009, ADR-0013).
 
     Measured both ways: across the whole Java campaign the `tests` lens was never shown a test
     and still answered four times in 190 tasks; shown one, it spoke
     (`docs/step7e-tests-lens.md`). A lens asked about something absent from its payload is
     paid to invent it.
     """
-    return (lens == "tests") == is_test(path)
+    return owner(path) == (lens if lens in OWNED else None)
 
 
 @dataclass

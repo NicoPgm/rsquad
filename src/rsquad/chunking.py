@@ -34,8 +34,8 @@ CONTEXT = 40
 _HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", re.M)
 
 #: Changed files no lens reads, each named in the queue with its reason (ADR-0009). Coverage is
-#: counted here, by the CLI, and never reported by whatever ran the model.
-DOCUMENTATION = (".md", ".rst", ".adoc", ".txt")
+#: counted here, by the CLI, and never reported by whatever ran the model. Documentation is no
+#: longer among them: the `docs` lens reads it (ADR-0013).
 LOCKFILES = {"package-lock.json", "yarn.lock", "pnpm-lock.yaml", "poetry.lock", "uv.lock",
              "Pipfile.lock", "Cargo.lock", "Gemfile.lock", "composer.lock", "go.sum"}
 
@@ -75,6 +75,21 @@ class Unit:
         return render_context(self.context)
 
 
+#: Documentation, for people or for agents. A suffix anywhere in the name counts, so a template
+#: such as `AGENTS.md.template` is documentation too.
+DOC_SUFFIXES = {".md", ".rst", ".adoc", ".txt"}
+
+#: `.txt` files that a tool reads as code: dependencies and builds, not prose.
+_TXT_AS_CODE = re.compile(r"^(requirements|constraints).*\.txt$|^CMakeLists\.txt$", re.I)
+
+
+def is_doc(path: str) -> bool:
+    name = PurePosixPath(path.replace("\\", "/")).name
+    if _TXT_AS_CODE.match(name):
+        return False
+    return bool(DOC_SUFFIXES & {s.lower() for s in PurePosixPath(name).suffixes})
+
+
 def is_test(path: str) -> bool:
     pure = PurePosixPath(path.replace("\\", "/"))
     return bool(_TEST_DIRS & set(pure.parts[:-1])) or bool(_TEST_NAME.search(pure.stem))
@@ -89,8 +104,6 @@ def exclusion(path: str, source: str | None) -> str | None:
     name = PurePosixPath(path.replace("\\", "/")).name
     if name in LOCKFILES:
         return "lockfile"
-    if name.lower().endswith(DOCUMENTATION):
-        return "documentation"
     if _GENERATED.search("\n".join(source.splitlines()[:5])):
         return "generated"
     return None

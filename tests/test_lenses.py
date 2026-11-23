@@ -182,3 +182,9 @@ def test_the_harness_path_needs_no_anthropic():
 
     code = "import sys; sys.modules['anthropic'] = None; import rsquad.__main__"
     assert subprocess.run([sys.executable, "-c", code]).returncode == 0
+
+
+@pytest.mark.parametrize("path", ["README.md", "tests/README.md"])
+def test_documentation_is_read_by_the_docs_lens_alone(path):
+    from rsquad.lenses import LENSES, applies
+    assert [name for name in LENSES if applies(name, path)] == ["docs"]

@@ -99,7 +99,10 @@ def lens_tasks(units: list[Unit], lens_names: list[str],
                intent: conformance.Intent | None = None, model: str = "") -> list[Task]:
     tasks = []
     for lens in lens_names:
-        read = [u for u in units if lenses.applies(lens, u.file)]
+        # `docs` is shown the whole change, code included: documentation goes stale when the
+        # code it describes moves, and the code is where that shows. It still reports only in
+        # documentation. It runs when no documentation changed for the same reason.
+        read = units if lens == "docs" else [u for u in units if lenses.applies(lens, u.file)]
         if not read:
             continue
         prompt = _task_text(prompts.system_prompt() + "\n\n" + prompts.lens_prompt(lens),
@@ -108,7 +111,9 @@ def lens_tasks(units: list[Unit], lens_names: list[str],
                           model=model, prompt=prompt))
     for unit in units:
         stem = unit.file.replace("/", "__").replace("\\", "__")
-        if intent is not None and intent.parts:
+        # Not on documentation, for now: one task per file, and the `docs` lens already reads
+        # documentation against the code (ADR-0013).
+        if intent is not None and intent.parts and not chunking.is_doc(unit.file):
             tasks.append(Task(
                 id="conformance--%s" % stem, contract="conformance",
                 lens=conformance.LENS, file=unit.file, model=model,

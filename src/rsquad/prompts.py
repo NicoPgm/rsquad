@@ -28,7 +28,7 @@ LENS_DIR = PROMPT_DIR / "lenses"
 #: Prompt version, per mode. Read it with the mode, never alone.
 VERSIONS = {"api": "v1"}
 
-LENSES = ("repro", "bounds", "contract", "tests")
+LENSES = ("repro", "bounds", "contract", "tests", "docs")
 
 _COMMENT = re.compile(r"<!--.*?-->", re.S)
 

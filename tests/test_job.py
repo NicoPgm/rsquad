@@ -396,3 +396,35 @@ def test_a_path_that_leaves_the_copy_anchors_nothing(tmp_path):
     (tmp_path / "secret.py").write_text("return 'Deleted'\n", encoding="utf-8")
     assert job.outside_unit(tmp_path / job.REPOSITORY, "../secret.py") is None
     assert job.outside_unit(tmp_path / job.REPOSITORY, "src/delete.py").diff == ""
+
+
+# ------------------------------------------------------------------ documentation (ADR-0013)
+
+README = Unit(file="README.md", diff="@@ -1 +1 @@\n+Run `resume --all`.\n",
+              source="Run `resume --all`.\n", numbered="1\tRun `resume --all`.")
+
+
+def test_the_docs_lens_is_shown_the_code_and_runs_without_a_changed_document():
+    """Documentation goes stale when the code moves, and the code is where that shows."""
+    tasks = job.lens_tasks([UNIT], ["docs"])
+    assert [t.id for t in tasks] == ["docs--PR"]
+    assert "return fiches[0]" in tasks[0].prompt
+
+
+def test_documentation_gets_no_conformance_task():
+    tasks = job.lens_tasks([UNIT, README], [], INTENT)
+    assert [t.file for t in tasks] == ["src/a.py"]
+
+
+def test_a_stale_document_outside_the_change_reaches_the_queue(tmp_path):
+    (tmp_path / job.REPOSITORY).mkdir()
+    (tmp_path / job.REPOSITORY / "GUIDE.md").write_text("Call `resume` on any list.\n",
+                                                        encoding="utf-8")
+    job.export(tmp_path, job.lens_tasks([UNIT], ["docs"]), META)
+    stale = {"file": "GUIDE.md", "line": 1, "snippet": "Call `resume` on any list.",
+             "kind": "documentation", "severity": "minor", "scope": "exposed",
+             "inputs": "a reader calls resume on an empty list, as the guide allows",
+             "consequence": "IndexError"}
+    _answer(tmp_path, "docs--PR", {"findings": [stale, FINDING]})       # FINDING is in code
+    result = job.ingest(tmp_path, UNITS)
+    assert [f["file"] for f in result.findings] == ["GUIDE.md"]
