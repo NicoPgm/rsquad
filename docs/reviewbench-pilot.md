@@ -19,7 +19,9 @@ of arm C (28–42 %): near the bottom of the leaderboard (see the correction at 
 version of this paragraph compared recall over all severities with the leaderboard's). Arm D,
 pre-registered, took the published recipe of three reviewers above it, five changes at once: it
 covered 34 of 96 and 7 of 12 high-severity, and failed the frozen 90 % grounded-precision guard
-at 86.5 % (see its section). Two changes were then measured on the same five pull requests, one at a time: letting
+at 86.5 % (see its section). Taken apart on five unseen pull requests, D's gain held (21 of 72
+golden findings against master's 6) and came from the recipe and Opus together; no variant met
+the 90 % guard, master included, so nothing changes in master. Two changes were then measured on the same five pull requests, one at a time: letting
 every reader see the repository (A), and relaxing the lenses' proof-or-silence rule (B). **Neither
 moved grounded recall by more than two golden findings out of 44**, which five pull requests
 cannot tell from noise.
@@ -270,6 +272,66 @@ Two replies of round 1 were malformed, again on jadx-collaboration #3; none was 
 Cost: 76 points of the 5-hour window over two windows (the refutation round was paused at 70 %
 and resumed the next morning), 10 weekly points, 27 M subagent tokens (8.6 M for the lenses,
 18.6 M for 221 Opus refutations), and five judge runs on the API key. Arm C cost 32 points.
+
+## Arm D taken apart, pre-registered — on five unseen pull requests
+
+**Pre-registration:** `evaluation/reviewbench-ablation.yaml` (`8fd3737`), with the master
+variant as `evaluation/reviewbench-ablation.diff`; arm D's code is `reviewbench-d.diff`,
+unchanged. Committed before any task ran. The golden findings of these five were opened by the
+judge only, after every reply was in.
+
+Five pull requests nobody here had read, the next by size: brianc/node-postgres #3650,
+scottlz0310/Mcp-Docker #29, brexhq/CrabTrap #15, sdsykes/fastimage #165, mheuss/chronicle #14
+(46 files, 72 golden true findings, 2 of them high severity). Two runs, master and arm D, each
+running every blind-lens task once on Sonnet and once on Opus, gave six variants. Blind lenses
+only, round 1, no refutation; micro figures.
+
+| | variant | entries | covered (of 72) | recall | high (of 2) | grounded P | augmented P |
+|---|---|---:|---:|---:|---:|---:|---:|
+| V0 | master, Sonnet (as shipped) | 17 | 6 | 8.3 % | 0 | 85.7 % | 88.2 % |
+| V1 | master, Opus | 22 | 9 | 12.5 % | 0 | 75.0 % | 81.8 % |
+| V2 | master, both passes | 29 | 11 | 15.3 % | 0 | 84.6 % | 82.8 % |
+| V3 | D, Sonnet | 31 | 10 | 13.9 % | 1 | 83.3 % | 90.3 % |
+| V4 | D, Opus | 44 | 19 | 26.4 % | 1 | 79.2 % | 88.6 % |
+| V5 | D, both passes | 53 | 21 | 29.2 % | 1 | 80.8 % | 83.0 % |
+
+The rules, as frozen:
+
+| | condition | required | measured | |
+|---|---|---|---|---|
+| Q1 | recall(V5) ≥ recall(V0) + 10 points | ≥ 18.3 % | 29.2 % | holds |
+| Q1 | augmented precision(V5) | ≥ 80 % | 83.0 % | holds |
+| Q2 | first variant with recall ≥ V0 + ⅔ of D's gain (≥ 22.2 %) | | V4, 26.4 % | |
+| Q2 | … and grounded precision ≥ 90 % | ≥ 90 % | V4 79.2 %, V5 80.8 % | **fails** |
+
+**Q1 holds: arm D's gain is not an artefact of the ten.** On pull requests nobody had read,
+master covered 6 of 72 golden findings and D 21, more than three times as many.
+
+**Q2 finds no candidate, so nothing changes in master.** Two variants reach the recall bar, V4
+and V5, and both fail the 90 % grounded-precision guard. Every variant fails it, master as
+shipped included (85.7 %): on this set, before refutation, the guard taken from arm D's
+pre-registration was out of reach of the reference itself. That is recorded, not acted on: the
+rule was frozen with that bar, and lowering it now would be choosing the bar after seeing the
+answer. As pre-registered, the bench work stops here.
+
+What the six rows say about the parts:
+
+- **Neither ingredient works alone; together they do.** The recipe on Sonnet (V3) adds 4 golden
+  findings over master, Opus on master's rules (V1) adds 3, two passes on master (V2) add 5. The
+  recipe on Opus (V4) adds 13. The model and the recipe interact: Opus does little under
+  "proof or silence", and the recipe does little on Sonnet.
+- **The second pass is nearly free of value once Opus runs the recipe.** V4 alone has 19 of
+  V5's 21, with 44 entries against 53 and better augmented precision (88.6 % against 83.0 %).
+- **Precision is low everywhere on this set, and the counts are small.** Grounded precision
+  rests on 7 to 26 matched findings per variant; one more false match moves it by 3 to 11
+  points. The 2 high-severity golden findings make the high column uninformative.
+- **One pull request defeated every variant.** mheuss/chronicle #14 (Rust, 14 files, the
+  largest) drew no golden finding from any of the six.
+
+Two replies were malformed, both in D's Sonnet pass on fastimage #165 (two of its four tasks);
+none was repaired. Cost: 47 points of the 5-hour window (12 % → 59 %), 7 weekly points, 20.6 M
+subagent tokens (4.5 M for D's 38 tasks, 16.1 M for master's 222), and six judge runs on the
+API key.
 
 ## Annex — the two arms, as diffs against `58f8b06`
 
