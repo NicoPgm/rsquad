@@ -27,3 +27,8 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The gate's exemptions (`rsquad gate`): a test that passes before the change on purpose.
+markers = [
+    "characterization: pins behaviour as it is, so it passes on the base by construction",
+    "guard: guards behaviour the change keeps, so it passes on the base by construction",
+]
