@@ -52,6 +52,7 @@ def test_html_comments_are_stripped():
     assert "<!--" not in lens_prompt("repro")
 
 
+@pytest.mark.guard
 def test_the_system_prompt_forbids_style_findings():
     """Left unsaid, every lens reports naming and import order and the queue becomes noise."""
     text = system_prompt().lower()

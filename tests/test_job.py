@@ -50,6 +50,7 @@ def test_a_task_carries_the_whole_instruction(tmp_path):
     assert "{{" not in text                     # fully rendered before it left
 
 
+@pytest.mark.guard
 def test_a_task_carries_the_code_it_anchors_to(tmp_path):
     """The repository is there to search (ADR-0011), not to replace the payload.
 
@@ -233,6 +234,7 @@ OTHER_UNIT = Unit(file="src/b.py", diff="@@ -1,2 +1,2 @@\n+    return rows[-1]\n
                   numbered="1\tdef last(rows):\n2\t    return rows[-1]")
 
 
+@pytest.mark.guard
 def test_lens_tasks_are_routed_by_file_kind():
     tasks = {t.lens: t for t in job.lens_tasks([UNIT, TEST_UNIT], ["repro", "tests"])}
     assert "`src/a.py`" in tasks["repro"].prompt and "`tests/test_a.py`" not in tasks["repro"].prompt
