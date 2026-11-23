@@ -103,6 +103,13 @@ def test_one_account_that_stood_settles_the_entry():
     assert "could not decide" in render(group([doubted]), refuted=[])
 
 
+def test_the_queue_says_where_the_refuter_places_a_defect():
+    moved = dict(finding(), verdict="wrong-location",
+                 elsewhere="The defect lives in delete.py:12, which never calls remove().")
+    text = render(group([moved]), refuted=[])
+    assert "places it elsewhere** — The defect lives in delete.py:12" in text
+
+
 def test_every_severity_has_a_rank():
     """A severity the schema allows but the ranker does not know would crash the queue."""
     from rsquad.findings import vocabulary

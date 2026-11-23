@@ -18,6 +18,12 @@ noise, and the refuter now kills only what the code shows wrong. Doubt is still 
 refuter" from "the refuter could not tell". With six causes only, a refuter that could not
 decide had to borrow one that might not hold (ADR-0009).
 
+**`wrong-location` does not refute either.** It says the defect is real and lives at another
+line, so removing the finding removed a defect the refuter had just confirmed. On ReviewBench it
+did exactly that to the most severe defect of a pull request: a delete command that deletes
+nothing, reported at the nearest changed line because the command's own file was not in the
+change. The finding now reaches the queue with the refuter's reason, which says where.
+
 **A refutation is held to the standard it enforces.** `evidence_snippet` must anchor in the file
 exactly as a finding's snippet must — quote real code near a real line, or be discarded.
 
@@ -44,9 +50,11 @@ from .lenses import MAX_TOKENS, MODEL, Usage, _usage
 #: refutation deletes a real finding and leaves no trace in the queue.
 EFFORT = "xhigh"
 
-#: The verdicts that let a finding through. Doubt no longer refutes (ADR-0011).
+#: The verdicts that let a finding through. Doubt no longer refutes (ADR-0011), and neither
+#: does a defect confirmed at another line.
 STANDS = "stands"
 UNDECIDED = "undecided"
+WRONG_LOCATION = "wrong-location"
 
 UNANCHORED = "evidence does not appear near the line it cites"
 
@@ -82,11 +90,11 @@ class Verdict:
     def refutes(self) -> bool:
         """Does this verdict actually remove the finding from the queue?
 
-        Three things must all hold: a verdict was produced, it is neither `stands` nor
-        `undecided`, and its evidence is real. A broken refutation is not a refutation.
+        Three things must all hold: a verdict was produced, it is not one that lets the finding
+        through, and its evidence is real. A broken refutation is not a refutation.
         """
-        return (bool(self.verdict) and self.verdict not in (STANDS, UNDECIDED) and self.anchored
-                and not self.error)
+        return (bool(self.verdict) and self.verdict not in (STANDS, UNDECIDED, WRONG_LOCATION)
+                and self.anchored and not self.error)
 
 
 def request(unit: Unit, finding: dict, model: str = MODEL) -> dict[str, Any]:
@@ -198,5 +206,7 @@ def survivors(verdicts: list[Verdict]) -> tuple[list[dict], list[Verdict]]:
         else:
             finding = dict(verdict.finding)
             finding["verdict"] = verdict.verdict or "not refuted"
+            if verdict.verdict == WRONG_LOCATION:
+                finding["elsewhere"] = verdict.reason
             kept.append(finding)
     return kept, killed

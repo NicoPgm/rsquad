@@ -167,6 +167,16 @@ def test_undecided_lets_the_finding_through_and_says_so():
     assert killed == [] and kept[0]["verdict"] == "undecided"
 
 
+def test_a_defect_confirmed_at_another_line_reaches_the_reader():
+    """`wrong-location` says the defect is real. Removing the finding removed a defect the
+    refuter had just confirmed; it now goes through, carrying the reason that says where."""
+    verdict = interpret(UNIT, FINDING, _reply("wrong-location"))
+    assert not verdict.refutes
+    kept, killed = survivors([verdict])
+    assert killed == [] and kept[0]["verdict"] == "wrong-location"
+    assert kept[0]["elsewhere"] == verdict.reason
+
+
 @pytest.mark.guard
 def test_an_undecided_verdict_must_still_quote_real_code():
     """Naming doubt is not a way around the anchoring guard."""

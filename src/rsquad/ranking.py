@@ -143,7 +143,8 @@ def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
         out += ["> Every finding below **survived a refuter** that was given the claim without "
                 "its author, its severity or the other findings, and told to kill it on evidence. "
                 "%d claim(s) did not survive; those marked undecided were neither shown wrong "
-                "nor confirmed." % len(refuted), ""]
+                "nor confirmed, and those the refuter places elsewhere are real by its reading, "
+                "at another line." % len(refuted), ""]
 
     if not ranked:
         out += ["Nothing to report. On most diffs this is the correct answer.", ""]
@@ -162,6 +163,8 @@ def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
             left, left_text, right, right_text = detail(finding)
             out += ["- **%s** — %s" % (left, left_text)]
             out += ["- **%s** — %s" % (right, right_text), ""]
+        for reason in dict.fromkeys(f["elsewhere"] for f in entry.findings if "elsewhere" in f):
+            out += ["- **The refuter places it elsewhere** — %s" % reason, ""]
         remaining = len(entry.findings) - len(shown)
         if remaining:
             out += ["_%d further account(s) of the same defect, not repeated here._"

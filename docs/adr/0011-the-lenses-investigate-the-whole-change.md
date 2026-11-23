@@ -45,6 +45,7 @@ work, by the person who reads the queue (step 4 of ADR-0009).
 - **The refuter drops a claim only on evidence.** `undecided` lets the finding through, and the
   queue marks it. This reverses ADR-0006's "doubt means refuted"; the rest of ADR-0006, a refuter
   that inherits no framing and a broken refutation that refutes nothing, stands.
+  *Amended 2026-11-23:* `wrong-location` lets the finding through as well, with the refuter's reason, which says where the defect is. It had removed a defect the refuter confirmed real (`docs/reviewbench-pilot.md`, V4 on the nine larger pull requests).
 - **The lenses run on Opus by default.** The refuter already did.
 
 ## Consequences
