@@ -1,0 +1,52 @@
+# Pre-registration — V4 as shipped, on the nine larger test-set pull requests of ReviewBench
+#
+# Committed before any task runs. What follows is frozen; the report says where it was not
+# followed.
+#
+# Context: docs/reviewbench-pilot.md and ADR-0011. V4 became the default by the user's decision,
+# outside the bench rule, on fifteen pull requests of 1 to 14 files. This run measures it on the
+# test set's larger half, which nothing here has read, so that recall and precision rest on more
+# than fifteen small changes. It decides nothing: no rule below changes master.
+
+date: 2026-11-23
+bench: review-bench/ReviewBench @ 082f65f, test set (corpus/test/test.json)
+code: rsquad master @ 438fd4a (V4 plus the fixes from its own review), unmodified
+
+sets:
+  # The test set's pull requests 16 to 24 by size (files changed, then lines). Their golden
+  # findings have never been opened; the judge alone opens them, after every reply is in.
+  # Left out: simnaut/emdash #2 (408 files). V4 puts every file a lens reads into one prompt
+  # with no bound (ADR-0011), and 408 files exceed an agent's context. It needs a bound first.
+  - AY2526S2-CS2103T-W14-3_tp_152          # Java, 19 files
+  - wirechat_wirechat_183                  # PHP, 20 files
+  - PaulStSmith_figlet-comment-generator_32 # C#, 21 files
+  - gagneurlab_PROTRIDER_10                # Python, 22 files
+  - cmik_apilix_12                         # TypeScript, 22 files
+  - DisciplinedSoftware_Codebase-Conversion_1 # Python, 23 files
+  - superhighfives_pika_200                # Swift, 36 files
+  - scotthamilton77_agents-config_1        # Shell, 38 files
+  - vanyastaff_nebula_224                  # Rust, 69 files
+
+run:
+  shape: `rsquad export` defaults (four blind lenses over the whole change on Opus, conformance
+    per file on Opus, refutation on Opus, context pack off), one run, replies never repaired;
+    a malformed or missing reply is a failed task
+  intent: the pull request's title and body as --spec
+  driver: harness/claude-code.workflow.js, unmodified
+  judge: npm run judge, provider anthropic, model claude-sonnet-5, with
+    "compat": {"forceAdaptiveThinking": true}; after refutation; micro figures
+  staging: if the 5-hour window reaches 80 %, the run pauses between rounds or between jobs
+    and resumes in the next window; nothing is judged before every reply is in
+
+metric:
+  reported: golden true findings covered (grounded), high-severity golden covered, grounded
+    precision, augmented precision, entries per pull request, findings marked undecided,
+    malformed and missing replies, cost (5-hour window points, weekly points)
+  beside: the fifteen smaller pull requests were measured with other arms (D on ten, the
+    ablation's V4 on five, blind lenses only); they are shown next to this run, never summed
+    with it as if they were the same measurement
+
+rule:
+  none: V4 is the default already (ADR-0011); this run neither adopts nor reverts it.
+  flag: augmented precision below 0.80 is reported as a warning for the work campaign, since
+    one entry in five read for nothing is the bar the arm D registration set for a reader.
