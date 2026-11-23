@@ -406,6 +406,59 @@ weekly points, and one judge run on the API key. Subagent tokens were recorded f
 workflow runs only: 17.9 M (2.9 M for PROTRIDER's 35 refutations, 13.0 M for 104 refutations and
 nebula's 57 tasks, 1.9 M for nebula's 24 refutations).
 
+## The docs lens and the wide scope, pre-registered — on two pull requests, not blind
+
+**Pre-registration:** `evaluation/reviewbench-docs.yaml` (`99609bd`), committed before any task
+ran. Code: master at `ff2ad20`, which adds three changes drawn from the analysis of V4's misses:
+a `wrong-location` verdict no longer refutes (`98d2a08`), a lens may report outside the change
+and labels each finding `introduced`, `exposed` or `pre-existing` (ADR-0012), and documentation
+is reviewed by a fifth lens, `docs` (ADR-0013).
+
+**Not blind.** The golden findings of both pull requests were read in that analysis, and the
+changes were aimed at them. This says whether the mechanism works where it was aimed; it is not
+a recall figure for RSquad. scotthamilton77/agents-config #1 (Shell, 38 files, 16 of its 24
+golden findings in documentation or agent instructions) and AY2526S2-CS2103T-W14-3/tp #152
+(Java, 19 files, its high-severity misses outside the change). One run, same judge, after
+refutation, micro figures.
+
+| | V4 (`438fd4a`) | now (`ff2ad20`) |
+|---|---:|---:|
+| golden true findings covered (of 38) | 6 | **10** |
+| … in documentation files (of 17) | 2 | 4 |
+| … not introduced by the pull request (of 18) | 3 | 5 |
+| … high severity (of 5) | 1 | 2 |
+| entries | 19 | 37 |
+| grounded precision | 6/6 | 10/10 |
+| augmented precision | 100 % | 94.6 % |
+
+- **The mechanisms did what they were built for.** tp #152 went from 1 to 4 of 14: the delete
+  command that deletes nothing, high severity, is now reported in `DeleteNoteCommand.java`, a
+  file the pull request does not touch, as `exposed`, and the judge matched it; the user guide
+  still calling notes deferred was found by `docs`. agents-config went from 5 to 6 of 24: `docs`
+  found two agent instructions that still point at Claude-only paths once installed for Codex
+  and Gemini, and lost one finding V4 had, a mismatched closing tag in a template, which the
+  `docs` lens now owns and its typo rule leaves out.
+- **What agents-config still misses is mostly out of reach by design or knowledge**: the `@file`
+  include syntax in the Gemini and Claude templates (two high-severity findings; the Codex one is
+  covered), spelling, and shell portability (`shasum` on Linux).
+- **The wide instruction added little that was old.** Of 50 findings in round 1, 3 were
+  `pre-existing` and 14 `exposed`. The queue put 2 entries under "Already there", both on tp #152.
+- **The code lenses read documentation on their way.** Seven of their findings landed in
+  documentation files and were dropped by the routing; the `docs` lens had reported each of
+  those places itself, so nothing was lost here.
+- **The refuter refuted nothing**: 47 of 47 verdicts `stands`. On the nine larger pull requests
+  it had removed 19 of 324. Two pull requests cannot say whether that is the claims getting
+  better or the refuter getting softer.
+- **Both false entries are the `tests` lens asking for tests** that exist elsewhere. The flag
+  does not fire.
+- Every reply well formed, none missing, none repaired.
+
+Cost: 18 points of the 5-hour window (9 for round 1, 9 for 47 refutations), 2 weekly points,
+6.2 M subagent tokens, one judge run. V4's cost on these two pull requests cannot be read apart
+from its nine-job rounds; its refutations were 29 against 47 here. The `docs` task on
+agents-config carried 538 000 characters, the largest of the run: it is shown the whole change,
+code included, on every pull request.
+
 ## Annex — the two arms, as diffs against `58f8b06`
 
 **A**, `prompts/user.v1.md` (the same paragraph, with the evidence sentence adapted, was added to
