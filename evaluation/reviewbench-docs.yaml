@@ -1,0 +1,56 @@
+# Pre-registration — the docs lens and the wide scope (ADR-0012, ADR-0013), on two pull requests
+#
+# Committed before any task runs. What follows is frozen; the report says where it was not
+# followed.
+#
+# Context: docs/reviewbench-pilot.md, "V4 as shipped". The analysis of its misses led to three
+# changes: a `wrong-location` verdict no longer refutes, a lens may report outside the change
+# with a `scope`, and documentation is reviewed by a lens of its own. This run checks that they
+# do what they were built for, and prices the wide instruction for the first time.
+#
+# NOT BLIND. The golden findings of both pull requests were opened during that analysis, and the
+# changes were designed against them. This measures whether the mechanism works where it was
+# aimed, not whether it generalises; nothing here may be quoted as a recall figure for RSquad.
+# The test set has no unread pull request left that V4 could review (emdash needs a bound).
+
+date: 2026-11-23
+bench: review-bench/ReviewBench @ 082f65f, test set (corpus/test/test.json)
+code: rsquad master @ ff2ad20, unmodified
+
+sets:
+  - scotthamilton77_agents-config_1   # Shell, 38 files; 16 of its 24 golden findings are in docs
+  - AY2526S2-CS2103T-W14-3_tp_152     # Java, 19 files; its high-severity misses are outside the change
+
+baseline:
+  # V4 as shipped (438fd4a) on the same two pull requests, same judge, after refutation.
+  run: docs/reviewbench-pilot.md, "V4 as shipped"
+  covered: 6 of 38 golden true findings
+  in documentation files: 2 of 17
+  not introduced by the pull request (golden scope): 3 of 18
+  high severity: 1 of 5
+
+run:
+  shape: `rsquad export` defaults at ff2ad20 (five lenses over the whole change, conformance per
+    code file, refutation, all on Opus, context pack off), one run, replies never repaired; a
+    malformed or missing reply is a failed task
+  intent: the pull request's title and body as --spec, the same files as the baseline
+  driver: harness/claude-code.workflow.js, unmodified
+  judge: npm run judge, provider anthropic, model claude-sonnet-5, with
+    "compat": {"forceAdaptiveThinking": true}; after refutation; micro figures
+  staging: pause between rounds if the 5-hour window reaches 90 %; nothing is judged before
+    every reply is in
+
+metric:
+  reported, against the baseline row by row: golden true findings covered (grounded), covered
+    in documentation files, covered among those not introduced by the pull request, high
+    severity covered, grounded and augmented precision, entries per pull request
+  new: findings and entries by scope (introduced, exposed, pre-existing) and by lens (docs
+    against the others); refutation tasks; verdicts; findings dropped by the guards, with the
+    reason
+  cost: 5-hour window points and weekly points, split between round 1 and round 2, against the
+    baseline's cost on the same two pull requests where it can be read
+
+rule:
+  none: nothing here adopts or reverts anything; the three changes are already in master.
+  flag: augmented precision below 0.80 on either pull request is reported as a warning, with the
+    entries the judge found false, by lens and scope.
