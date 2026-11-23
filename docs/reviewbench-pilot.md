@@ -16,7 +16,10 @@ reviewers by grounded F1 on high-severity issues; its rows sit at 91–99 % prec
 recall on those issues** (read 2026-11-22). Precision is not where reviewers differ, recall is.
 On high-severity golden findings RSquad covered 2 of 6 here, and 5 of 12 on the ten pull requests
 of arm C (28–42 %): near the bottom of the leaderboard (see the correction at the end; a first
-version of this paragraph compared recall over all severities with the leaderboard's). Two changes were then measured on the same five pull requests, one at a time: letting
+version of this paragraph compared recall over all severities with the leaderboard's). Arm D,
+pre-registered, took the published recipe of three reviewers above it, five changes at once: it
+covered 34 of 96 and 7 of 12 high-severity, and failed the frozen 90 % grounded-precision guard
+at 86.5 % (see its section). Two changes were then measured on the same five pull requests, one at a time: letting
 every reader see the repository (A), and relaxing the lenses' proof-or-silence rule (B). **Neither
 moved grounded recall by more than two golden findings out of 44**, which five pull requests
 cannot tell from noise.
@@ -199,6 +202,74 @@ finely, and the leaderboard scores 219 pull requests three times; the placement 
 The conclusion stands, and the figures name its shape: on ten pull requests RSquad put forward
 **6 high-severity candidates for 12 high-severity golden findings**, every one of them true. It
 is not saying wrong things; it is saying too few.
+
+## Arm D, pre-registered — the leaders' recipe: not adopted, on the precision guard
+
+**Pre-registration:** `evaluation/reviewbench-d.yaml` (`21ae241`), with the arm as
+`evaluation/reviewbench-d.diff`, committed before any arm-D task ran.
+
+Three reviewers above RSquad on the leaderboard publish their method (block/review, Laude
+RevEngine, Klaussy), and they share a recipe that is the opposite of RSquad's on five points.
+Arms A, B and C each tested one of them and kept the rest; D took all five at once:
+
+1. one task per blind lens over the whole pull request (C's lens half);
+2. every reader may read and search a checkout of the repository at head (A, plus search);
+3. exhaustive reporting: B's rules with a new example from outside the bench, "keep reviewing
+   after the first finding", and one finding per affected file;
+4. a refuter that refutes on evidence only: `undecided` no longer removes a finding;
+5. two passes, every blind-lens task once on Sonnet and once on Opus.
+
+Same ten pull requests, same judge, micro figures. The per-pass rows count blind lenses only;
+the others include conformance.
+
+| | entries | golden true covered (of 96) | S1 | S2 | high (of 12) | grounded P | augmented P | augmented R |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| baseline | 29 | 20 | 11 | 9 | 5 | 100 % | 100 % | 27.6 % |
+| D, Sonnet pass only, round 1 | 55 | 25 | | | 6 | 82.8 % | 89.1 % | 41.3 % |
+| D, Opus pass only, round 1 | 56 | 30 | | | 8 | 84.8 % | 89.3 % | 44.1 % |
+| D, round 1 | 82 | 37 | | | 8 | 87.5 % | 90.2 % | 56.3 % |
+| **D, after refutation** | **72** | **34** | 17 | 17 | **7** | **86.5 %** | 91.7 % | 52.3 % |
+
+The rule, as frozen:
+
+| condition | required | measured | |
+|---|---|---|---|
+| covered(D) | ≥ 30 | 34 | holds |
+| high-severity covered(D) | ≥ 7 | 7 | holds |
+| grounded precision(D) | ≥ 90 % | 86.5 % | **fails** |
+| augmented precision(D) | ≥ 80 % | 91.7 % | holds |
+
+**D is not adopted.** The recall gap mostly closed and the precision guard did not hold. That
+is not the outcome the pre-registration's `if_not` branch describes ("does not close the gap"),
+so the branch is not applied as written: what comes next is left to a new decision, and this
+section only records what was measured.
+
+- **Recall moved, for the first time.** 34 golden findings against 20, on both halves (S1 11 →
+  17, S2 9 → 17). On high-severity issues, 7 of 12 (58 % micro, 61 % macro) at 100 % precision
+  on them: a high-severity F1 of 74–76 %, which on the leaderboard would sit near the fifth row.
+  Twelve golden findings and one run cannot place it more finely than that.
+- **What failed is five findings.** The judge matched five of D's entries to golden findings
+  that the bench's human reviewers labelled false: four low severity, one medium (a case-sensitive
+  comparison, a regular-expression denial of service flagged by a static analyser, a
+  check-then-read race, a test assertion, a staleness filter). Each pass alone also has five.
+  Grounded precision counts only matched findings, so five of 37 is 86.5 %. Measured on
+  what a reader would see, the noise is lower: one entry of the 35 the golden set lacks was
+  judged false, and augmented precision is 91.7 %.
+- **The second model carried more than the second pass.** The Opus pass alone covered 30 and the
+  Sonnet pass 25; with conformance, 37 before refutation. Which ingredient carries the gain is
+  not separable from one run that changed five.
+- **The lenient refuter barely mattered.** Of 221 refutations, 195 stood, 23 refuted and 3 were
+  `undecided`, kept under the new rule. Refutation removed 10 entries, among them 3 golden
+  findings and 1 high-severity one; it did not remove any of the five matched false positives.
+- **Volume is the price.** 72 entries for ten pull requests against 29; 208 findings after
+  refutation against about 50. Entries fold findings that name the same place, which is why the
+  two counts differ.
+
+Two replies of round 1 were malformed, again on jadx-collaboration #3; none was repaired.
+
+Cost: 76 points of the 5-hour window over two windows (the refutation round was paused at 70 %
+and resumed the next morning), 10 weekly points, 27 M subagent tokens (8.6 M for the lenses,
+18.6 M for 221 Opus refutations), and five judge runs on the API key. Arm C cost 32 points.
 
 ## Annex — the two arms, as diffs against `58f8b06`
 
