@@ -333,6 +333,10 @@ none was repaired. Cost: 47 points of the 5-hour window (12 % → 59 %), 7 weekl
 subagent tokens (4.5 M for D's 38 tasks, 16.1 M for master's 222), and six judge runs on the
 API key.
 
+**Afterwards, outside the rule.** The user chose to build V4 into master anyway, with precision
+left to the reader at work rather than to the bench's guard: ADR-0011. The rule above is not
+reread as having adopted it.
+
 ## Annex — the two arms, as diffs against `58f8b06`
 
 **A**, `prompts/user.v1.md` (the same paragraph, with the evidence sentence adapted, was added to

@@ -34,3 +34,33 @@ def test_a_missing_file_reads_as_absent_not_empty(monkeypatch):
     monkeypatch.setattr(vcs, "git", lambda args, repo=None: type(
         "R", (), {"returncode": 128, "stdout": "", "stderr": "does not exist"})())
     assert vcs.file_at("head", "gone.py") is None
+
+
+def test_the_snapshot_holds_the_commit_and_nothing_beside_it(tmp_path):
+    """ADR-0011. The readers search the tree at head: not the working copy's uncommitted files,
+    and not `.git`, which holds the commit message the blind lenses must not be handed."""
+    import subprocess
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    def git(*args):
+        subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *args], cwd=repo,
+                       check=True, capture_output=True)
+    git("init", "-q")
+    (repo / "src").mkdir()
+    (repo / "src" / "a.py").write_text("x = 1\n", encoding="utf-8")
+    git("add", ".")
+    git("commit", "-q", "-m", "Return None when the corpus is empty.")
+    (repo / "src" / "a.py").write_text("x = 2\n", encoding="utf-8")
+    (repo / "scratch.txt").write_text("not committed\n", encoding="utf-8")
+
+    vcs.snapshot("HEAD", tmp_path / "job" / "repo", repo)
+    copy = tmp_path / "job" / "repo"
+    assert (copy / "src" / "a.py").read_text(encoding="utf-8") == "x = 1\n"
+    assert not (copy / "scratch.txt").exists()
+    assert not (copy / ".git").exists()
+
+
+def test_a_revision_that_cannot_be_archived_stops_the_export(tmp_path):
+    with pytest.raises(SystemExit):
+        vcs.snapshot("no-such-revision", tmp_path / "out", tmp_path)

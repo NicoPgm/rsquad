@@ -76,6 +76,21 @@ def user_prompt(file: str, diff: str, numbered: str, elision: str = "",
                    elision=elision, context=context)
 
 
+def sections(units) -> str:
+    """Every file of the change, each as the per-file prompt shows one: diff, then numbered text."""
+    out = []
+    for unit in units:
+        out.append("## `%s`\n\n### What the change did to it\n\n```diff\n%s\n```\n\n"
+                   "### The file as it now stands\n\n```\n%s\n```\n%s%s"
+                   % (unit.file, unit.diff, unit.numbered, unit.context_block, unit.elision))
+    return "\n".join(out)
+
+
+def pr_user_prompt(units) -> str:
+    return _render(_load(PROMPT_DIR / "user-pr.v1.md"),
+                   files=", ".join("`%s`" % u.file for u in units), sections=sections(units))
+
+
 def conformance_system_prompt() -> str:
     return _render(_load(PROMPT_DIR / "conformance-system.v1.md"),
                    vocabulary_block=vocabulary_block("conformance"))

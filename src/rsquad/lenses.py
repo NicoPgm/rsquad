@@ -116,6 +116,15 @@ def interpret(unit: Unit, lens: str, text: str) -> tuple[list[dict], list[tuple[
     return anchoring.sift(payload["findings"], {unit.file: unit.source})
 
 
+def interpret_pr(units: dict, lens: str, text: str) -> tuple[list[dict], list[tuple[dict, str]]]:
+    """`interpret`, over every file of the change: each finding is anchored in its own file."""
+    payload = json.loads(text)
+    validate(payload)
+    for finding in payload["findings"]:
+        finding["lens"] = lens
+    return anchoring.sift(payload["findings"], {f: u.source for f, u in units.items()})
+
+
 def look(unit: Unit, lens: str, model: str = MODEL,
          client: "anthropic.Anthropic | None" = None) -> LensRun:
     """Run one lens over one unit. Failure is recorded, never raised.

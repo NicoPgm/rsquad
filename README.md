@@ -15,7 +15,7 @@ components do.
                            repro · bounds · call contract · test quality
                                       │
 [3] REFUTATION             1 agent per finding, separate context
-                           its job is to kill it. Doubt means refuted.
+                           kills it on evidence; doubt lets it through, marked.
                                       │
 [4] RANKED QUEUE           for a human. Not a verdict.
 ```
@@ -41,9 +41,10 @@ the spec" is unverifiable; not putting the spec in the payload is a fact you can
 discussion. "This is fragile" does not ship. "If `items` is empty, line 42 raises" does — and it
 is checkable, therefore refutable, therefore worth arguing about on evidence.
 
-**The refuter is a separate context, and it gets the benefit of the doubt.** The asymmetry is the
-mechanism: finding is free, surviving refutation is not. Without it, an agent asked for problems
-will always supply some.
+**The refuter is a separate context, and it kills a claim on evidence.** Finding is free,
+surviving refutation is not. Until ADR-0011 the refuter also got the benefit of the doubt; on
+ReviewBench that cost more real defects than it removed noise, so doubt now lets a finding
+through, marked as such in the queue.
 
 **The queue ranks; it does not decide.** A system that orders human attention beats one that
 claims to replace it.
@@ -342,6 +343,7 @@ reports. A report says what happened, an ADR says what we do about it.
 | [0008](docs/adr/0008-the-seam-is-a-job-on-disk.md) | the second transport is a job on disk, not a workflow |
 | [0009](docs/adr/0009-the-skill-is-the-product-the-api-is-frozen.md) | the skill is the product; the API transport is frozen |
 | [0010](docs/adr/0010-under-a-harness-blindness-is-by-instruction.md) | under a harness, blindness is by instruction, and is called that |
+| [0011](docs/adr/0011-the-lenses-investigate-the-whole-change.md) | the lenses investigate the whole change with the repository, on Opus; doubt no longer refutes |
 
 ### The written-down parts
 
@@ -364,11 +366,11 @@ reports. A report says what happened, an ADR says what we do about it.
 | [`docs/step7d-forty-cases.md`](docs/step7d-forty-cases.md) | thirty-eight cases on the harness: 31 detected, and the widening cost nothing |
 | [`docs/step7b-context-pack.md`](docs/step7b-context-pack.md) | the context pack changed nothing: 14/19 either way, case for case, and what that rules out |
 | [`docs/step7e-tests-lens.md`](docs/step7e-tests-lens.md) | the tests lens, evaluated at last: it was never underperforming, it was never shown a test |
-| [`docs/step8-tiered-models.md`](docs/step8-tiered-models.md) | Sonnet lenses, Opus refuter: 30/38 against 31/38, now the default; one case lost to the lenses, one to the refuter |
+| [`docs/step8-tiered-models.md`](docs/step8-tiered-models.md) | Sonnet lenses, Opus refuter: 30/38 against 31/38, the default until ADR-0011; one case lost to the lenses, one to the refuter |
 | [`docs/step4-at-work.md`](docs/step4-at-work.md) | ADR-0009 step 4: installing the skill at work, the first run as a check of Cursor, and the per-finding log |
 | [`docs/step4-step0-cursor.md`](docs/step4-step0-cursor.md) | Step 4 step 0, run in Cursor: five checks pass; models and the `{{…}}` export hitch |
 | [`docs/step4-acceptance-counts.md`](docs/step4-acceptance-counts.md) | Step 4 acceptance counts from work: 41 `act` / 58 (71 %), above ~30 %; no finding text |
-| [`docs/reviewbench-pilot.md`](docs/reviewbench-pilot.md) | ReviewBench, five smallest test PRs: 15/15 true but 11/44 golden (25 %) recall; repository access and relaxed proof each move it by at most two; whole-PR units (pre-registered, ten PRs) not adopted, 19 vs 20 of 96; high-severity recall 28–42 % (5/12), near the bottom of the leaderboard; the leaders' recipe (arm D, pre-registered) covers 34/96 and 7/12 but fails the 90 % precision guard at 86.5 %; on five unseen PRs its gain holds (21 vs 6 of 72, recipe and Opus together) and no variant meets the guard, master included |
+| [`docs/reviewbench-pilot.md`](docs/reviewbench-pilot.md) | ReviewBench, five smallest test PRs: 15/15 true but 11/44 golden (25 %) recall; repository access and relaxed proof each move it by at most two; whole-PR units (pre-registered, ten PRs) not adopted, 19 vs 20 of 96; high-severity recall 28–42 % (5/12), near the bottom of the leaderboard; the leaders' recipe (arm D, pre-registered) covers 34/96 and 7/12 but fails the 90 % precision guard at 86.5 %; on five unseen PRs its gain holds (21 vs 6 of 72, recipe and Opus together) and no variant meets the guard, master included; V4, the recipe on one Opus pass (19 of 72), is the default since ADR-0011, by the user's decision |
 | [`docs/state-of-the-art-review-agents.md`](docs/state-of-the-art-review-agents.md) | what 38 open-source review agents converge on, how three benchmarks measure them, and what that suggests for a rework |
 
 ## License and provenance

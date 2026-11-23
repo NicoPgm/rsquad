@@ -157,12 +157,13 @@ def test_a_broken_verdict_leaves_its_finding_in_the_queue():
 
 # ------------------------------------------------------------------ a named doubt (ADR-0009)
 
-def test_undecided_is_a_refutation_and_says_so():
-    """Doubt still refutes (ADR-0006). What changes is that the record says it was doubt."""
+def test_undecided_lets_the_finding_through_and_says_so():
+    """ADR-0011 reverses ADR-0006 on doubt: a claim falls on evidence only. The finding reaches
+    the queue carrying the verdict, so the reader can see the refuter could not decide."""
     verdict = interpret(UNIT, FINDING, _reply("undecided"))
-    assert verdict.refutes
+    assert not verdict.refutes
     kept, killed = survivors([verdict])
-    assert kept == [] and killed[0].verdict == "undecided"
+    assert killed == [] and kept[0]["verdict"] == "undecided"
 
 
 def test_an_undecided_verdict_must_still_quote_real_code():

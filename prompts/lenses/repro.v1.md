@@ -14,4 +14,4 @@ Look for:
 - state mutated while it is being iterated
 - a return that skips required cleanup or a required write
 
-Report only what you can trigger. For each finding, state the inputs you walked with.
+For each finding, state the inputs or the situation you walked with.

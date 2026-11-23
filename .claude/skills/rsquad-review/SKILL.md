@@ -25,8 +25,10 @@ unclear; this skill is one driver written against that contract.
    that count.
 4. **Coverage comes from RSquad, never from you.** Repeat what the command line printed about
    files not reviewed. Do not say the change was "fully reviewed".
-5. **Subagents read their task file and its schema, and nothing else.** That is the only thing
-   keeping a blind lens blind on this path (ADR-0010). Say so if the user asks how blind it is.
+5. **Subagents read their task file, its schema, and the job's `repo/` copy, nothing else.**
+   The copy is the tree at head, so a blind lens can now find a specification checked into the
+   repository: blindness to the stated intent is by instruction only (ADR-0010, ADR-0011). Say
+   so if the user asks how blind it is.
 
 ## Steps
 
@@ -45,9 +47,10 @@ with the repository's main branch. If HEAD *is* the main branch, review HEAD aga
 
 ### 2. Export
 
-Pick a job directory **outside the working copy** (the system temp directory, e.g.
-`<tmp>/rsquad-<12 characters of the head sha>`), so nothing next to the tasks invites a
-subagent into the repository.
+Pick a new job directory **outside the working copy** (the system temp directory, e.g.
+`<tmp>/rsquad-<12 characters of the head sha>`). `export` writes the tree at head into its
+`repo/`, with no history and no uncommitted change: a subagent that searches the repository
+finds the commit under review, not the working copy.
 
 ```
 python -m rsquad export <job> --base <base> --head <head>
@@ -57,10 +60,11 @@ Optional flags, only when the user asks for them:
 
 - `--spec <document>`, repeatable: what the change was supposed to do, for the conformance lens.
   The commit message is always included.
-- `--model <id>` for the lenses and `--refute-model <id>` for the refuter. They default to
-  Sonnet and Opus, the split measured at 30/38 against 31/38 for Opus throughout
-  (`docs/step8-tiered-models.md`). Do not move the refuter to a cheaper model on your own: it is
-  the step whose mistakes leave the least trace.
+- `--model <id>` for the lenses and `--refute-model <id>` for the refuter. Both default to
+  Opus: on five unseen ReviewBench pull requests the lenses found 19 golden findings on Opus
+  against 10 on Sonnet (ADR-0011). Do not move either to a cheaper model on your own: the
+  lenses lose half of what they find, and the refuter is the step whose mistakes leave the
+  least trace.
 - `--lens <name>` repeatable, `--no-conformance`, `--context` (the context pack, off by default).
 
 If the command prints `nothing readable changed`, report the files it listed as not reviewed and
@@ -77,9 +81,9 @@ round 1 is read. **Wait for their go-ahead.** The command line has a dry run for
 
 For every entry in `manifest.json` → `tasks`, start one subagent:
 
-- **fresh context**, **read-only tools** (reading files is all it needs). Under Claude Code, use
-  the `rsquad-task` subagent (`.claude/agents/rsquad-task.md`): it has the file-reading tool and
-  nothing else, which also keeps each task's fixed cost low. Elsewhere, any read-only subagent;
+- **fresh context**, **read-only tools** (reading and searching files is all it needs). Under
+  Claude Code, use the `rsquad-task` subagent (`.claude/agents/rsquad-task.md`): it can read,
+  search and list files and nothing else. Elsewhere, any read-only subagent that can search;
 - on the model named by the entry's `model` field (fall back to the manifest's top-level
   `model`). Map the id to the host's choice of tier — an id containing `opus` to the Opus tier,
   `sonnet` to Sonnet, `haiku` to Haiku. If the host cannot choose a model per subagent, run it on
@@ -96,8 +100,8 @@ Give each subagent exactly this, with the placeholders filled in:
 > 2. Read `<job>/schema/<contract>.json`. Your answer MUST validate against it: enumerated
 >    fields are closed, every required field is required, and no extra field is allowed.
 >
-> Read no other file. Everything you need is in those two, and reaching for the repository would
-> answer a different question than the one the task asks.
+> Read no other file, except what the task file itself allows: it may point you to a copy of
+> the repository inside the job, which you may read and search as it says.
 >
 > Your final message is your answer: raw JSON and nothing else — no prose, no markdown fence.
 

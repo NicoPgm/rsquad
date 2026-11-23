@@ -52,11 +52,20 @@ VERSION = 1
 
 LENS_ROUND, REFUTE_ROUND = 1, 2
 
-#: The default tiers on this transport, decided by the rule frozen in
-#: `evaluation/step8-tiered.yaml`: Sonnet lenses with an Opus refuter detected 30/38 against the
-#: all-Opus 31/38, above the 29 the rule set (`docs/step8-tiered-models.md`).
-LENS_MODEL = "claude-sonnet-5"
+#: The default tiers on this transport. Step 8 put the lenses on Sonnet (30/38 against 31/38 for
+#: Opus, `docs/step8-tiered-models.md`), when a lens read one file and reported only what it
+#: could trigger. Under the recipe of ADR-0011 the model matters more: on five unseen ReviewBench
+#: pull requests, the recipe covered 10 golden findings on Sonnet and 19 on Opus
+#: (`docs/reviewbench-pilot.md`, arm D taken apart, variant V4).
+LENS_MODEL = "claude-opus-5"
 REFUTE_MODEL = "claude-opus-5"
+
+
+#: A task over every file of the change, in place of one file's name (ADR-0011).
+WHOLE = "*"
+
+#: Where `export` writes the tree at head, inside the job. The prompts name it.
+REPOSITORY = "repo"
 
 
 @dataclass
@@ -89,17 +98,16 @@ def _task_text(system: str, user: str) -> str:
 def lens_tasks(units: list[Unit], lens_names: list[str],
                intent: conformance.Intent | None = None, model: str = "") -> list[Task]:
     tasks = []
+    for lens in lens_names:
+        read = [u for u in units if lenses.applies(lens, u.file)]
+        if not read:
+            continue
+        prompt = _task_text(prompts.system_prompt() + "\n\n" + prompts.lens_prompt(lens),
+                            prompts.pr_user_prompt(read))
+        tasks.append(Task(id="%s--PR" % lens, contract="finding", lens=lens, file=WHOLE,
+                          model=model, prompt=prompt))
     for unit in units:
         stem = unit.file.replace("/", "__").replace("\\", "__")
-        for lens in lens_names:
-            if not lenses.applies(lens, unit.file):
-                continue
-            body = prompts.user_prompt(file=unit.file, diff=unit.diff, numbered=unit.numbered,
-                                       elision=unit.elision, context=unit.context_block)
-            tasks.append(Task(id="%s--%s" % (lens, stem), contract="finding", lens=lens,
-                              file=unit.file, model=model,
-                              prompt=_task_text(prompts.system_prompt()
-                                                + "\n\n" + prompts.lens_prompt(lens), body)))
         if intent is not None and intent.parts:
             tasks.append(Task(
                 id="conformance--%s" % stem, contract="conformance",
@@ -202,6 +210,14 @@ def ingest(job: Path, units: dict[str, Unit],
             # A task with no reply is not an empty result. Saying nothing and being unable to
             # speak look identical in a queue, and only one of them means the code is fine.
             out.missing.append(entry["id"])
+            continue
+        if entry["file"] == WHOLE:
+            try:
+                kept, dropped = lenses.interpret_pr(units, entry["lens"], text)
+                out.findings += kept
+                out.dropped += dropped
+            except Exception as error:                           # noqa: BLE001
+                out.malformed.append((entry["id"], "%s: %s" % (type(error).__name__, error)))
             continue
         unit = units.get(entry["file"])
         if unit is None:

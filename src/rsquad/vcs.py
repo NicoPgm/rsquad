@@ -6,7 +6,9 @@ the lenses need the same two calls.
 
 from __future__ import annotations
 
+import io
 import subprocess
+import tarfile
 from pathlib import Path
 
 
@@ -52,3 +54,19 @@ def tracked_files(revision: str, repo: Path | None = None) -> list[str]:
     """
     listed = git(["ls-tree", "-r", "--name-only", revision], repo)
     return [line.strip() for line in listed.stdout.splitlines() if line.strip()]
+
+
+def snapshot(revision: str, dest: Path, repo: Path | None = None) -> None:
+    """The tree at `revision`, written to `dest`: the repository a reader may search.
+
+    An archive, not a worktree. It leaves nothing to clean up in the reviewed repository, and it
+    carries no `.git`: no history, and no commit message, which is the conformance lens's intent
+    and nothing a blind lens should find lying beside the code.
+    """
+    archive = subprocess.run(["git", "archive", "--format=tar", revision], cwd=repo,
+                             capture_output=True)
+    if archive.returncode != 0:
+        raise SystemExit("cannot snapshot %s: %s"
+                         % (revision, archive.stderr.decode("utf-8", "replace").strip()))
+    with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as tar:
+        tar.extractall(dest, filter="data")

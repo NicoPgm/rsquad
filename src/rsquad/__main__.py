@@ -20,7 +20,7 @@ from pathlib import Path
 from . import (budget, chunking, conformance, config, evaluate, job, lenses, ranking,
                refutation)
 from .gate import ADAPTERS, DEFAULT_ADAPTER, by_language, check, git, merge_base, report
-from .vcs import resolve
+from .vcs import resolve, snapshot
 
 
 def _gate(args: argparse.Namespace) -> int:
@@ -286,6 +286,7 @@ def _evaluate_export(args, scorable, excluded, repo: Path, chosen) -> int:
                    {"base": base, "head": head, "repo": str(repo), "specs": [],
                     "model": args.model, "refute_model": args.refute_model or args.model,
                     "context": args.context, "path": defect["file"], "case": defect["id"]})
+        snapshot(head, workspace / defect["id"] / job.REPOSITORY, repo)
         written += 1
         print("  %-44s %d task(s)" % (defect["id"], len(tasks)))
 
@@ -458,12 +459,14 @@ def _export(args: argparse.Namespace) -> int:
             "specs": args.spec or [], "model": args.model,
             "refute_model": args.refute_model or args.model, "context": args.context}
     round_dir = job.export(out, tasks, meta)
+    snapshot(head, out / job.REPOSITORY, repo)
 
     print("%s <- %s | %d task(s) written to %s"
           % (head[:12], base[:12], len(tasks), round_dir / "tasks"))
     print("\nRun each task and write its JSON reply to %s/<task id>.json."
           % (round_dir / "results"))
     print("Schemas the replies must satisfy are in %s." % (out / "schema"))
+    print("The tree at head, which every reader may search, is in %s." % (out / job.REPOSITORY))
     print("Then: rsquad ingest %s" % out)
     return 0
 

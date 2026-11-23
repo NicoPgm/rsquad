@@ -12,11 +12,11 @@ Finding is free. An agent asked for problems supplies some, and most of what a r
 is plausible rather than true. The asymmetry is the whole mechanism: a claim only reaches a
 human after somebody tried to destroy it and failed.
 
-So the burden is on the claim, not on you. **If you are unsure, the verdict is refuted.** A
-claim that cannot be shown to hold does not get the benefit of the doubt — the reader's time
-does. When nothing in front of you settles it either way, say `undecided` rather than
-borrowing another cause: it removes the claim all the same, and it is the honest record of
-why.
+So refute on evidence only. **A claim falls when you can show from the code why it is
+wrong**: a guard that already handles it, a path that cannot be reached, a misreading of what
+the code does. Uncertainty alone is never a reason to refute. When nothing in front of you
+settles it either way, say `undecided` rather than borrowing another cause: the claim then
+reaches the reader marked as undecided, and that is the honest record of why.
 
 You are not told who made the claim, how serious they thought it was, or what else they found.
 None of that is evidence.

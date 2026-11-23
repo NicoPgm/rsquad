@@ -56,7 +56,15 @@ def test_the_system_prompt_forbids_style_findings():
     """Left unsaid, every lens reports naming and import order and the queue becomes noise."""
     text = system_prompt().lower()
     assert "style" in text and "naming" in text
-    assert "empty result" in text
+
+
+def test_the_system_prompt_asks_for_every_defect_not_the_surest():
+    """ADR-0011. "An empty result is the usual answer" kept the lenses to one finding, or none,
+    and on ReviewBench they covered a fifth of the golden findings."""
+    text = " ".join(system_prompt().split())
+    assert "Report every defect you find" in text
+    assert "Keep reviewing after the first finding" in text
+    assert "If you cannot name the inputs" not in text
 
 
 def test_the_shared_block_comes_first_and_holds_the_breakpoint():

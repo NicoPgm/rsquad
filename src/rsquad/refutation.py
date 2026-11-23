@@ -10,11 +10,13 @@ never the other findings. Those are the finder's opinions, and a refuter that sa
 grading a colleague instead of reading code. `request()` is pure, and a test asserts that none
 of the three leaks into the payload.
 
-**Doubt means refuted.** There is no confidence field, because a scale is where a refuter
-hedges. The burden is on the claim; the reader's time gets the benefit of the doubt.
-Doubt is also *named*: `undecided` kills a finding like any other cause, so the `Refuted`
-section can tell "shown wrong" from "not shown right" (ADR-0009). With six causes only, a
-refuter that could not decide had to borrow one that might not hold.
+**A claim falls on evidence, not on doubt** (ADR-0011, reversing ADR-0006 on this point). There
+is no confidence field, because a scale is where a refuter hedges. Until ADR-0011 doubt refuted:
+the burden was on the claim. On ReviewBench that rule cost more real defects than it removed
+noise, and the refuter now kills only what the code shows wrong. Doubt is still *named*:
+`undecided` lets the finding through, and the queue marks it, so the reader can tell "survived a
+refuter" from "the refuter could not tell". With six causes only, a refuter that could not
+decide had to borrow one that might not hold (ADR-0009).
 
 **A refutation is held to the standard it enforces.** `evidence_snippet` must anchor in the file
 exactly as a finding's snippet must — quote real code near a real line, or be discarded.
@@ -42,8 +44,9 @@ from .lenses import MAX_TOKENS, MODEL, Usage, _usage
 #: refutation deletes a real finding and leaves no trace in the queue.
 EFFORT = "xhigh"
 
-#: The only verdict that lets a finding through.
+#: The verdicts that let a finding through. Doubt no longer refutes (ADR-0011).
 STANDS = "stands"
+UNDECIDED = "undecided"
 
 UNANCHORED = "evidence does not appear near the line it cites"
 
@@ -79,10 +82,11 @@ class Verdict:
     def refutes(self) -> bool:
         """Does this verdict actually remove the finding from the queue?
 
-        Three things must all hold: a verdict was produced, it is not `stands`, and its evidence
-        is real. A broken refutation is not a refutation.
+        Three things must all hold: a verdict was produced, it is neither `stands` nor
+        `undecided`, and its evidence is real. A broken refutation is not a refutation.
         """
-        return bool(self.verdict) and self.verdict != STANDS and self.anchored and not self.error
+        return (bool(self.verdict) and self.verdict not in (STANDS, UNDECIDED) and self.anchored
+                and not self.error)
 
 
 def request(unit: Unit, finding: dict, model: str = MODEL) -> dict[str, Any]:

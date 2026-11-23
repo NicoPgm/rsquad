@@ -18,13 +18,14 @@ def test_a_job_written_before_the_change_keeps_its_pack_and_its_model():
 
 
 def test_export_defaults_to_the_measured_tiers(monkeypatch):
-    """Sonnet lenses, Opus refuter: the split step 8 measured, not a guess."""
+    """Opus lenses and refuter: under ADR-0011 the lenses found 19 golden findings on Opus
+    against 10 on Sonnet, on five unseen pull requests. Measured, not a guess."""
     from rsquad import __main__ as cli
 
     seen = {}
     monkeypatch.setattr(cli, "_export", lambda args: seen.update(vars(args)) or 0)
     cli.main(["export", "job"])
-    assert (seen["model"], seen["refute_model"]) == ("claude-sonnet-5", "claude-opus-5")
+    assert (seen["model"], seen["refute_model"]) == ("claude-opus-5", "claude-opus-5")
 
 
 def test_the_refutation_round_keeps_its_own_model():

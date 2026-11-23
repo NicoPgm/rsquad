@@ -23,13 +23,12 @@
  * agent with file-reading tools. **It can read anything on the machine**, and "do not read the
  * spec" in a task file is an instruction, not a property.
  *
- * The mitigation is structural, not textual: **run this against a job directory and nothing
- * else.** A task file already carries the diff, the numbered file and the resolved context, so
- * an agent needs no repository to do its work. Copy the job somewhere with no checkout beside
- * it, and blindness is restored by there being nothing to peek at.
- *
- * Run it inside a working copy and the blind lenses are blind only by good manners. That is a
- * real difference between the transports and it belongs in the comparison, not in an argument.
+ * Since ADR-0011 the job itself holds the tree at head, in `repo/`, and every reader is told
+ * to search it: on ReviewBench, reading the repository was part of what more than doubled the
+ * golden findings covered. So a specification checked into the repository is within a blind
+ * lens's reach, and blindness to the stated intent is by instruction only. What the job still
+ * keeps out is history, the commit message and any uncommitted file: run it against a job
+ * directory outside the working copy, as before.
  * ──────────────────────────────────────────────────────────────────────────────────────────
  */
 
@@ -103,8 +102,8 @@ const instruction = (job, round, task) =>
   `allowed.\n` +
   `3. Write your answer as raw JSON — no prose, no markdown fence — to ` +
   `${job}/round-${round}/results/${task.id}.json\n\n` +
-  `Read no other file. Everything you need is in those two, and reaching for the ` +
-  `repository would answer a different question than the one the task asks.\n\n` +
+  `Read no other file, except what the task file itself allows: it may point you to a ` +
+  `checkout of the repository, which you may read and search as it says.\n\n` +
   `Then return the task id, whether you wrote the file, and one short note.`
 
 phase('Manifest')

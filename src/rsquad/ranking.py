@@ -21,6 +21,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .refutation import UNDECIDED
+
 SEVERITY_ORDER = {"blocking": 0, "significant": 1, "minor": 2}
 
 #: The queue renders two finding shapes. A blind lens states the inputs that trigger a defect and
@@ -139,14 +141,17 @@ def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
             "not a verdict — nothing here blocks anything.", ""]
     if refuted is not None:
         out += ["> Every finding below **survived a refuter** that was given the claim without "
-                "its author, its severity or the other findings, and told to kill it. %d claim(s) "
-                "did not survive." % len(refuted), ""]
+                "its author, its severity or the other findings, and told to kill it on evidence. "
+                "%d claim(s) did not survive; those marked undecided were neither shown wrong "
+                "nor confirmed." % len(refuted), ""]
 
     if not ranked:
         out += ["Nothing to report. On most diffs this is the correct answer.", ""]
 
     for position, entry in enumerate(ranked, 1):
         mark = " · **%d lenses agree**" % len(entry.lenses) if entry.corroborated else ""
+        if any(f.get("verdict") == UNDECIDED for f in entry.findings):
+            mark += " · **the refuter could not decide**"
         out += ["## %d. `%s:%d` — %s%s" % (position, entry.file, entry.line, entry.severity,
                                            mark), ""]
         out += ["_%s · seen by %s_" % (", ".join(entry.kinds), ", ".join(entry.lenses)), ""]

@@ -50,13 +50,12 @@ def test_a_task_carries_the_whole_instruction(tmp_path):
     assert "{{" not in text                     # fully rendered before it left
 
 
-def test_a_task_needs_no_repository(tmp_path):
-    """Self-sufficiency is the precondition for isolating the harness (ADR-0008).
+def test_a_task_carries_the_code_it_anchors_to(tmp_path):
+    """The repository is there to search (ADR-0011), not to replace the payload.
 
-    An agent can only be denied a repository if it does not need one. The code under review is
-    inline, and so is every definition of the context pack — a pack that cited `src/x.py:40`
-    instead of quoting it would force the agent back into the checkout, and blindness would go
-    with it. Cheaper to assert here than to discover mid-run.
+    The code under review is inline, and so is every definition of the context pack: a finding
+    is anchored in the numbered text the task carries, and a reader sent to the checkout for it
+    could quote a line that is not the one under review.
     """
     definition = Definition(symbol="load", file="src/other.py", line=40,
                             source="def load(path):\n    return open(path).read()")
@@ -229,12 +228,40 @@ def test_extra_meta_rides_in_the_manifest(tmp_path):
 TEST_UNIT = Unit(file="tests/test_a.py", diff="@@ -1 +1 @@\n+    assert resume([]) is None\n",
                  source="def test_empty():\n    assert resume([]) is None\n",
                  numbered="1\tdef test_empty():\n2\t    assert resume([]) is None")
+OTHER_UNIT = Unit(file="src/b.py", diff="@@ -1,2 +1,2 @@\n+    return rows[-1]\n",
+                  source="def last(rows):\n    return rows[-1]\n",
+                  numbered="1\tdef last(rows):\n2\t    return rows[-1]")
 
 
 def test_lens_tasks_are_routed_by_file_kind():
-    tasks = job.lens_tasks([UNIT, TEST_UNIT], ["repro", "tests"])
-    assert sorted((t.lens, t.file) for t in tasks) == [("repro", "src/a.py"),
-                                                       ("tests", "tests/test_a.py")]
+    tasks = {t.lens: t for t in job.lens_tasks([UNIT, TEST_UNIT], ["repro", "tests"])}
+    assert "`src/a.py`" in tasks["repro"].prompt and "`tests/test_a.py`" not in tasks["repro"].prompt
+    assert "`tests/test_a.py`" in tasks["tests"].prompt and "`src/a.py`" not in tasks["tests"].prompt
+
+
+def test_a_lens_reads_the_whole_change_in_one_task_on_one_model():
+    """ADR-0011: one task per lens over every file it reads, so a defect spanning files is
+    visible. One pass: a second, on another model, added two golden findings out of 21."""
+    tasks = job.lens_tasks([UNIT, OTHER_UNIT], ["repro"], model="claude-opus-5")
+    assert [(t.id, t.file, t.model) for t in tasks] == [("repro--PR", job.WHOLE, "claude-opus-5")]
+    assert UNIT.numbered in tasks[0].prompt and OTHER_UNIT.numbered in tasks[0].prompt
+    assert "repo/" in tasks[0].prompt
+
+
+def test_a_whole_change_reply_is_anchored_file_by_file(tmp_path):
+    """Each finding is held to the file it names. One that quotes code from another file of the
+    change, or names a file outside it, is dropped by the guard, not trusted."""
+    units = {UNIT.file: UNIT, OTHER_UNIT.file: OTHER_UNIT}
+    tasks = job.lens_tasks(list(units.values()), ["repro"])
+    job.export(tmp_path, tasks, META)
+    elsewhere = dict(FINDING, file="src/b.py", line=2, snippet="return rows[-1]")
+    misplaced = dict(FINDING, file="src/b.py")                # a.py's line, b.py's name
+    outside = dict(FINDING, file="src/c.py")
+    _answer(tmp_path, "repro--PR", {"findings": [FINDING, elsewhere, misplaced, outside]})
+    result = job.ingest(tmp_path, units)
+    assert sorted((f["file"], f["line"]) for f in result.findings) == [("src/a.py", 2),
+                                                                      ("src/b.py", 2)]
+    assert len(result.dropped) == 2 and not result.malformed
 
 
 def test_every_task_names_its_model_in_the_manifest(tmp_path):
@@ -255,3 +282,17 @@ def test_the_queue_names_what_no_lens_read(tmp_path):
     text = job.queue(job.ingest(tmp_path, UNITS), excluded=[("docs/a.md", "documentation")])
     assert "## Not reviewed (1)" in text
     assert "`docs/a.md` — documentation" in text
+
+
+def test_the_queue_marks_a_finding_the_refuter_could_not_decide(tmp_path):
+    """Doubt lets a finding through (ADR-0011); the reader must still see that it was doubt."""
+    tasks = _export(tmp_path)
+    _answer(tmp_path, tasks[0].id, {"findings": [FINDING]})
+    first = job.ingest(tmp_path, UNITS)
+    job.export(tmp_path, job.refutation_tasks(first.findings, UNITS), META,
+               round_number=job.REFUTE_ROUND)
+    _answer(tmp_path, "refute--0001",
+            {"verdict": "undecided", "reason": "nothing here shows whether fiches can be empty",
+             "evidence_line": 2, "evidence_snippet": "return fiches[0]"}, round_number=2)
+    text = job.queue(job.ingest(tmp_path, UNITS))
+    assert "`src/a.py:2`" in text and "the refuter could not decide" in text

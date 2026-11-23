@@ -49,10 +49,11 @@ see *Failure is a first-class outcome* below.
 | `model` | the model RSquad intends for the lenses. Superseded by `task.model` where a task carries one. |
 | `tasks[]` | `id`, `contract`, `lens`, `file`, `model`; refutation tasks also carry `finding`, the claim under test. **`task.model` is the one to honour** (lenses and refuter may differ, ADR-0009), and record what you actually used if you cannot — see *The model is not decoration*. |
 | `refute_model`, `context` | RSquad's own bookkeeping for the next round. Ignore. |
-| `base`, `head`, `repo`, `specs`, `path`, `case` | RSquad's own bookkeeping for `ingest`. **A driver has no use for these and should not read the repository.** |
+| `base`, `head`, `repo`, `specs`, `path`, `case` | RSquad's own bookkeeping for `ingest`. **A driver has no use for these.** The repository a task may search is the job's own `repo/`, never the one `repo` names. |
 | `carried` | present in round 2; findings that get no refuter and ride to the queue. Not tasks. Ignore. |
 
-`task.id` is already filesystem-safe — it is the file path with separators replaced. Use it
+`task.id` is already filesystem-safe: `<lens>--PR` for a lens, which reads every file of the
+change in one task (ADR-0011), and the file path with separators replaced for the others. Use it
 verbatim as the filename. Do not sanitise it further, or `ingest` will not find the reply.
 
 ### The three contracts
@@ -84,8 +85,9 @@ to anything else this project has measured:
   file is the prompt, whole.
 - **merge tasks into one call.** Lenses are blind to each other by construction; batching two
   lenses into one context destroys the property the whole design rests on.
-- **read the repository.** The task file already contains the diff, the numbered file and the
-  resolved context pack. An agent that goes looking is answering a different question.
+- **point an agent at another repository.** A task may read and search the job's `repo/`, the
+  tree at head that `export` wrote, and says so itself. The working copy, its history and its
+  uncommitted files are a different change from the one under review.
 
 ## Failure is a first-class outcome
 
@@ -160,7 +162,8 @@ If your runtime lets you choose, honour the field. If it does not — a Cursor a
 Cursor is configured with — then **record what actually ran**, next to the results, in whatever
 form you like. Without that, a comparison between two runs is a comparison of two unknowns.
 
-Every number published in `docs/` before step 8 is `claude-opus-5` at effort `high`; step 8 (`docs/step8-tiered-models.md`) is Sonnet lenses with an Opus refuter, now the default. A run on another model
+Every number published in `docs/` before step 8 is `claude-opus-5` at effort `high`; step 8 (`docs/step8-tiered-models.md`) is Sonnet lenses with an Opus refuter; since ADR-0011 both
+are Opus by default. A run on another model
 answers *"does this find real things in our code"*. It does not reproduce those figures and
 should not be reported as if it did.
 
@@ -170,10 +173,13 @@ On the API transport a blind lens is blind because its request has no channel th
 specification could arrive, and a test asserts it. Under a harness the lens is an agent with
 file-reading tools: *"do not read the spec"* in a task file is an instruction, not a property.
 
-The mitigation is structural — **run the driver against a job directory with no checkout beside
-it**. The task file is self-contained, so an agent needs no repository to do its work.
+Since ADR-0011 the job holds the tree at head in `repo/`, and every task tells its reader to
+search it. A specification checked into the repository is then within a blind lens's reach. What
+stays out is the history, the commit message and anything uncommitted — provided the driver runs
+against a job directory **outside the working copy**.
 
-Measured across 46 harness agents and 119 file operations: not one read a file outside the job.
+Measured before ADR-0011, across 46 harness agents and 119 file operations: not one read a file
+outside the job.
 That is an observation, not a property. The transcript check that produced it is free and
 repeatable, and it makes a breach detectable rather than impossible. See
 [`blindness-under-a-harness.md`](blindness-under-a-harness.md).
