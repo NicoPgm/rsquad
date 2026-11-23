@@ -95,6 +95,14 @@ def test_corroboration_is_visible_in_the_entry_title():
     assert "2 lenses agree" in text
 
 
+def test_one_account_that_stood_settles_the_entry():
+    """Two lenses, one defect: if one refuter confirmed it, the entry is not 'undecided'."""
+    stood = dict(finding(lens="repro"), verdict="stands")
+    doubted = dict(finding(lens="contract"), verdict="undecided")
+    assert "could not decide" not in render(group([stood, doubted]), refuted=[])
+    assert "could not decide" in render(group([doubted]), refuted=[])
+
+
 def test_every_severity_has_a_rank():
     """A severity the schema allows but the ranker does not know would crash the queue."""
     from rsquad.findings import vocabulary

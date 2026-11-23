@@ -22,7 +22,7 @@ decide had to borrow one that might not hold (ADR-0009).
 exactly as a finding's snippet must — quote real code near a real line, or be discarded.
 
 And one asymmetry inside the asymmetry, which matters: **an unanchored verdict does not refute
-anything.** "Doubt means refuted" governs the refuter's reasoning, not its malfunctions. A
+anything.** The rule on doubt governs the refuter's reasoning, not its malfunctions. A
 verdict whose evidence does not exist in the file is not a doubt, it is a broken response, and
 letting one kill a finding would mean hallucinated evidence silently destroying real work. Those
 verdicts are recorded and ignored, and the finding survives to be read.

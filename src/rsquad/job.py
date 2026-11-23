@@ -211,7 +211,7 @@ def ingest(job: Path, units: dict[str, Unit],
             # speak look identical in a queue, and only one of them means the code is fine.
             out.missing.append(entry["id"])
             continue
-        if entry["file"] == WHOLE:
+        if entry["contract"] == "finding" and entry["file"] == WHOLE:
             try:
                 kept, dropped = lenses.interpret_pr(units, entry["lens"], text)
                 out.findings += kept

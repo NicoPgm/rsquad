@@ -11,7 +11,7 @@ its own model access, no Anthropic key, and nothing installed beyond Python.
 
 ```bash
 git clone https://github.com/NicoPgm/rsquad
-pip install -e ./rsquad          # Python 3.11+; no extra needed, the harness path calls no API
+pip install -e ./rsquad          # Python 3.11.4+; no extra needed, the harness path calls no API
 python -m rsquad --help          # must work before anything else
 ```
 

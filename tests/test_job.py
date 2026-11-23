@@ -266,6 +266,35 @@ def test_a_whole_change_reply_is_anchored_file_by_file(tmp_path):
     assert len(result.dropped) == 2 and not result.malformed
 
 
+def test_a_lens_finding_counts_only_in_the_files_that_lens_was_shown(tmp_path):
+    """The lens can read every file in `repo/`; it is under review only in its own. A blind lens
+    reporting in a test file is what the routing by file kind keeps out."""
+    test_unit = Unit(file="tests/test_a.py", diff="@@ -0,0 +1 @@\n+assert resume([1]) == 1\n",
+                     source="assert resume([1]) == 1\n", numbered="1\tassert resume([1]) == 1")
+    units = {UNIT.file: UNIT, test_unit.file: test_unit}
+    job.export(tmp_path, job.lens_tasks(list(units.values()), ["repro"]), META)
+    in_a_test = dict(FINDING, file="tests/test_a.py", line=1, snippet="assert resume([1]) == 1")
+    _answer(tmp_path, "repro--PR", {"findings": [FINDING, in_a_test]})
+    result = job.ingest(tmp_path, units)
+    assert [f["file"] for f in result.findings] == ["src/a.py"]
+    assert len(result.dropped) == 1
+
+
+def test_a_file_named_like_the_whole_change_still_gets_its_conformance(tmp_path):
+    """`*` is a legal file name on POSIX. Its conformance reply must not be read as a lens's.
+    The task keeps a name Windows can write; only the file it reviews is `*`."""
+    star = Unit(file="*", diff=UNIT.diff, source=UNIT.source, numbered=UNIT.numbered)
+    task = job.Task(id="conformance--star", contract="conformance", lens="conformance",
+                    file="*", prompt="")
+    job.export(tmp_path, [task], META)
+    mismatch = {"file": "*", "line": 2, "snippet": "return fiches[0]",
+                "requirement": "Return None when the corpus is empty.",
+                "mismatch": "it indexes", "kind": "unimplemented", "severity": "minor"}
+    _answer(tmp_path, task.id, {"findings": [mismatch]})
+    result = job.ingest(tmp_path, {"*": star}, INTENT)
+    assert result.malformed == [] and [f["file"] for f in result.findings] == ["*"]
+
+
 def test_every_task_names_its_model_in_the_manifest(tmp_path):
     """The driver reads the model per task: lenses on one tier, the refuter on another."""
     job.export(tmp_path, job.lens_tasks([UNIT], ["repro"], model="claude-sonnet-5"), META)
@@ -278,10 +307,13 @@ def test_every_task_names_its_model_in_the_manifest(tmp_path):
     assert [t["model"] for t in second["tasks"]] == ["claude-opus-5"]
 
 
+@pytest.mark.guard
 def test_the_queue_names_what_no_lens_read(tmp_path):
-    _export(tmp_path)
-    _answer(tmp_path, "repro--src__a.py", {"findings": []})
-    text = job.queue(job.ingest(tmp_path, UNITS), excluded=[("docs/a.md", "documentation")])
+    tasks = _export(tmp_path)
+    _answer(tmp_path, tasks[0].id, {"findings": []})
+    result = job.ingest(tmp_path, UNITS)
+    assert result.missing == []
+    text = job.queue(result, excluded=[("docs/a.md", "documentation")])
     assert "## Not reviewed (1)" in text
     assert "`docs/a.md` — documentation" in text
 

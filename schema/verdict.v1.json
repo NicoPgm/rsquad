@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "verdict.v1.json",
   "title": "Verdict",
-  "description": "What a refuter concluded about one finding. Binary on purpose: there is no confidence scale, because a scale is where a refuter hedges. Doubt means refuted, and says so: `undecided` removes the claim like any other refutation, and records that nothing settled it. The refuter must quote code for its verdict, checked by the same anchoring guard the finding passed - a refutation nobody can check is worth no more than a finding nobody can check.",
+  "description": "What a refuter concluded about one finding. Binary on purpose: there is no confidence scale, because a scale is where a refuter hedges. A claim falls on evidence, not on doubt: `undecided` lets the claim through to the reader, marked, and records that nothing settled it. The refuter must quote code for its verdict, checked by the same anchoring guard the finding passed - a refutation nobody can check is worth no more than a finding nobody can check.",
 
   "type": "object",
   "additionalProperties": false,

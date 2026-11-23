@@ -135,7 +135,7 @@ quote. The run also found two live defects in RSquad's own gate.
 
 ```bash
 git clone https://github.com/NicoPgm/rsquad && cd rsquad
-pip install -e ".[dev]"        # Python 3.11+; ".[api]" alone if you only want `review`
+pip install -e ".[dev]"        # Python 3.11.4+; ".[api]" alone if you only want `review`
 python -m pytest               # 332 tests, no network, no API call
 ```
 

@@ -273,11 +273,15 @@ def _evaluate_export(args, scorable, excluded, repo: Path, chosen) -> int:
     workspace = Path(args.jobs)
     written = 0
     for defect in scorable:
+        # The snapshot comes before the manifest, inside the guard: a case that cannot be
+        # copied leaves no job that looks complete, and never ends the export of the others.
+        # SystemExit is how git failures are raised here, and it is not an Exception.
         try:
             head, base, units = _case_units(defect, repo, args.context)
             intent = conformance.gather(head, repo, None)
             tasks = job.lens_tasks(units, chosen, intent if intent.parts else None, args.model)
-        except Exception as error:                                   # noqa: BLE001
+            snapshot(head, workspace / defect["id"] / job.REPOSITORY, repo)
+        except (Exception, SystemExit) as error:                     # noqa: BLE001
             print("  %-44s not exported: %s" % (defect["id"], error))
             continue
         # `path` rides in the manifest so ingest rebuilds the SAME unit. Without it the review
@@ -286,7 +290,6 @@ def _evaluate_export(args, scorable, excluded, repo: Path, chosen) -> int:
                    {"base": base, "head": head, "repo": str(repo), "specs": [],
                     "model": args.model, "refute_model": args.refute_model or args.model,
                     "context": args.context, "path": defect["file"], "case": defect["id"]})
-        snapshot(head, workspace / defect["id"] / job.REPOSITORY, repo)
         written += 1
         print("  %-44s %d task(s)" % (defect["id"], len(tasks)))
 
@@ -458,8 +461,8 @@ def _export(args: argparse.Namespace) -> int:
     meta = {"base": base, "head": head, "repo": str(repo or Path.cwd()),
             "specs": args.spec or [], "model": args.model,
             "refute_model": args.refute_model or args.model, "context": args.context}
+    snapshot(head, out / job.REPOSITORY, repo)      # first: a failed copy leaves no manifest
     round_dir = job.export(out, tasks, meta)
-    snapshot(head, out / job.REPOSITORY, repo)
 
     print("%s <- %s | %d task(s) written to %s"
           % (head[:12], base[:12], len(tasks), round_dir / "tasks"))

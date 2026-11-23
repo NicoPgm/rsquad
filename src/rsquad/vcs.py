@@ -6,7 +6,7 @@ the lenses need the same two calls.
 
 from __future__ import annotations
 
-import io
+import shutil
 import subprocess
 import tarfile
 from pathlib import Path
@@ -56,17 +56,37 @@ def tracked_files(revision: str, repo: Path | None = None) -> list[str]:
     return [line.strip() for line in listed.stdout.splitlines() if line.strip()]
 
 
+def _keep(member: tarfile.TarInfo, dest: str) -> tarfile.TarInfo | None:
+    """The `data` filter, except that a member it refuses is left out instead of fatal.
+
+    A link to an absolute path or out of the tree must not land in the copy, where a reader
+    could follow it out; it must not stop the review either, for one link in a whole tree.
+    """
+    try:
+        return tarfile.data_filter(member, dest)
+    except tarfile.FilterError:
+        return None
+
+
 def snapshot(revision: str, dest: Path, repo: Path | None = None) -> None:
     """The tree at `revision`, written to `dest`: the repository a reader may search.
 
     An archive, not a worktree. It leaves nothing to clean up in the reviewed repository, and it
     carries no `.git`: no history, and no commit message, which is the conformance lens's intent
-    and nothing a blind lens should find lying beside the code.
+    and nothing a blind lens should find lying beside the code. `dest` is emptied first, so a
+    second export into the same job holds no file of the first one. The archive is streamed,
+    never held whole in memory. Paths marked `export-ignore` are left out, as `git archive`
+    does for any export.
     """
-    archive = subprocess.run(["git", "archive", "--format=tar", revision], cwd=repo,
-                             capture_output=True)
-    if archive.returncode != 0:
-        raise SystemExit("cannot snapshot %s: %s"
-                         % (revision, archive.stderr.decode("utf-8", "replace").strip()))
-    with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as tar:
-        tar.extractall(dest, filter="data")
+    shutil.rmtree(dest, ignore_errors=True)
+    with subprocess.Popen(["git", "archive", "--format=tar", revision], cwd=repo,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE) as archive:
+        try:
+            with tarfile.open(fileobj=archive.stdout, mode="r|") as tar:
+                tar.extractall(dest, filter=_keep)
+        except tarfile.ReadError:
+            if archive.wait() == 0:
+                raise
+        if archive.wait() != 0:
+            raise SystemExit("cannot snapshot %s: %s"
+                             % (revision, archive.stderr.read().decode("utf-8", "replace").strip()))

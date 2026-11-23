@@ -117,12 +117,18 @@ def interpret(unit: Unit, lens: str, text: str) -> tuple[list[dict], list[tuple[
 
 
 def interpret_pr(units: dict, lens: str, text: str) -> tuple[list[dict], list[tuple[dict, str]]]:
-    """`interpret`, over every file of the change: each finding is anchored in its own file."""
+    """`interpret`, over every file of the change: each finding is anchored in its own file.
+
+    Only the files this lens was shown count as under review. The lens can read the others in
+    `repo/`, and a finding there would otherwise anchor: a blind lens in a test file, or the
+    `tests` lens in production code, is what the routing exists to keep out.
+    """
     payload = json.loads(text)
     validate(payload)
     for finding in payload["findings"]:
         finding["lens"] = lens
-    return anchoring.sift(payload["findings"], {f: u.source for f, u in units.items()})
+    return anchoring.sift(payload["findings"],
+                          {f: u.source for f, u in units.items() if applies(lens, f)})
 
 
 def look(unit: Unit, lens: str, model: str = MODEL,

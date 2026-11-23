@@ -150,7 +150,8 @@ def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
 
     for position, entry in enumerate(ranked, 1):
         mark = " · **%d lenses agree**" % len(entry.lenses) if entry.corroborated else ""
-        if any(f.get("verdict") == UNDECIDED for f in entry.findings):
+        # Only when no account of the defect survived outright: one `stands` settles it.
+        if all(f.get("verdict") == UNDECIDED for f in entry.findings):
             mark += " · **the refuter could not decide**"
         out += ["## %d. `%s:%d` — %s%s" % (position, entry.file, entry.line, entry.severity,
                                            mark), ""]

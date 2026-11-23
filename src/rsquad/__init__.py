@@ -6,7 +6,7 @@
     [1] CONFORMANCE LENS  one agent, WITH the spec. "Does the diff do what the spec says?"
     [2] BLIND LENSES      n agents, WITHOUT the spec. repro / bounds / contract / test quality.
     [3] REFUTATION        one agent per finding, separate context. Its job is to kill it.
-                          Doubt means refuted.
+                          A claim falls on evidence, not on doubt.
     [4] RANKED QUEUE      for a human. Not a verdict.
 
 The order carries the design. Only step [0] may block; opinions comment.

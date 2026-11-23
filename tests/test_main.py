@@ -1,6 +1,13 @@
 """The command line's own decisions — only what no other module owns."""
 
+import argparse
+
+import pytest
+
+from rsquad import __main__ as cli
 from rsquad.__main__ import _adapter, _round_two
+from rsquad.chunking import Unit
+from rsquad.conformance import Intent
 from rsquad.gate import by_language
 
 
@@ -34,3 +41,44 @@ def test_the_refutation_round_keeps_its_own_model():
     meta = _round_two(data)
     assert (meta["model"], meta["refute_model"], meta["context"]) == (
         "claude-sonnet-5", "claude-opus-5", False)
+
+
+UNIT = Unit(file="src/a.py", diff="+x\n", source="x\n", numbered="1\tx")
+
+
+def _no_repository(monkeypatch):
+    """Units without git: these tests are about what the command line does when the copy fails."""
+    monkeypatch.setattr(cli, "_case_units", lambda defect, repo, context: ("h", "b", [UNIT]))
+    monkeypatch.setattr(cli, "_units_and_intent",
+                        lambda args, repo: ("h", "b", [UNIT], [], Intent(parts=[])))
+    monkeypatch.setattr(cli.conformance, "gather", lambda *args: Intent(parts=[]))
+
+
+def test_a_failed_snapshot_leaves_no_job_that_looks_complete(tmp_path, monkeypatch):
+    _no_repository(monkeypatch)
+
+    def fails(head, dest, repo):
+        raise SystemExit("cannot snapshot h: boom")
+
+    monkeypatch.setattr(cli, "snapshot", fails)
+    args = argparse.Namespace(repo=None, lens=None, no_conformance=True, model="m",
+                              refute_model=None, job=str(tmp_path / "job"), spec=None,
+                              context=False)
+    with pytest.raises(SystemExit):
+        cli._export(args)
+    assert not (tmp_path / "job" / "manifest.json").exists()
+
+
+def test_one_case_that_cannot_be_copied_does_not_end_the_export(tmp_path, monkeypatch):
+    _no_repository(monkeypatch)
+
+    def snapshot(head, dest, repo):
+        if dest.parent.name == "first":
+            raise SystemExit("cannot snapshot h: boom")
+
+    monkeypatch.setattr(cli, "snapshot", snapshot)
+    args = argparse.Namespace(jobs=str(tmp_path), context=False, model="m", refute_model=None)
+    cases = [{"id": "first", "file": "src/a.py"}, {"id": "second", "file": "src/a.py"}]
+    cli._evaluate_export(args, cases, [], tmp_path, ["repro"])
+    assert not (tmp_path / "first" / "manifest.json").exists()
+    assert (tmp_path / "second" / "manifest.json").exists()

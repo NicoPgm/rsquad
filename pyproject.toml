@@ -2,7 +2,7 @@
 name = "rsquad"
 version = "0.1.0"
 description = "A review squad: a mechanical gate, blind lenses, adversarial refutation, a ranked queue."
-requires-python = ">=3.11"
+requires-python = ">=3.11.4"
 license = "MIT"
 dependencies = [
     "pyyaml>=6.0",

@@ -77,10 +77,11 @@ def test_evidence_must_anchor_like_any_finding():
     assert verdict.anchored and verdict.refutes
 
 
+@pytest.mark.guard
 def test_invented_evidence_does_not_refute_anything():
     """The asymmetry inside the asymmetry.
 
-    "Doubt means refuted" governs the refuter's reasoning, not its malfunctions. A verdict whose
+    The rule on doubt governs the refuter's reasoning, not its malfunctions. A verdict whose
     evidence is not in the file is a broken response, and letting one through would mean
     hallucinated evidence silently deleting real work.
     """
@@ -166,7 +167,9 @@ def test_undecided_lets_the_finding_through_and_says_so():
     assert killed == [] and kept[0]["verdict"] == "undecided"
 
 
+@pytest.mark.guard
 def test_an_undecided_verdict_must_still_quote_real_code():
     """Naming doubt is not a way around the anchoring guard."""
     verdict = interpret(UNIT, FINDING, _reply("undecided", snippet="nowhere in the file"))
+    assert verdict.anchored is False
     assert not verdict.refutes
