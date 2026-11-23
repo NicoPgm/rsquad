@@ -24,7 +24,9 @@ golden findings against master's 6) and came from the recipe and Opus together; 
 the 90 % guard, master included, so nothing changes in master. Two changes were then measured on the same five pull requests, one at a time: letting
 every reader see the repository (A), and relaxing the lenses' proof-or-silence rule (B). **Neither
 moved grounded recall by more than two golden findings out of 44**, which five pull requests
-cannot tell from noise.
+cannot tell from noise. Last, V4, built into master by the user's decision, covered 72 of 168
+golden findings and 12 of 18 high-severity ones on the test set's nine larger pull requests, at
+92.1 % grounded precision (its section).
 
 ## Setup
 
@@ -336,6 +338,73 @@ API key.
 **Afterwards, outside the rule.** The user chose to build V4 into master anyway, with precision
 left to the reader at work rather than to the bench's guard: ADR-0011. The rule above is not
 reread as having adopted it.
+
+## V4 as shipped, pre-registered — on the nine larger pull requests
+
+**Pre-registration:** `evaluation/reviewbench-v4.yaml` (`f9f314b`), committed before any task
+ran. It decides nothing: V4 is master's default already (ADR-0011). Its golden findings were
+opened by the judge only, after every reply was in.
+
+The test set's pull requests 16 to 24 by size, nine repositories in eight languages, 270 files,
+168 golden true findings, 18 of them high severity. simnaut/emdash #2 (408 files) was left out
+before the run: V4 puts every file a lens reads into one prompt with no bound. `rsquad export`
+defaults (four blind lenses over the whole change, conformance per file, refutation, all on
+Opus), the pull request's title and body as `--spec`, one run, no reply repaired. Micro figures,
+after refutation.
+
+| pull request | language | files | entries | covered | of golden | grounded P | augmented P |
+|---|---|---:|---:|---:|---:|---:|---:|
+| AY2526S2-CS2103T-W14-3/tp #152 | Java | 19 | 11 | 1 | 14 | 100 % | 100 % |
+| wirechat/wirechat #183 | PHP | 20 | 17 | 3 | 12 | 100 % | 76.5 % |
+| PaulStSmith/figlet-comment-generator #32 | C# | 21 | 13 | 7 | 9 | 70.0 % | 76.9 % |
+| gagneurlab/PROTRIDER #10 | Python | 22 | 32 | 7 | 21 | 77.8 % | 81.3 % |
+| cmik/apilix #12 | TypeScript | 22 | 28 | 14 | 32 | 100 % | 85.7 % |
+| DisciplinedSoftware/Codebase-Conversion #1 | Python | 23 | 39 | 16 | 29 | 100 % | 100 % |
+| superhighfives/pika #200 | Swift | 36 | 25 | 14 | 18 | 93.3 % | 96.0 % |
+| scotthamilton77/agents-config #1 | Shell | 38 | 8 | 5 | 24 | 100 % | 100 % |
+| vanyastaff/nebula #224 | Rust | 69 | 15 | 5 | 9 | 100 % | 100 % |
+| **all nine** | | **270** | **188** | **72** | **168** | **92.1 %** | **90.4 %** |
+
+- **Golden true findings covered: 72 of 168 (42.9 %).** High severity: **12 of 18 (66.7 %)** at
+  91.7 % grounded precision on them, a high-severity grounded F1 of 77.2 %. That is of the order
+  of arm D's 74–76 % on the ten, which that section placed near the leaderboard's fifth row; nine
+  pull requests and one run cannot place it more finely, and the leaderboard rests on 219 pull
+  requests judged three times.
+- **Precision.** Of 76 entries the judge matched to golden findings, 70 matched true ones and 6
+  matched findings the bench's reviewers labelled false (grounded 92.1 %). Of the 112 entries the
+  golden set lacks, the judge found 100 true and 12 false (augmented 90.4 %, augmented recall
+  64.2 %). **The flag does not fire:** augmented precision is above 0.80 overall. Per pull
+  request it is below 0.80 on two, wirechat (4 of 17 entries false) and figlet (3 of 13, all
+  among those matched).
+- **Recall is uneven.** pika covered 14 of 18 and figlet 7 of 9; tp #152 covered 1 of 14, and
+  agents-config, the shell repository, 5 of 24 with only 8 entries.
+- **The refuter removed little.** 324 findings after round 1, 257 refutations, 19 refuted, 305
+  survived, folded into 188 entries. Codebase-Conversion's 59 refutations all stood. No verdict
+  was `undecided`.
+- **Every reply was well formed.** 219 lens and conformance tasks and 257 refutations: none
+  missing, none malformed, none repaired.
+
+**Beside it, never summed with it.** The fifteen smaller pull requests were measured with other
+arms: arm D (two passes, Sonnet and Opus) on ten covered 34 of 96 at 86.5 % grounded precision,
+and the ablation's V4 on five, blind lenses only and before refutation, 19 of 72 at 79.2 %. The
+golden sets, the arms and the stage of measurement differ; the three rows are not one curve. Had
+the 90 % grounded-precision guard of the earlier registrations applied here, it would hold; none
+applied, and nine pull requests with 76 matched entries move that figure by 1.3 points per
+entry.
+
+**Where the protocol was not followed.**
+
+1. The pause threshold was raised from 80 % to 90 % of the 5-hour window by the user, during the
+   run, after round 2 of five jobs had completed at 75 %. The run took two windows either way.
+2. vanyastaff/nebula #224 was exported with `8a70923`, not `438fd4a`. Its export hung: the
+   rewritten snapshot deadlocked on a full pipe once the archive was large enough, which
+   `8a70923` fixes. Only the copy's mechanics changed; the tasks written are the same.
+
+Cost: about 115 points of the 5-hour window over two windows (44 for round 1 of eight jobs, 20
+for five jobs' refutations, 9 for PROTRIDER's, then 42 in the second window for the rest), 15
+weekly points, and one judge run on the API key. Subagent tokens were recorded for the last three
+workflow runs only: 17.9 M (2.9 M for PROTRIDER's 35 refutations, 13.0 M for 104 refutations and
+nebula's 57 tasks, 1.9 M for nebula's 24 refutations).
 
 ## Annex — the two arms, as diffs against `58f8b06`
 
