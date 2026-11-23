@@ -30,6 +30,10 @@ def message(entry: ranking.Entry) -> str:
     for finding in entry.representatives:
         left, left_text, right, right_text = ranking.detail(finding)
         parts.append("%s. %s: %s" % (right_text.rstrip("."), left, left_text))
+    # What the queue shows under "the refuter places it elsewhere": the reader gets it, so the
+    # judge does too.
+    for reason in dict.fromkeys(f["elsewhere"] for f in entry.findings if "elsewhere" in f):
+        parts.append("Where it lives: %s" % reason)
     return " ".join(parts)
 
 

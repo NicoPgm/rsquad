@@ -35,6 +35,13 @@ def test_the_message_says_what_is_wrong_then_when():
     assert out["findings"][0]["message"] == "raises KeyError. Inputs: an empty dict"
 
 
+def test_the_message_carries_where_the_refuter_places_the_defect():
+    moved = dict(_finding("contract", 10), elsewhere="It lives in delete.py:12.")
+    out = reviewbench.findings_file([moved], PR)
+    assert out["findings"][0]["message"] == ("raises KeyError. Inputs: an empty dict "
+                                             "Where it lives: It lives in delete.py:12.")
+
+
 def test_the_pr_block_matches_the_manifest_and_nothing_more():
     out = reviewbench.findings_file([], PR)
     assert out == {"pr": {"repo": PR["repo"], "pr_number": 7, "base": PR["base"],
