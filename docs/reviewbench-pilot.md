@@ -459,6 +459,47 @@ from its nine-job rounds; its refutations were 29 against 47 here. The `docs` ta
 agents-config carried 538 000 characters, the largest of the run: it is shown the whole change,
 code included, on every pull request.
 
+## The hygiene lens, pre-registered — same two pull requests, not blind
+
+**Pre-registration:** `evaluation/reviewbench-hygiene.yaml` (`3b30f1f`). Code: master at
+`73d3e6e`, which adds ADR-0014: a `hygiene` lens whose `maintainability` findings skip the
+refuter and sit last in the queue as Suggestions, and a `tests` lens shown the code and the
+existing tests of the changed code.
+
+| | V4 | docs and scope | hygiene |
+|---|---:|---:|---:|
+| tp #152 (of 14) | 1 | 4 | 4 |
+| agents-config (of 24) | 5 | 6 | 7 |
+| **both (of 38)** | **6** | **10** | **11** |
+| high severity (of 5) | 1 | 2 | 2 |
+| grounded / augmented precision | 6/6, 100 % | 10/10, 94.6 % | 91.7 %, 91.3 % |
+
+- **ADR-0014 missed what it was aimed at.** Of the seven tp #152 misses it targeted, one is now
+  covered (a missing failure test for note deserialization). The lenses did report three more in
+  substance, at another place: the bench anchors "no test covers `resetData` with notes" and "no
+  end-to-end undo test" at the code, and the `tests` lens reported them at the test that fails to
+  check it (`AddressBookTest.java:47`, `NoteCommandTest.java:40`); the judge matched neither. The
+  weak test in the untouched `DeleteNoteCommandTest`, the misleading test name and the weak
+  removal test were not found.
+- **Run-to-run variance is as large as the effect.** Each pull request gained one or two golden
+  findings and lost one that the previous run had (a validation regex on tp #152, duplicate
+  `--tools` on agents-config). On 38 golden findings and one run per arm, a difference of one is
+  noise; this and the previous section cannot separate small changes.
+- **Suggestions:** four entries, three judged true. The `hygiene` lens used `maintainability` for
+  3 of its 7 findings on agents-config and filed the rest as defects, which the shared rule
+  ("pick the kind that names the defect") allows; those went through the refuter.
+- **The refuter refuted again:** 3 of 62 (`intended` twice, `no-consequence` once), and kept one
+  `wrong-location` finding with its reason.
+
+Cost: 22 points of the 5-hour window (10 for round 1, 12 for 62 refutations), 3 weekly points,
+7.7 M subagent tokens, and two judge runs: the first failed on tp #152 with an invalid matcher
+reply and wrote nothing, as the bench's strict mode requires; the second is the one reported.
+
+**What this pair of sections says.** Two pull requests read beforehand can show that a mechanism
+fires; they cannot rank changes worth one or two golden findings. ReviewBench publishes the
+golden findings of all 219 pull requests, 194 of them outside the test set and never read here:
+that is where a blind measurement of master can be had.
+
 ## Annex — the two arms, as diffs against `58f8b06`
 
 **A**, `prompts/user.v1.md` (the same paragraph, with the evidence sentence adapted, was added to
