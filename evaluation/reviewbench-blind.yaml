@@ -1,0 +1,58 @@
+# Pre-registration — master, blind, on ten ReviewBench pull requests drawn at random outside the
+# test set
+#
+# Committed before the draw is made and before any task runs. What follows is frozen; the report
+# says where it was not followed.
+#
+# Context: docs/reviewbench-pilot.md. Every figure so far comes from the 25 test-set pull
+# requests, and the last two runs from two of them read beforehand. ReviewBench publishes the
+# golden findings of all 219 pull requests its leaderboard scores; 194 lie outside the test set
+# and none of them has been read here, golden findings or code. This run measures master as it
+# is, on a random sample of those, so that the figure rests on nothing the design was aimed at.
+
+date: 2026-11-24
+bench: review-bench/ReviewBench @ 082f65f, corpus/manifest.json (219 pull requests)
+code: rsquad master @ 02f2510, unmodified (ADR-0011 to ADR-0014)
+
+draw:
+  population: the pull requests of corpus/manifest.json whose key is not in
+    corpus/test/test.json; key = "<owner>_<repo>_<pr_number>"
+  order: sort the keys, then random.Random(20261124).shuffle(keys) in Python 3.13
+  taken: the first ten in that order that pass the checks below; every skipped key is reported
+    with its reason
+  skip if:
+    - base or head cannot be fetched, from the review-bench mirror or the upstream repository
+    - more than 70 changed files: lenses have no bound on what they read (ADR-0011); the largest
+      change run so far was 69 files, simnaut/emdash #2 at 408 was left out for the same reason
+    - `rsquad export` writes no task (nothing readable changed)
+  not a reason to skip: language, size below 70 files, the number of golden findings, or the
+    repository having another pull request in the test set
+  opened before the judge: only what the draw needs, i.e. the manifest entry and the diff's file
+    count; golden findings are opened by the judge alone, after every reply is in
+
+run:
+  shape: `rsquad export` defaults at 02f2510 (six lenses over the whole change, conformance per
+    code file, refutation except for suggestions, all on Opus, context pack off), one run,
+    replies never repaired; a malformed or missing reply is a failed task
+  intent: the pull request's title and body from the manifest, as --spec
+  driver: harness/claude-code.workflow.js, unmodified
+  judge: npm run judge, provider anthropic, model claude-sonnet-5, with
+    "compat": {"forceAdaptiveThinking": true}; after refutation; micro figures. If the judge
+    fails on a matcher reply, as it did once, it is run again once, and the report says so
+  staging: pause between rounds or between jobs if the 5-hour window reaches 90 %; nothing is
+    judged before every reply is in
+
+metric:
+  primary: high-severity grounded recall, precision and F1, micro and macro, the figures the
+    leaderboard ranks on; set beside the leaderboard as read on 2026-11-23, as an indication
+    only (ten pull requests judged once, against 219 judged three times)
+  also: golden true findings covered over all severities; grounded and augmented precision;
+    the same for suggestions apart; covered by golden category, defects (correctness,
+    reliability, security, api-architecture, performance) against hygiene (testing,
+    maintainability, documentation, accessibility); covered by golden scope; entries per pull
+    request and by queue part; malformed and missing replies; cost (5-hour window and weekly
+    points, by round)
+
+rule:
+  none: nothing here adopts or reverts anything.
+  flag: augmented precision below 0.80 overall is reported as a warning for the work campaign.
