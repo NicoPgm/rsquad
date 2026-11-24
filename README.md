@@ -56,7 +56,7 @@ claims to replace it.
 | [0] mechanical gate | **built** — `rsquad gate`, Python/pytest adapter |
 | the finding contract | **built** — `schema/finding.v1.json` + both guards, no model involved |
 | [1] conformance lens | **built** - the only step with the intent, and both ends anchored |
-| [2] blind lenses | **built** — `rsquad review`, five lenses (code, tests, documentation), blindness enforced by signature |
+| [2] blind lenses | **built** — `rsquad review`, six lenses (code, tests, documentation, hygiene), blindness enforced by signature |
 | [3] refutation | **built** — one refuter per finding, no inherited framing |
 | [4] ranked queue | **built** — grouped by location, ranked, never a verdict |
 

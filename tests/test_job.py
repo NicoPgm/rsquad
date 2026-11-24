@@ -238,7 +238,8 @@ OTHER_UNIT = Unit(file="src/b.py", diff="@@ -1,2 +1,2 @@\n+    return rows[-1]\n
 def test_lens_tasks_are_routed_by_file_kind():
     tasks = {t.lens: t for t in job.lens_tasks([UNIT, TEST_UNIT], ["repro", "tests"])}
     assert "`src/a.py`" in tasks["repro"].prompt and "`tests/test_a.py`" not in tasks["repro"].prompt
-    assert "`tests/test_a.py`" in tasks["tests"].prompt and "`src/a.py`" not in tasks["tests"].prompt
+    # `tests` is shown the code too, to know what its tests must check (ADR-0014).
+    assert "`tests/test_a.py`" in tasks["tests"].prompt and "`src/a.py`" in tasks["tests"].prompt
 
 
 def test_a_lens_reads_the_whole_change_in_one_task_on_one_model():
@@ -428,3 +429,29 @@ def test_a_stale_document_outside_the_change_reaches_the_queue(tmp_path):
     _answer(tmp_path, "docs--PR", {"findings": [stale, FINDING]})       # FINDING is in code
     result = job.ingest(tmp_path, UNITS)
     assert [f["file"] for f in result.findings] == ["GUIDE.md"]
+
+
+# ------------------------------------------------------------------ hygiene and tests (ADR-0014)
+
+def test_the_tests_lens_runs_when_no_test_changed():
+    """The existing tests of the changed code are its to read, changed or not."""
+    tasks = job.lens_tasks([UNIT], ["tests"])
+    assert [t.id for t in tasks] == ["tests--PR"] and "return fiches[0]" in tasks[0].prompt
+
+
+def test_the_hygiene_lens_reads_code_and_tests_not_documentation():
+    tasks = job.lens_tasks([UNIT, TEST_UNIT, README], ["hygiene"])
+    assert "`src/a.py`" in tasks[0].prompt and "`tests/test_a.py`" in tasks[0].prompt
+    assert "`README.md`" not in tasks[0].prompt
+
+
+def test_a_suggestion_reaches_the_queue_unrefuted_and_apart(tmp_path):
+    """Nothing fails yet, so nothing can be refuted: it rides to the queue as a suggestion."""
+    tasks = job.lens_tasks([UNIT], ["hygiene"])
+    job.export(tmp_path, tasks, META)
+    untested = dict(FINDING, kind="maintainability", severity="minor",
+                    inputs="a later change returns fiches[-1]", consequence="no test fails")
+    _answer(tmp_path, "hygiene--PR", {"findings": [untested]})
+    first = job.ingest(tmp_path, UNITS)
+    assert job.refutation_tasks(first.findings, first.units) == []
+    assert job.carried(first.findings, first.units) == first.findings

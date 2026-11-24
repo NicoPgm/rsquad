@@ -34,11 +34,12 @@ honestly. An empty result is right when you found nothing, and only then.
 several defects, and the second is as likely to matter as the first. If one defect shows in
 several files, report it once in each file where it shows, each anchored there.
 
-## Out of scope, always
+## Out of scope, unless your lens says otherwise
 
 Style, naming, formatting, import order, type annotations, docstrings, test coverage as a
 number, "consider using X instead", refactoring suggestions, and anything phrased as a
-preference. Another tool handles those, or nobody should.
+preference. Another tool handles those, or nobody should. One lens, `hygiene`, takes back a
+narrow part of this list, and says which.
 
 Do not report a defect that the diff *fixes*. Read what the code does after the change.
 

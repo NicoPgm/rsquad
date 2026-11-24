@@ -188,3 +188,9 @@ def test_the_harness_path_needs_no_anthropic():
 def test_documentation_is_read_by_the_docs_lens_alone(path):
     from rsquad.lenses import LENSES, applies
     assert [name for name in LENSES if applies(name, path)] == ["docs"]
+
+
+def test_hygiene_reports_in_code_and_tests_alike():
+    from rsquad.lenses import applies
+    assert applies("hygiene", "src/a.py") and applies("hygiene", "tests/test_a.py")
+    assert not applies("hygiene", "README.md")

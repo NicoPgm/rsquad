@@ -127,6 +127,16 @@ def test_one_lens_placing_a_defect_in_the_change_keeps_it_there():
     assert "Already there" not in text and "introduced by this change" in text
 
 
+def test_suggestions_come_last_and_apart():
+    """A suggestion at the place of a defect stays with the defect."""
+    hint = dict(finding(file="a.py"), kind="maintainability", severity="significant")
+    bug = dict(finding(file="b.py", lens="repro"), severity="minor")
+    beside = dict(finding(file="b.py", lens="hygiene"), kind="maintainability")
+    text = render(group([hint, bug, beside]))
+    change, suggestions = text.split("## Suggestions (1)")
+    assert "`b.py:10`" in change and "`a.py:10`" in suggestions
+
+
 def test_every_severity_has_a_rank():
     """A severity the schema allows but the ranker does not know would crash the queue."""
     from rsquad.findings import vocabulary

@@ -53,14 +53,16 @@
     },
 
     "kind": {
-      "enum": ["correctness", "boundary", "contract", "resource", "test-quality", "documentation"],
+      "enum": ["correctness", "boundary", "contract", "resource", "test-quality", "documentation",
+               "maintainability"],
       "glossary": {
         "correctness": "the code computes or returns the wrong thing for some reachable input",
         "boundary": "empty, zero, one, maximum, off-by-one, or an unhandled edge of a range",
         "contract": "an interface used against its documented or implied terms: wrong type, wrong order, ignored error, broken invariant",
         "resource": "something acquired and not released, or growing without bound: handles, memory, connections, unbounded retries or cost",
         "test-quality": "a test that cannot fail, asserts the wrong property, or freezes current behaviour as if it were intended",
-        "documentation": "the text says, or has its reader do, something the code or the tool that reads it does not do"
+        "documentation": "the text says, or has its reader do, something the code or the tool that reads it does not do",
+        "maintainability": "nothing fails today, but the code or its tests make a future defect likely or hard to see: an untested new path, a misleading name, a declaration that contradicts the value, a fragile idiom"
       }
     },
 

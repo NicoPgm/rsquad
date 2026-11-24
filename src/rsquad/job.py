@@ -99,10 +99,7 @@ def lens_tasks(units: list[Unit], lens_names: list[str],
                intent: conformance.Intent | None = None, model: str = "") -> list[Task]:
     tasks = []
     for lens in lens_names:
-        # `docs` is shown the whole change, code included: documentation goes stale when the
-        # code it describes moves, and the code is where that shows. It still reports only in
-        # documentation. It runs when no documentation changed for the same reason.
-        read = units if lens == "docs" else [u for u in units if lenses.applies(lens, u.file)]
+        read = [u for u in units if lenses.shown(lens, u.file)]
         if not read:
             continue
         prompt = _task_text(prompts.system_prompt() + "\n\n" + prompts.lens_prompt(lens),

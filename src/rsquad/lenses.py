@@ -35,7 +35,7 @@ MAX_TOKENS = 16000
 
 #: Effort per lens. `tests` reads assertions and needs less depth than walking execution paths.
 EFFORT = {"repro": "high", "bounds": "high", "contract": "high", "tests": "medium",
-          "docs": "high"}
+          "docs": "high", "hygiene": "medium"}
 
 LENSES = prompts.LENSES
 
@@ -57,8 +57,24 @@ def applies(lens: str, path: str) -> bool:
     and still answered four times in 190 tasks; shown one, it spoke
     (`docs/step7e-tests-lens.md`). A lens asked about something absent from its payload is
     paid to invent it.
+
+    `hygiene` reports in code and tests alike: an untested path is noted at the code, a
+    misleading test name at the test (ADR-0014).
     """
+    if lens == "hygiene":
+        return not is_doc(path)
     return owner(path) == (lens if lens in OWNED else None)
+
+
+def shown(lens: str, path: str) -> bool:
+    """What a lens is given to read, wider than where it may report for the lenses that check
+    one kind of file against the rest: documentation against the code, tests against the code
+    they cover (ADR-0013, ADR-0014). They run on every change for the same reason."""
+    if lens == "docs":
+        return True
+    if lens == "tests":
+        return not is_doc(path)
+    return applies(lens, path)
 
 
 @dataclass

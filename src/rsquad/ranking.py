@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .refutation import UNDECIDED
+from .refutation import SUGGESTION, UNDECIDED
 
 SEVERITY_ORDER = {"blocking": 0, "significant": 1, "minor": 2}
 
@@ -76,6 +76,11 @@ class Entry:
         enough to keep it out of the technical-debt part, where a reader might not look."""
         return min((f.get("scope", "introduced") for f in self.findings),
                    key=lambda s: SCOPE_ORDER[s])
+
+    @property
+    def suggestion(self) -> bool:
+        """Only suggestions here. One account of a defect at the same place outranks them."""
+        return all(f["kind"] == SUGGESTION for f in self.findings)
 
     @property
     def kinds(self) -> list[str]:
@@ -183,8 +188,9 @@ def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
     if not ranked:
         out += ["Nothing to report. On most diffs this is the correct answer.", ""]
 
-    debt = [e for e in ranked if e.scope == "pre-existing"]
-    change = [e for e in ranked if e.scope != "pre-existing"]
+    hints = [e for e in ranked if e.suggestion]
+    debt = [e for e in ranked if not e.suggestion and e.scope == "pre-existing"]
+    change = [e for e in ranked if not e.suggestion and e.scope != "pre-existing"]
     for position, entry in enumerate(change, 1):
         out += _entry(position, entry)
     if debt:
@@ -193,6 +199,13 @@ def render(entries: list[Entry], dropped: list[tuple[dict, str]] | None = None,
                 "account. Not a reason to hold the change; candidates for a technical-debt "
                 "ticket.", ""]
         for position, entry in enumerate(debt, len(change) + 1):
+            out += _entry(position, entry)
+    if hints:
+        out += ["---", "", "## Suggestions (%d)" % len(hints), ""]
+        out += ["Nothing here fails today: an untested path, a misleading name, a fragile "
+                "idiom. Not refuted, since a refuter has nothing to test, and never a reason "
+                "to hold the change. Read them if you have the time.", ""]
+        for position, entry in enumerate(hints, len(change) + len(debt) + 1):
             out += _entry(position, entry)
 
     if dropped:

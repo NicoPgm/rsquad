@@ -68,8 +68,13 @@ NOT_REFUTABLE = "no refuter exists for this claim shape"
 REQUIRED_FIELDS = ("inputs", "consequence")
 
 
+#: A suggestion: nothing fails today, so there is nothing a refuter could show wrong (ADR-0014).
+SUGGESTION = "maintainability"
+
+
 def refutable(finding: dict) -> bool:
-    return all(field in finding for field in REQUIRED_FIELDS)
+    return (all(field in finding for field in REQUIRED_FIELDS)
+            and finding.get("kind") != SUGGESTION)
 
 
 @dataclass
