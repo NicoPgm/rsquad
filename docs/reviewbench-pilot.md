@@ -26,7 +26,10 @@ every reader see the repository (A), and relaxing the lenses' proof-or-silence r
 moved grounded recall by more than two golden findings out of 44**, which five pull requests
 cannot tell from noise. Last, V4, built into master by the user's decision, covered 72 of 168
 golden findings and 12 of 18 high-severity ones on the test set's nine larger pull requests, at
-92.1 % grounded precision (its section).
+92.1 % grounded precision (its section). Then, blind, on ten pull requests drawn at random
+outside the test set and never read here, master covered 60 of 104 golden findings and 6 of 7
+high-severity ones, at 87.5 % grounded precision; seven high-severity findings are too few to
+place it on the leaderboard (its section).
 
 ## Setup
 
@@ -499,6 +502,129 @@ reply and wrote nothing, as the bench's strict mode requires; the second is the 
 fires; they cannot rank changes worth one or two golden findings. ReviewBench publishes the
 golden findings of all 219 pull requests, 194 of them outside the test set and never read here:
 that is where a blind measurement of master can be had.
+
+## Master, blind, pre-registered — ten pull requests drawn outside the test set
+
+**Pre-registration:** `evaluation/reviewbench-blind.yaml` (`5c8886c`), committed before the draw
+and before any task ran. Code: master at `02f2510`, unmodified (ADR-0011 to ADR-0014). Nothing
+in it adopts or reverts anything.
+
+**Blind, this time.** The 194 pull requests outside the test set had never been read here, code
+or golden findings. The keys were sorted and shuffled with `random.Random(20261124)`; the first
+ten that passed the checks were taken. Before the judge, only the manifest entry and the diff's
+file count were opened. Draw order and outcome:
+
+| # | pull request | language | files | |
+|---:|---|---|---:|---|
+| 1 | psalm/psalm-plugin-laravel #674 | PHP | 19 | taken |
+| 2 | dotnet/sdk #53906 | C# | 3 | taken |
+| 3 | psalm/psalm-plugin-laravel #668 | PHP | 6 | taken |
+| 4 | joshjohanning/npm-version-check-action #92 | JavaScript | 7 | taken |
+| 5 | supa-magic/spm #19 | TypeScript | 21 | taken |
+| 6 | resplab/leap #48 | Python | 7 | **left out: export failed** (see below) |
+| 7 | blamechris/chroxy #2266 | JavaScript | 2 | taken |
+| 8 | Gibbs-Morris/mississippi #471 | C# | 177 | left out: more than 70 files, as registered |
+| 9 | CommunityToolkit/Maui #3181 | C# | 26 | taken |
+| 10 | hughdidit/DAISy-Agency #294 | TypeScript | 1 | taken |
+| 11 | basecamp/omarchy #5203 | Shell | 1 | taken |
+| 12 | dougborg/katana-openapi-client #309 | Python | 27 | taken |
+
+`rsquad export` defaults (six lenses over the whole change, conformance per code file,
+refutation except for suggestions, all on Opus), the pull request's title and body as `--spec`,
+one run, no reply repaired. One judge run, micro figures unless stated, after refutation.
+
+**High severity, the leaderboard's figures.**
+
+| | high-severity golden covered | grounded precision | grounded recall | grounded F1 |
+|---|---:|---:|---:|---:|
+| micro | 6 of 7 | 100 % (6 of 6) | 85.7 % | **92.3 %** |
+| macro (3 pull requests carry one) | | 100 % | 91.7 % | 95.7 % |
+
+Beside the leaderboard as read for the correction section, **as an indication only**: its first
+row is OhMyBug at 83.0 %, the fifth Laude RevEngine at 73.3 %. The figure would sit above the
+whole table, and it cannot be read that way. **Seven high-severity golden findings, on three pull
+requests, judged once**: a 95 % interval on 6 of 7 runs from 49 % to 97 % recall, which on the
+leaderboard spans from its middle rows to above its first. The leaderboard rests on 219 pull
+requests judged three times. What the figure does establish is narrower: on pull requests nobody
+here had read, master missed one high-severity finding of seven and put forward no false
+high-severity one. The miss, on katana-openapi-client: a variant update now looks a SKU up in a
+cache that the tool never warms, unlike the existing SKU readers, so a cold cache fails with
+`SKU not found`.
+
+**All severities.**
+
+| pull request | entries | covered | of golden | high | entries judged true |
+|---|---:|---:|---:|---:|---:|
+| psalm/psalm-plugin-laravel #674 | 12 | 2 | 16 | | 10 |
+| dotnet/sdk #53906 | 16 | 6 | 6 | | 14 |
+| psalm/psalm-plugin-laravel #668 | 11 | 4 | 7 | | 11 |
+| joshjohanning/npm-version-check-action #92 | 26 | 6 | 11 | | 25 |
+| supa-magic/spm #19 | 15 | 11 | 15 | 1 of 1 | 15 |
+| blamechris/chroxy #2266 | 7 | 3 | 4 | | 7 |
+| CommunityToolkit/Maui #3181 | 25 | 13 | 16 | 2 of 2 | 24 |
+| hughdidit/DAISy-Agency #294 | 3 | 0 | 1 | | 2 |
+| basecamp/omarchy #5203 | 4 | 2 | 3 | | 2 |
+| dougborg/katana-openapi-client #309 | 44 | 13 | 25 | 3 of 4 | 43 |
+| **all ten** | **163** | **60** | **104** | **6 of 7** | **153** |
+
+- **Golden true findings covered: 60 of 104 (57.7 % micro, 57.2 % macro).** By golden category,
+  defects (correctness, reliability, security, api-architecture, performance) 48 of 74 (64.9 %),
+  hygiene (testing, maintainability, documentation, accessibility) 12 of 30 (40.0 %).
+- **Precision.** Of 56 entries matched to golden findings, 49 matched true ones and 7 matched
+  findings the bench's reviewers labelled false: grounded 87.5 %, below V4's 92.1 % on the nine
+  larger test-set pull requests. Of the 107 entries the golden set lacks, the judge found 104
+  true and 3 false (augmented precision 93.9 %, augmented recall 78.8 %). **The flag does not
+  fire.** Per pull request, entries judged true fall below 0.80 on the two smallest reviews:
+  omarchy (2 of 4) and DAISy-Agency (2 of 3).
+- **By queue part**, in the order a reader meets them:
+
+  | part | entries | judged true |
+  |---|---:|---:|
+  | introduced by this change | 104 | 96 |
+  | exposed by this change | 26 | 24 |
+  | Already there | 23 | 23 |
+  | Suggestions | 10 | 10 |
+
+  Suggestions, apart: 10 entries, all true, none in the golden set. The Already-there part is
+  all true as well, and almost all outside the golden set (22 of 23): of the golden true
+  findings, 102 are labelled introduced by the pull request and 2 pre-existing, neither of which
+  was covered; none is labelled exacerbated. The wide scope finds real old defects that this
+  bench barely scores.
+- **Volume.** 16 entries per pull request on average, from 3 (DAISy-Agency, one file) to 44
+  (katana-openapi-client, 27 files). Of the 349 findings of round 1, 230 were labelled
+  `introduced`, 42 `exposed`, 50 `pre-existing`, and 27 came from conformance, which has no
+  scope.
+- **The refuter removed little, as before.** 276 verdicts: 256 `stands`, 16 refuted (8
+  `intended`, 3 `not-reachable`, 2 `misread`, 2 `already-handled`, 1 `no-consequence`), 3
+  `wrong-location` and 1 `undecided`, both of which let the finding through.
+- **Every reply was well formed.** 148 lens and conformance tasks and 276 refutations: none
+  missing, none malformed, none repaired. The judge ran once, with no error.
+
+**Not comparable with the earlier sections, and not summed with them.** These ten pull requests
+are smaller than the test set's nine larger ones (113 files, 11 per pull request, against 270
+and 30), the golden sets differ in proportion (7 high-severity of 104 here, 18 of 168 there), and
+judge variance of about two golden findings per pull request, seen in the last two sections,
+applies here too. The figures say how master does on a random sample of the bench it was not
+aimed at; ten pull requests cannot say how it ranks.
+
+**Where the protocol was not followed.**
+
+1. **resplab/leap #48 was left out for a reason the registration does not list.** Its export
+   failed: the snapshot's `git archive` let Git LFS fetch a 232 MB file and the export stopped.
+   It was replaced by the next key in the draw order. That is a bug in RSquad's snapshot, which
+   should never resolve LFS content, and is left for after this measurement; the code under
+   measurement was not changed.
+2. **Round 2 spanned two 5-hour windows.** The refutations of four jobs ran in the first,
+   which stopped at 87 % because the next job would have crossed the 90 % threshold; the six
+   others ran in the second. No reply was judged before all were in.
+3. **The leaderboard table set beside the figures** is the one read on 2026-11-22 and used by the
+   correction section on 2026-11-23; it was not read again on the 23rd.
+
+Cost: 112 points of the 5-hour window over two windows: 49 for round 1's 148 tasks, then 12 for
+53 refutations in the first window and 51 for 223 in the second (about 0.23 point per
+refutation). Weekly points went from 15 % to 22 % in the second window; the first window's share
+was not recorded apart. Subagent tokens were recorded for the second window only: 18.1 M. One
+judge run on the API key.
 
 ## Annex — the two arms, as diffs against `58f8b06`
 
