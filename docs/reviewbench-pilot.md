@@ -612,8 +612,8 @@ aimed at; ten pull requests cannot say how it ranks.
 1. **resplab/leap #48 was left out for a reason the registration does not list.** Its export
    failed: the snapshot's `git archive` let Git LFS fetch a 232 MB file and the export stopped.
    It was replaced by the next key in the draw order. That is a bug in RSquad's snapshot, which
-   should never resolve LFS content, and is left for after this measurement; the code under
-   measurement was not changed.
+   should never resolve LFS content, and was left for after this measurement; the code under
+   measurement was not changed. Fixed in `bc7151d`: the copy now holds the LFS pointer.
 2. **Round 2 spanned two 5-hour windows.** The refutations of four jobs ran in the first,
    which stopped at 87 % because the next job would have crossed the 90 % threshold; the six
    others ran in the second. No reply was judged before all were in.
