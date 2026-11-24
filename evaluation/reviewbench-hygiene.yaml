@@ -1,0 +1,40 @@
+# Pre-registration — the hygiene lens and the wider tests lens (ADR-0014), on the same two pull
+# requests as evaluation/reviewbench-docs.yaml
+#
+# Committed before any task runs. What follows is frozen; the report says where it was not
+# followed.
+#
+# NOT BLIND, as before: both pull requests' golden findings were read, and ADR-0014 was aimed at
+# seven of tp #152's ten remaining misses (five hygiene, two weak tests outside the change).
+# This checks the mechanism where it was aimed and prices it; it gives no recall figure.
+
+date: 2026-11-24
+bench: review-bench/ReviewBench @ 082f65f, test set (corpus/test/test.json)
+code: rsquad master @ 73d3e6e, unmodified
+
+sets:
+  - scotthamilton77_agents-config_1
+  - AY2526S2-CS2103T-W14-3_tp_152
+
+baseline:
+  # Both earlier runs, same two pull requests, same judge, after refutation.
+  v4: 6 of 38 covered (438fd4a)
+  docs and scope: 10 of 38 covered, tp #152 4 of 14, agents-config 6 of 24 (ff2ad20)
+
+run:
+  shape: `rsquad export` defaults at 73d3e6e (six lenses, conformance per code file,
+    refutation except for suggestions, all on Opus, context pack off), one run, replies never
+    repaired
+  intent, driver, judge: as in evaluation/reviewbench-docs.yaml
+  staging: pause between rounds if the 5-hour window reaches 90 %
+
+metric:
+  reported, against both baselines: golden true findings covered, per pull request; of the
+    seven tp #152 misses ADR-0014 aimed at, how many are covered; entries, and how many are
+    suggestions; grounded and augmented precision, for suggestions apart from the rest;
+    refutation tasks; cost (5-hour window points, split by round)
+
+rule:
+  none: ADR-0014 is in master already.
+  flag: augmented precision of the suggestions below 0.80 is reported as a warning: it is the
+    part of the queue built to be cut first.
