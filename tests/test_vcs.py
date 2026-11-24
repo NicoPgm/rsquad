@@ -92,6 +92,29 @@ def test_a_second_snapshot_holds_nothing_of_the_first(tmp_path):
     assert (copy / "b.py").exists() and not (copy / "src" / "a.py").exists()
 
 
+def test_the_snapshot_holds_an_lfs_pointer_and_never_runs_the_filter(tmp_path):
+    """`git archive` runs smudge filters. With Git LFS installed, that downloaded every LFS file
+    of the tree: 232 MB on one ReviewBench pull request, and the export failed. The copy holds
+    what was committed, the pointer. The filter here fails on purpose, as a stand-in for the
+    download: it must never run."""
+    repo = _repo(tmp_path)
+    pointer = "version https://git-lfs.github.com/spec/v1\noid sha256:%s\nsize 232000000\n" % ("0" * 64)
+    for name, text in ((".gitattributes", "data.csv filter=lfs diff=lfs merge=lfs -text\n"), ("data.csv", pointer)):
+        blob = _git(repo, "hash-object", "-w", "--no-filters", "--stdin", input=text).stdout.strip()
+        _git(repo, "update-index", "--add", "--cacheinfo", "100644,%s,%s" % (blob, name))
+    _git(repo, "commit", "-q", "-m", "Track the data with LFS.")
+    for key in ("process", "smudge"):
+        _git(repo, "config", "filter.lfs." + key, "false")
+    _git(repo, "config", "filter.lfs.required", "true")
+
+    vcs.snapshot("HEAD", tmp_path / "job" / "repo", repo)
+    copy = tmp_path / "job" / "repo"
+    committed = subprocess.run(["git", "cat-file", "blob", "HEAD:data.csv"], cwd=repo,
+                               check=True, capture_output=True).stdout
+    assert committed.startswith(b"version https://git-lfs")
+    assert (copy / "data.csv").read_bytes() == committed
+
+
 def test_a_link_out_of_the_tree_is_left_out_not_fatal(tmp_path):
     """A reader must not follow a link out of the copy, and one link must not stop a review.
     The link is committed as a git symlink entry, so the test needs no symlink support."""

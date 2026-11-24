@@ -84,8 +84,12 @@ def snapshot(revision: str, dest: Path, repo: Path | None = None) -> None:
     # blobs writes there, and a pipe nobody reads fills and stalls git. stdout is drained after
     # tarfile stops at the end-of-archive marker, for the same reason. Either stall hung the
     # export of a 69-file pull request on ReviewBench, once every file was already written.
+    # `git archive` runs smudge filters, and Git LFS's downloads every LFS file of the tree:
+    # 232 MB on another, whose export failed. The copy holds the pointer, as committed.
+    no_lfs = ["-c", "filter.lfs.process=", "-c", "filter.lfs.smudge=",
+              "-c", "filter.lfs.required=false"]
     with tempfile.TemporaryFile() as errors, subprocess.Popen(
-            ["git", "archive", "--format=tar", revision], cwd=repo,
+            ["git", *no_lfs, "archive", "--format=tar", revision], cwd=repo,
             stdout=subprocess.PIPE, stderr=errors) as archive:
         unreadable = None
         try:
